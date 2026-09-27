@@ -254,6 +254,7 @@ export default function BbCafeDesktopPos() {
   const [liveOrders, setLiveOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [liveDbCoupons, setLiveDbCoupons] = useState<any[]>([]); // 👉 NEW: Database से कूपन लोड करने के लिए
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [inventorySearchQuery, setInventorySearchQuery] = useState('');
