@@ -1011,8 +1011,8 @@ export default function BbCafeDesktopPos() {
         setCurrentUser(JSON.parse(savedUser)); 
       } catch (e) {} 
     }
-    setGstEnabled(localStorage.getItem("bb_pos_gst_enabled_pc") === 'true');
-    setGstRate(Number(localStorage.getItem("bb_pos_gst_rate_pc")) || 5);
+    // 👉 NEW: Load Cash Tender Setting
+    setCashTenderEnabled(localStorage.getItem("bb_pos_cash_tender_enabled_pc") === 'true');
     setKotEnabled(localStorage.getItem("bb_pos_kot_enabled_pc") !== 'false'); 
 
     const localTheme = localStorage.getItem("bb_pos_theme_pc") || 'light';
