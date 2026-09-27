@@ -3366,41 +3366,42 @@ export default function BbCafeDesktopPos() {
                       )}
                     </div>
 
-                    {/* CASH CHANGE RETURN CALCULATOR */}
-                    <div className="bg-neutral-100 dark:bg-neutral-800/80 p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 mb-2 shrink-0 space-y-1">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-neutral-700 dark:text-neutral-300">कैश दिया (Cash Tendered):</span>
-                        <div className="flex items-center gap-1">
-                          <input 
-                            id="cashTenderedInput"
-                            type="number" 
-                            placeholder="₹ नोट" 
-                            value={cashTendered} 
-                            onChange={e => setCashTendered(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-20 bg-white dark:bg-neutral-900 border rounded px-2 py-1 text-xs font-mono font-bold outline-none" 
-                          />
+                    {/* CASH CHANGE RETURN CALCULATOR (Settings से कंट्रोल होगा) */}
+                    {cashTenderEnabled && (
+                      <div className="bg-neutral-100 dark:bg-neutral-800/80 p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 mb-2 shrink-0 space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-neutral-700 dark:text-neutral-300">कैश दिया (Cash Tendered):</span>
+                          <div className="flex items-center gap-1">
+                            <input 
+                              id="cashTenderedInput"
+                              type="number" 
+                              placeholder="₹ नोट" 
+                              value={cashTendered} 
+                              onChange={e => setCashTendered(e.target.value === '' ? '' : Number(e.target.value))}
+                              className="w-20 bg-white dark:bg-neutral-900 border rounded px-2 py-1 text-xs font-mono font-bold outline-none" 
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-1">
-                        {[100, 200, 500, 1000].map(val => (
-                          <button 
-                            key={val} 
-                            type="button" 
-                            onClick={() => setCashTendered(val)} 
-                            className="flex-1 py-0.5 bg-white dark:bg-neutral-900 border rounded text-[10px] font-bold text-neutral-700 dark:text-neutral-300"
-                          >
-                            ₹{val}
-                          </button>
-                        ))}
-                      </div>
-                      {cashTendered !== '' && Number(cashTendered) >= getTotalBillPrice() && (
-                        <div className="pt-1 border-t flex justify-between items-center text-xs font-black text-green-600">
-                          <span>वापस दें (Change Return):</span>
-                          <span className="font-mono text-sm">₹{changeReturnAmount}</span>
+                        <div className="flex gap-1">
+                          {[100, 200, 500, 1000].map(val => (
+                            <button 
+                              key={val} 
+                              type="button" 
+                              onClick={() => setCashTendered(val)} 
+                              className="flex-1 py-0.5 bg-white dark:bg-neutral-900 border rounded text-[10px] font-bold text-neutral-700 dark:text-neutral-300"
+                            >
+                              ₹{val}
+                            </button>
+                          ))}
                         </div>
-                      )}
-                    </div>
-
+                        {cashTendered !== '' && Number(cashTendered) >= getTotalBillPrice() && (
+                          <div className="pt-1 border-t flex justify-between items-center text-xs font-black text-green-600">
+                            <span>वापस दें (Change Return):</span>
+                            <span className="font-mono text-sm">₹{changeReturnAmount}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {/* BILL TOTALS */}
                     <div className="space-y-1 text-xs border-t border-neutral-300 dark:border-neutral-800 pt-1.5 shrink-0 font-bold">
                       <div className="flex justify-between text-neutral-600 dark:text-neutral-400"><span>Subtotal</span><span className="font-mono">₹{getCartSubtotal()}</span></div>
