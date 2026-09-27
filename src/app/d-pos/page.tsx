@@ -4481,9 +4481,22 @@ export default function BbCafeDesktopPos() {
                           placeholder="GST % (e.g. 5)"
                           className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" 
                         />
-                        <span className="bg-neutral-200 dark:bg-neutral-700 px-4 py-2 rounded-xl text-xs font-black uppercase flex items-center">% Rate (दर)</span>
-                      </div>
-                    )}
+                        {/* 👉 NEW: Cash Tendered Settings */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs font-bold uppercase">Show Cash Change Calculator (कैश वापसी):</p>
+                      <button 
+                        onClick={() => {
+                          const newVal = !cashTenderEnabled;
+                          setCashTenderEnabled(newVal);
+                          localStorage.setItem("bb_pos_cash_tender_enabled_pc", String(newVal));
+                          toast.success(newVal ? "Cash Calculator ON हो गया!" : "Cash Calculator OFF हो गया!");
+                        }} 
+                        className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${cashTenderEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}
+                      >
+                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${cashTenderEnabled ? 'translate-x-6' : ''}`}></div>
+                      </button>
+                    </div>
                   </div>
 
                   {/* UPI ID SETTING */}
