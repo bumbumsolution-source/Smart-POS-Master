@@ -2933,29 +2933,58 @@ export default function BbCafeDesktopPos() {
                       <div className="flex gap-1.5 relative">
                         <div className="relative flex-1">
                           <input 
-  ref={phoneInputRef}
-  type="text"
-  placeholder="ग्राहक का नाम या मोबाइल नंबर..." 
-  value={cartCustSearchInput} 
-  onChange={e => handleCustomerSearchChange(e.target.value)} 
-  onFocus={() => { if(custSuggestions.length > 0) setShowCustDropdown(true); }}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (showCustDropdown && custSuggestions.length > 0) {
-        handleSelectDropdownCustomer(custSuggestions[0]); // अगर लिस्ट में है, तो पहला सेलेक्ट कर लेगा
-      } else if (customerPhone.length === 10) {
-        setShowCustDropdown(false);
-        searchCustomerByExactPhone(customerPhone); // सेव नहीं है, तो अपने-आप नाम डालने का बॉक्स खोल देगा
-      }
-    }
-  }}
-  className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 dark:text-white outline-none font-bold placeholder:font-normal placeholder:text-neutral-400" 
-/>
+                            ref={phoneInputRef}
+                            type="text"
+                            placeholder="ग्राहक का नाम या मोबाइल नंबर..." 
+                            value={cartCustSearchInput} 
+                            onChange={e => handleCustomerSearchChange(e.target.value)} 
+                            onFocus={() => { 
+                              // 👉 Focus होने पर अगर इनपुट खाली है, तो Recent लिस्ट खोलें
+                              if (!cartCustSearchInput && recentCartCustomers.length > 0) {
+                                const enrichedRecents = recentCartCustomers.map(rc => {
+                                  const fullCust = allCustomers.find(c => c.phone === rc.phone || c.id === rc.phone);
+                                  return fullCust || rc;
+                                });
+                                setCustSuggestions(enrichedRecents);
+                                setShowCustDropdown(true);
+                              } else if (custSuggestions.length > 0) {
+                                setShowCustDropdown(true); 
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (showCustDropdown && custSuggestions.length > 0) {
+                                  handleSelectDropdownCustomer(custSuggestions[0]); 
+                                } else if (customerPhone.length === 10) {
+                                  setShowCustDropdown(false);
+                                  searchCustomerByExactPhone(customerPhone); 
+                                }
+                              }
+                            }}
+                            className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 dark:text-white outline-none font-bold placeholder:font-normal placeholder:text-neutral-400" 
+                          />
                           
                           {/* कट (X) बटन ताकि नया नाम डाल सकें */}
                           {cartCustSearchInput && (
-                            <button onClick={() => { setCartCustSearchInput(''); setCustomerPhone(''); setCustomerName(''); setShowCustDropdown(false); setShowNewCustForm(false); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-red-500 transition-colors">
+                            <button onClick={() => { 
+                              setCartCustSearchInput(''); 
+                              setCustomerPhone(''); 
+                              setCustomerName(''); 
+                              setShowCustDropdown(false); 
+                              setShowNewCustForm(false); 
+                              
+                              // 👉 क्रॉस दबाते ही रिसेंट लिस्ट खोल दें
+                              if (recentCartCustomers.length > 0) {
+                                const enrichedRecents = recentCartCustomers.map(rc => {
+                                  const fullCust = allCustomers.find(c => c.phone === rc.phone || c.id === rc.phone);
+                                  return fullCust || rc;
+                                });
+                                setCustSuggestions(enrichedRecents);
+                                setShowCustDropdown(true);
+                              }
+                              setTimeout(() => phoneInputRef.current?.focus(), 50);
+                            }} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-red-500 transition-colors">
                                <X size={14} />
                             </button>
                           )}
@@ -2963,10 +2992,18 @@ export default function BbCafeDesktopPos() {
                           {/* 👉 DROPDOWN LIST (हवा में लटकती हुई) */}
                           {showCustDropdown && custSuggestions.length > 0 && (
                              <div className="absolute top-[110%] left-0 w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-2xl z-[100] max-h-56 overflow-y-auto">
+                                
+                                {/* 👉 रिसेंट लिस्ट के लिए छोटा सा हेडर */}
+                                {!cartCustSearchInput && (
+                                   <div className="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 text-[9px] font-black uppercase text-neutral-500 sticky top-0">
+                                     🕒 Recent Customers (आखिरी 10)
+                                   </div>
+                                )}
+
                                 {custSuggestions.map((cust, idx) => (
                                     <div key={idx} onClick={() => handleSelectDropdownCustomer(cust)} className="p-2.5 border-b border-neutral-100 dark:border-neutral-800 hover:bg-orange-50 dark:hover:bg-orange-500/20 cursor-pointer flex justify-between items-center transition-colors">
                                         <div>
-                                            <p className="font-black text-xs text-neutral-900 dark:text-white leading-none">{cust.name}</p>
+                                            <p className="font-black text-xs text-neutral-900 dark:text-white leading-none">{cust.name || 'Walk-in Guest'}</p>
                                             <p className="font-mono text-[10px] text-neutral-500 mt-1">📞 {cust.phone}</p>
                                         </div>
                                         <span className="text-[10px] bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-1 rounded-md font-black border border-amber-200 dark:border-amber-500/30">
