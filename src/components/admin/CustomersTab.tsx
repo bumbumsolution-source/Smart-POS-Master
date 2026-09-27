@@ -2,16 +2,18 @@
 import React, { useState, useMemo } from 'react';
 import { db } from '../../lib/firebase'; // अपनी लोकेशन के अनुसार पाथ सेट करें
 import { doc, setDoc, collection, addDoc, doc as firestoreDoc } from 'firebase/firestore';
-import { User, Search, Share2, Edit, Trash, X, Phone, MapPin, Calendar, Check, MessageSquare, Filter, RefreshCw } from 'lucide-react';
+import { User, Search, Share2, Edit, Trash, X, Phone, MapPin, Calendar, Check, MessageSquare, Filter, RefreshCw, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatBillNumber } from '../../lib/utils'; // अपनी लोकेशन के अनुसार पाथ सेट करें
 
+// यहाँ हमने onExportCSV प्रॉप जोड़ा है ताकि डैशबोर्ड से फंक्शन यहाँ आ सके
 interface CustomersTabProps {
   loyaltyUsers: any[];
   orders: any[];
+  onExportCSV?: () => void; 
 }
 
-export default function CustomersTab({ loyaltyUsers, orders }: CustomersTabProps) {
+export default function CustomersTab({ loyaltyUsers, orders, onExportCSV }: CustomersTabProps) {
   // सर्च और एडिटिंग स्टेट्स
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
@@ -233,11 +235,23 @@ export default function CustomersTab({ loyaltyUsers, orders }: CustomersTabProps
         <h3 className="text-xl font-black text-orange-500 uppercase tracking-wider flex items-center gap-2">
           <User size={20}/> Customer Management
         </h3>
+        
+        {/* === यहाँ हमने Export CSV का बटन जोड़ा है === */}
         <div className="flex gap-2">
+          {onExportCSV && (
+            <button 
+              onClick={onExportCSV} 
+              className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] px-4 py-2.5 rounded-full flex items-center gap-1.5 uppercase shadow-md transition-all"
+            >
+              <Download size={13}/> Export CSV
+            </button>
+          )}
+
           <label className="bg-[#facc15] hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2.5 rounded-full flex items-center gap-1.5 uppercase cursor-pointer transition-all">
             Import CSV
             <input type="file" accept=".csv" onChange={handleCsvImport} className="hidden" />
           </label>
+
           <button onClick={() => setShowBroadcastModal(true)} className="bg-green-600 hover:bg-green-700 text-white font-black text-[10px] px-4 py-2.5 rounded-full flex items-center gap-1.5 uppercase shadow-md transition-all">
             <Share2 size={13}/> Broadcast Blast
           </button>
