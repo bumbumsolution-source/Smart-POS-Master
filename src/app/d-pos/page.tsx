@@ -1357,6 +1357,19 @@ export default function BbCafeDesktopPos() {
   const handleApplyPromoCoupon = () => {
     const code = promoCouponInput.trim().toUpperCase();
     if (!code) return toast.error("Enter a promo code!");
+
+    // 1. सबसे पहले Firebase (Admin Panel) वाले लाइव कूपन में चेक करें
+    const dbCoupon = liveDbCoupons.find(c => c.code === code);
+    
+    if (dbCoupon) {
+      setDiscountType('amount'); // एडमिन से अभी फ्लैट डिस्काउंट ही बन रहा है
+      setDiscountValue(Number(dbCoupon.discountValue));
+      setAppliedPromoName(code);
+      toast.success(`Coupon "${code}" (₹${dbCoupon.discountValue} OFF) लागू हो गया! 🎉`);
+      return;
+    }
+
+    // 2. अगर वहां नहीं मिला, तो पुरानी फिक्स लिस्ट (PROMO_COUPONS) में चेक करें
     if (PROMO_COUPONS[code]) {
       const c = PROMO_COUPONS[code];
       if (c.type === 'percent') {
@@ -1367,10 +1380,11 @@ export default function BbCafeDesktopPos() {
         setDiscountValue(c.value);
       }
       setAppliedPromoName(code);
-      toast.success(`Coupon "${code}" applied successfully!`);
-    } else {
-      toast.error("Invalid coupon code!");
+      toast.success(`Coupon "${code}" लागू हो गया! 🎉`);
+      return;
     }
+
+    toast.error("कूपन कोड गलत है या एक्सपायर हो चुका है! ❌");
   };
 
   const handleDeleteProduct = async (itemId: string, itemName: string) => {
