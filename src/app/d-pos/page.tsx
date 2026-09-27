@@ -2497,7 +2497,8 @@ export default function BbCafeDesktopPos() {
     setIsReceiptsLoading(true);
     try {
       if (navigator.onLine) {
-        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"), limit(receiptsLimit));
+        // 👉 NEW: यहाँ से limit(...) पूरी तरह हटा दिया गया है ताकि 100% सारे बिल आ जाएँ!
+        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
         const snap = await getDocs(q);
         setPastReceipts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       }
@@ -2507,7 +2508,6 @@ export default function BbCafeDesktopPos() {
       setIsReceiptsLoading(false);
     }
   };
-
   useEffect(() => {
     if (activeTab === 'receipts') fetchPastReceipts();
   }, [activeTab, receiptsLimit]);
