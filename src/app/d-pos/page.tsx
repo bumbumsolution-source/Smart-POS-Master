@@ -1240,6 +1240,7 @@ export default function BbCafeDesktopPos() {
   // 👆👆 नया कोड यहाँ खत्म 👆👆
  
   // 👉 NEW: स्मार्ट नाम और नंबर सर्च लॉजिक
+  // 👉 NEW: स्मार्ट नाम और नंबर सर्च लॉजिक (Recent 10 Customers के साथ)
   const handleCustomerSearchChange = (val: string) => {
     setCartCustSearchInput(val);
     setCustomerPhone(val.replace(/\D/g, '').slice(0, 10)); // बैकग्राउंड के लिए सिर्फ नंबर अलग करें
@@ -1253,6 +1254,15 @@ export default function BbCafeDesktopPos() {
       
       setCustSuggestions(matches);
       setShowCustDropdown(true);
+    } else if (val.length === 0) {
+      // 👉 NEW: जब इनपुट खाली हो, तो ड्रॉपडाउन में Recent 10 Customers दिखाएँ
+      const enrichedRecents = recentCartCustomers.map(rc => {
+        // पॉइंट्स और लेटेस्ट डेटा के लिए Main लिस्ट से मैच करें
+        const fullCust = allCustomers.find(c => c.phone === rc.phone || c.id === rc.phone);
+        return fullCust || rc; 
+      });
+      setCustSuggestions(enrichedRecents);
+      if (enrichedRecents.length > 0) setShowCustDropdown(true);
     } else {
       setShowCustDropdown(false);
       setCustSuggestions([]);
@@ -1262,7 +1272,6 @@ export default function BbCafeDesktopPos() {
       setShowNewCustForm(false);
     }
   };
-
   // ड्रॉपडाउन से कस्टमर सेलेक्ट करने पर
   const handleSelectDropdownCustomer = (cust: any) => {
     triggerBeep('tap');
