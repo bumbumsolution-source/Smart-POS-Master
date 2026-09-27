@@ -4436,65 +4436,32 @@ export default function BbCafeDesktopPos() {
                   <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
                     <p className="text-xs font-bold uppercase">Next Bill / Invoice Number:</p>
                     <div className="flex gap-2">
-                      <input 
-                        type="number" 
-                        value={manualInvoiceCounterInput} 
-                        onChange={e => setManualInvoiceCounterInput(e.target.value)}
-                        placeholder="e.g. 200"
-                        className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" 
-                      />
-                      <button onClick={() => { 
-                        const num = parseInt(manualInvoiceCounterInput, 10);
-                        if (!isNaN(num) && num >= 1) {
-                          localStorage.setItem("bb_pos_local_bill_counter_pc", String(num - 1));
-                          toast.success(`Next Invoice will be #${num}! ✅`);
-                        }
-                      }} className="bg-orange-600 text-white px-4 rounded-xl text-xs font-black uppercase">Set Counter</button>
+                      <input type="number" value={manualInvoiceCounterInput} onChange={e => setManualInvoiceCounterInput(e.target.value)} placeholder="e.g. 200" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" />
+                      <button onClick={() => { const num = parseInt(manualInvoiceCounterInput, 10); if (!isNaN(num) && num >= 1) { localStorage.setItem("bb_pos_local_bill_counter_pc", String(num - 1)); toast.success(`Next Invoice will be #${num}! ✅`); } }} className="bg-orange-600 text-white px-4 rounded-xl text-xs font-black uppercase">Set Counter</button>
                     </div>
                   </div>
 
-                  {/* 👉 NEW: GST Settings */}
+                  {/* 👉 GST Settings */}
                   <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
                     <div className="flex justify-between items-center">
                       <p className="text-xs font-bold uppercase">Enable GST (टैक्स):</p>
-                      <button 
-                        onClick={() => {
-                          const newVal = !gstEnabled;
-                          setGstEnabled(newVal);
-                          localStorage.setItem("bb_pos_gst_enabled_pc", String(newVal));
-                          toast.success(newVal ? `GST Enabled (${gstRate}%)!` : "GST Disabled!");
-                        }} 
-                        className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${gstEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}
-                      >
+                      <button onClick={() => { const newVal = !gstEnabled; setGstEnabled(newVal); localStorage.setItem("bb_pos_gst_enabled_pc", String(newVal)); toast.success(newVal ? `GST Enabled (${gstRate}%)!` : "GST Disabled!"); }} className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${gstEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}>
                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${gstEnabled ? 'translate-x-6' : ''}`}></div>
                       </button>
                     </div>
                     {gstEnabled && (
                       <div className="flex gap-2 pt-2">
-                        <input 
-                          type="number" 
-                          value={gstRate} 
-                          onChange={e => {
-                            const rate = Number(e.target.value);
-                            setGstRate(rate);
-                            localStorage.setItem("bb_pos_gst_rate_pc", String(rate));
-                          }}
-                          placeholder="GST % (e.g. 5)"
-                          className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" 
-                        />
-                        {/* 👉 NEW: Cash Tendered Settings */}
+                        <input type="number" value={gstRate} onChange={e => { const rate = Number(e.target.value); setGstRate(rate); localStorage.setItem("bb_pos_gst_rate_pc", String(rate)); }} placeholder="GST % (e.g. 5)" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" />
+                        <span className="bg-neutral-200 dark:bg-neutral-700 px-4 py-2 rounded-xl text-xs font-black uppercase flex items-center">% Rate (दर)</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 👉 NEW: Cash Tendered Settings */}
                   <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
                     <div className="flex justify-between items-center">
                       <p className="text-xs font-bold uppercase">Show Cash Change Calculator (कैश वापसी):</p>
-                      <button 
-                        onClick={() => {
-                          const newVal = !cashTenderEnabled;
-                          setCashTenderEnabled(newVal);
-                          localStorage.setItem("bb_pos_cash_tender_enabled_pc", String(newVal));
-                          toast.success(newVal ? "Cash Calculator ON हो गया!" : "Cash Calculator OFF हो गया!");
-                        }} 
-                        className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${cashTenderEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}
-                      >
+                      <button onClick={() => { const newVal = !cashTenderEnabled; setCashTenderEnabled(newVal); localStorage.setItem("bb_pos_cash_tender_enabled_pc", String(newVal)); toast.success(newVal ? "Cash Calculator ON हो गया!" : "Cash Calculator OFF हो गया!"); }} className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${cashTenderEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}>
                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${cashTenderEnabled ? 'translate-x-6' : ''}`}></div>
                       </button>
                     </div>
@@ -4504,13 +4471,7 @@ export default function BbCafeDesktopPos() {
                   <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
                     <p className="text-xs font-bold uppercase">Dynamic UPI ID (VPA for QR Code):</p>
                     <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        value={upiIdConfig} 
-                        onChange={e => setUpiIdConfig(e.target.value)}
-                        placeholder="e.g. Q991347275@ybl"
-                        className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" 
-                      />
+                      <input type="text" value={upiIdConfig} onChange={e => setUpiIdConfig(e.target.value)} placeholder="e.g. Q991347275@ybl" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" />
                       <button onClick={() => { localStorage.setItem("bb_pos_upi_id", upiIdConfig); toast.success("UPI ID Saved!"); }} className="bg-blue-600 text-white px-4 rounded-xl text-xs font-black uppercase">Save</button>
                     </div>
                   </div>
@@ -4519,13 +4480,7 @@ export default function BbCafeDesktopPos() {
                   <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
                     <p className="text-xs font-bold uppercase">Owner WhatsApp Number (for EOD Report):</p>
                     <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        value={ownerPhoneConfig} 
-                        onChange={e => setOwnerPhoneConfig(e.target.value)}
-                        placeholder="e.g. 919714293759"
-                        className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" 
-                      />
+                      <input type="text" value={ownerPhoneConfig} onChange={e => setOwnerPhoneConfig(e.target.value)} placeholder="e.g. 919714293759" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" />
                       <button onClick={() => { localStorage.setItem("bb_pos_owner_phone", ownerPhoneConfig); toast.success("Owner Phone Saved!"); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-black uppercase">Save</button>
                     </div>
                   </div>
