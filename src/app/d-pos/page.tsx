@@ -2946,9 +2946,10 @@ export default function BbCafeDesktopPos() {
                     {/* 👉 NEW: DYNAMIC CUSTOMER SEARCH (NAME OR NUMBER) & REDEEM SECTION */}
                     <div className="bg-neutral-100 dark:bg-neutral-800/60 p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 mb-2 shrink-0 space-y-2 relative">
                       <div className="flex gap-1.5 relative">
-                        <div className="relative flex-1">
+                        {/* 👉 NEW: यहाँ ref={custDropdownRef} जोड़ा गया है ताकि बाहर का क्लिक पहचाना जा सके */}
+                        <div className="relative flex-1" ref={custDropdownRef}>
                           <input 
-                            ref={phoneInputRef}
+  ref={phoneInputRef}
                             type="text"
                             placeholder="ग्राहक का नाम या मोबाइल नंबर..." 
                             value={cartCustSearchInput} 
