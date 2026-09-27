@@ -2072,7 +2072,7 @@ export default function BbCafeDesktopPos() {
         packingCharge: getPackingCharge(), 
         total: finalTotal,
         timestamp: new Date(), 
-        status: 'unsettled', // Saved to Daily Bills for payment settlement
+        status: 'unsettled', 
         paymentSettled: false,
         fulfillmentType, 
         deliveryArea: fulfillmentType === "delivery" ? selectedArea.name : "", 
@@ -2087,7 +2087,8 @@ export default function BbCafeDesktopPos() {
         pointsDiscount: redeemed,
         remainingPoints: remainingPts,
         customerPoints: remainingPts,
-        upiId: upiIdConfig
+        upiId: upiIdConfig,
+        promoCodeUsed: appliedPromoName || null // 👉 NEW: यहाँ सेव होगा कि कौन सा कूपन यूज़ हुआ
       };
 
       if (activeEditingOrderId) {
