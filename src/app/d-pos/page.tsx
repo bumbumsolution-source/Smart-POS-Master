@@ -811,10 +811,17 @@ export default function BbCafeDesktopPos() {
     return diff > 0 ? diff : 0;
   }, [cashTendered, cart, discountValue, isRedeemingPoints, pointsToRedeem, applyDeliveryFee, customDeliveryFee]);
 
-  // Active Orders
-  const activeLiveOrders = useMemo(() => liveOrders.filter((o) => (o.fulfillmentType === 'delivery' || o.fulfillmentType === 'pickup') && o.status !== 'completed' && o.status !== 'rejected'), [liveOrders]);
+ // Active Orders (👉 सिर्फ ऑनलाइन वेब ऑर्डर्स के लिए)
+  const activeLiveOrders = useMemo(() => 
+    liveOrders.filter((o) => 
+      o.source !== 'PC_POS' && // 👈 यह लाइन काउंटर के ऑर्डर्स को हटा देगी (सिर्फ ऑनलाइन बचेंगे)
+      (o.fulfillmentType === 'delivery' || o.fulfillmentType === 'pickup') && 
+      o.status !== 'completed' && 
+      o.status !== 'rejected'
+    ), 
+  [liveOrders]);
+  
   const activeTableOrders = useMemo(() => liveOrders.filter((o) => o.fulfillmentType === 'table' && o.status !== 'completed' && o.status !== 'rejected'), [liveOrders]);
-
   // Today's orders for Daily Bills (रिजेक्टेड ऑर्डर्स हटाये गए)
   const todaySettlementOrders = useMemo(() => {
     const today = new Date();
