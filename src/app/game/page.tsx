@@ -172,7 +172,13 @@ export default function SurpriseArcadeGame() {
         }
       }
 
-      await setDoc(userRef, { name: cleanName, phone: cleanPhone, table: tableNo }, { merge: true });
+      await setDoc(userRef, { 
+  name: cleanName, 
+  phone: cleanPhone, 
+  table: tableNo,
+  lastActive: serverTimestamp(),  // <-- यह लाइन D-POS में लिस्ट दिखाने के लिए है
+  importSource: 'SpinGame'        // <-- यह लाइन D-POS में 🎰 Game का टैग लगाने के लिए है
+}, { merge: true });
       setName(cleanName);
       setPhoneNumber(cleanPhone);
       setLastPlayedTime(null);
