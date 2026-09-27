@@ -135,6 +135,8 @@ export default function BbCafeDesktopPos() {
   const [activeTab, setActiveTab] = useState<'billing' | 'settlement' | 'inventory' | 'receipts' | 'settings' | 'orders' | 'tables' | 'reports' | 'udhari' | 'customers'>('billing');
   const [gstEnabled, setGstEnabled] = useState(false);
   const [gstRate, setGstRate] = useState(5);
+  // 👉 NEW: Cash Tendered Calculator On/Off
+  const [cashTenderEnabled, setCashTenderEnabled] = useState(false);
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('light');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
