@@ -710,9 +710,24 @@ export default function BbCafeDesktopPos() {
   const newCustNameRef = useRef<HTMLInputElement | null>(null);
   const newCustAddressRef = useRef<HTMLInputElement | null>(null);
   const isInitialOrdersLoad = useRef<boolean>(true);
+  
+  // 👉 NEW: बाहर क्लिक करने पर ड्रॉपडाउन बंद करने का Ref
+  const custDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // 👉 NEW: बाहर क्लिक करने को पकड़ने वाला लॉजिक
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (custDropdownRef.current && !custDropdownRef.current.contains(event.target as Node)) {
+        setShowCustDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const getSanitizedPhone = (p: string) => (p || '').replace(/\D/g, '').slice(-10);
-
   // Invoice Number Generator
   const getNextBillNumber = (): number => {
     const saved = localStorage.getItem("bb_pos_local_bill_counter_pc");
