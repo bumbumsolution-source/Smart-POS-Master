@@ -3527,8 +3527,8 @@ export default function BbCafeDesktopPos() {
                               <span className="font-mono font-black text-base text-green-600 dark:text-green-400">₹{order.total}</span>
                             </div>
 
-                            {!isSettled ? (
-                              <div className="flex gap-1.5">
+                           {!isSettled ? (
+                              <div className="flex gap-1.5 flex-wrap justify-end">
                                 <button 
                                   onClick={() => handleQuickSettleOrder(order.id, 'cash')} 
                                   className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase shadow"
@@ -3552,6 +3552,22 @@ export default function BbCafeDesktopPos() {
                                   className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-black uppercase shadow ml-2 flex items-center gap-1"
                                 >
                                   <SafeEdit3 size={14} /> Edit
+                                </button>
+                                
+                                {/* 👉 NEW: ऑनलाइन/पेंडिंग आर्डर के लिए KOT और Bill प्रिंट करने के बटन */}
+                                <button 
+                                  onClick={() => handlePrintReceiptDirect(order, true)} 
+                                  className="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase shadow ml-1 flex items-center gap-1"
+                                  title="किचन के लिए KOT निकालें"
+                                >
+                                  <SafePrinter size={14} /> KOT
+                                </button>
+                                <button 
+                                  onClick={() => handlePrintReceiptDirect(order, false)} 
+                                  className="px-3 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-white rounded-xl text-xs font-black uppercase shadow flex items-center gap-1 border border-neutral-300 dark:border-neutral-700"
+                                  title="कस्टमर के लिए बिल निकालें"
+                                >
+                                  <SafePrinter size={14} /> Bill
                                 </button>
                               </div>
                             ) : (
