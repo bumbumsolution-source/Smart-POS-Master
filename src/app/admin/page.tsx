@@ -15,7 +15,8 @@ import {
   Award, 
   Settings, 
   Menu as MenuIcon, 
-  X 
+  X,
+  Download // <-- Download आइकॉन इम्पोर्ट किया गया है
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -111,7 +112,6 @@ export default function AdminDashboard() {
     } catch (e) {}
   };
 
-  // त्वरित सेल्स फ़िल्टर लागू करना (यहाँ "month" का सपोर्ट जोड़ दिया गया है)
   const applyQuickSalesFilter = (type: 'today' | 'yesterday' | 'week' | 'month') => {
     const today = new Date();
     if (type === 'today') {
@@ -138,7 +138,6 @@ export default function AdminDashboard() {
     toast.success(`Filter Applied: ${type.toUpperCase()}`);
   };
 
-  // सेल्स रेंज रीसेट करना
   const handleResetSalesData = () => {
     const d = new Date();
     d.setDate(d.getDate() - 7); 
@@ -147,7 +146,6 @@ export default function AdminDashboard() {
     toast.success("Filters reset to last 7 days.");
   };
 
-  // दैनिक क्लोजिंग रिपोर्ट जेनरेट करना
   const handleSendDailyClosingReport = () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const todayOrders = orders.filter(o => {
@@ -174,7 +172,6 @@ Report Generated at: ${new Date().toLocaleTimeString()}`
     toast.success("Closing Report Sent via WhatsApp!");
   };
 
-  // एक्सेल रिपोर्ट ऑर्डर्स एक्सपोर्ट
   const handleExportOrders = () => {
     const filteredOrders = orders.filter(o => {
       if (!o.timestamp) return false;
@@ -202,19 +199,27 @@ Report Generated at: ${new Date().toLocaleTimeString()}`
     triggerCsvDownload(dataToExport, `orders_report_${startDate}_to_${endDate}`, headers, keys);
   };
 
-  // एक्सेल रिपोर्ट कस्टमर्स एक्सपोर्ट
+  // 🔹 यह फंक्शन Customers Tab में पास किया जाएगा (Total Orders & Total Spent के साथ)
   const handleExportCustomers = () => {
-    const headers = ["ID/Phone", "Name", "Points", "Tier"];
-    const keys = ["id", "name", "points", "tier"];
+    const headers = ["ID/Phone", "Name", "Points", "Tier", "Total Orders", "Total Spent (Rs)"];
+    const keys = ["id", "name", "points", "tier", "totalOrders", "totalSpent"];
     
-    const dataToExport = loyaltyUsers.map(u => ({
-      id: u.id || "",
-      name: u.name || "Guest",
-      points: u.points || 0,
-      tier: u.tier || "Bronze"
-    }));
+    const dataToExport = loyaltyUsers.map(u => {
+      const userOrders = orders.filter(o => o.customerPhone === u.id || o.customerId === u.id);
+      const totalOrdersCount = userOrders.length;
+      const totalSpentAmount = userOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
-    triggerCsvDownload(dataToExport, "customers_report", headers, keys);
+      return {
+        id: u.id || "",
+        name: u.name || "Guest",
+        points: u.points || 0,
+        tier: u.tier || "Bronze",
+        totalOrders: totalOrdersCount,
+        totalSpent: totalSpentAmount
+      };
+    });
+
+    triggerCsvDownload(dataToExport, "customers_detailed_report", headers, keys);
   };
 
   useEffect(() => {
@@ -227,7 +232,6 @@ Report Generated at: ${new Date().toLocaleTimeString()}`
     setLoading(false);
   }, []);
 
-  // Passcodes Loader और ऑटो सीडिंग
   useEffect(() => {
     const unsubPasscodes = onSnapshot(doc(db, "settings", "passcodes"), async (d) => {
       if (d.exists()) {
@@ -257,7 +261,6 @@ Report Generated at: ${new Date().toLocaleTimeString()}`
     return () => unsubPasscodes();
   }, []);
 
-  // रीयल-टाइम डेटाबेस लिसनर्स (SWR और रीयल-टाइम सिंक)
   useEffect(() => {
     if (!isVerified) return;
 
@@ -441,7 +444,6 @@ Report Generated at: ${new Date().toLocaleTimeString()}`
     }
   };
 
-  // बिल प्रिंटिंग हेल्पर फ़ंक्शन
   const handlePrintReceipt = (order: any) => {
     const printWindow = window.open('', '_blank', 'width=600,height=800');
     if (!printWindow) {
@@ -546,7 +548,6 @@ Report Generated at: ${new Date().toLocaleTimeString()}`
     printWindow.document.close();
   };
 
-  // व्हाट्सएप बिल सेंडर
   const handleSendWhatsAppBill = (order: any) => {
     const phone = String(order.customerPhone || "").replace("+91", "").trim();
     if (!phone) return toast.error("Customer phone not found!");
@@ -585,7 +586,6 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
     );
   }
 
-  // सुरक्षा लॉक स्क्रीन
   if (!isVerified) {
     return (
       <div className="bg-[#050505] min-h-screen text-white flex items-center justify-center p-4 font-sans">
@@ -621,7 +621,6 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
     );
   }
 
-  // साइडबार टैब कॉन्फ़िगरेशन सूची
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: `Orders (${orders.length})`, icon: ShoppingBag },
@@ -636,7 +635,6 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
       <link rel="manifest" href="/admin-manifest.json" />
       <Toaster />
 
-      {/* --- मोबाइल के लिए टॉप हेडर (Mobile Header Only) --- */}
       <header className="md:hidden w-full p-4 bg-white/[0.03] border-b border-white/5 flex justify-between items-center sticky top-0 z-40 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <button 
@@ -658,26 +656,22 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
         </div>
       </header>
 
-      {/* --- लेफ्ट साइडबार पैनल (Left Sidebar Panel) --- */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-[#0a0a0a] border-r border-white/5 flex flex-col justify-between transition-transform duration-300 ease-in-out
         md:sticky md:top-0 md:h-screen md:translate-x-0
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        {/* साइडबार हेडर */}
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-black text-orange-500 italic uppercase tracking-wider">Bum Bum Cafe</h2>
               <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">{userRole === 'admin' ? 'Owner / Boss' : 'Manager Portal'}</p>
             </div>
-            {/* मोबाइल पर क्लोज बटन */}
             <button onClick={() => setMobileMenuOpen(false)} className="md:hidden text-gray-400 p-1 bg-white/5 rounded-lg">
               <X size={18} />
             </button>
           </div>
 
-          {/* स्टोर स्टेटस */}
           <button 
             onClick={toggleStore} 
             className={`w-full py-2.5 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition-all border ${
@@ -690,7 +684,6 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
           </button>
         </div>
 
-        {/* साइडबार नेविगेशन लिंक्स */}
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto no-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -722,7 +715,6 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
           })}
         </nav>
 
-        {/* साइडबार फुटर */}
         <div className="p-6 border-t border-white/5 bg-white/[0.01]">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
@@ -740,7 +732,6 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
         </div>
       </aside>
 
-      {/* मोबाइल पर साइडबार खुला होने पर ब्लैक ओवरले */}
       {mobileMenuOpen && (
         <div 
           onClick={() => setMobileMenuOpen(false)} 
@@ -748,11 +739,9 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
         />
       )}
 
-      {/* --- मुख्य दाईं ओर का कंटेंट पैनल (Right Main Content Area) --- */}
       <main className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
         <div className="p-4 md:p-8 max-w-4xl w-full mx-auto">
           
-          {/* एक्टिव टैब हेडर (डेस्कटॉप पर मुख्य टैब टाइटल दिखाने के लिए) */}
           <div className="hidden md:flex justify-between items-center mb-8 pb-6 border-b border-white/5">
             <div>
               <p className="text-[10px] text-gray-500 font-black tracking-widest uppercase">Bum Bum Cafe Admin</p>
@@ -804,10 +793,12 @@ Thank you for your order, *${order.customerName || 'Guest'}*! Visit Again! 😊`
           )}
 
           {/* 4. कस्टमर्स मैनेजमेंट टैब */}
+          {/* 🔹 यहाँ हमने onExportCSV पास किया है */}
           {tab === 'customers' && (
             <CustomersTab 
               loyaltyUsers={loyaltyUsers}
               orders={orders}
+              onExportCSV={handleExportCustomers}
             />
           )}
 
