@@ -5076,13 +5076,47 @@ export default function BbCafeDesktopPos() {
                     <h3 className="font-black text-sm uppercase text-purple-600 dark:text-purple-400">
                       गेम इनाम वेरिफिकेशन
                     </h3>
-                    <p className="text-[10px] text-neutral-500 font-bold">ग्राहक का 10-अंकों का नंबर या BOM-XXXX कोड डालें</p>
+                    <p className="text-[10px] text-neutral-500 font-bold">नंबर डालें या विजेता देखें</p>
                   </div>
                 </div>
-                <button onClick={() => setIsGameVerifyModalOpen(false)} className="text-neutral-500 hover:text-black dark:hover:text-white">
-                  <X size={20} />
-                </button>
+                
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setShowTodaysWinnersList(!showTodaysWinnersList)}
+                    className="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-300 transition-colors shadow-sm"
+                  >
+                    🏆 आज के विजेता ({todaysGameWinners.length})
+                  </button>
+                  <button onClick={() => setIsGameVerifyModalOpen(false)} className="text-neutral-500 hover:text-black dark:hover:text-white">
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
+
+              {/* आज के विजेताओं की लिस्ट */}
+              {showTodaysWinnersList && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-3 max-h-48 overflow-y-auto space-y-2">
+                  <h4 className="text-xs font-black text-amber-800 dark:text-amber-400 uppercase mb-2">आज के गेम विजेता</h4>
+                  {todaysGameWinners.length === 0 ? (
+                    <p className="text-xs text-amber-600">आज अभी तक कोई विजेता नहीं है।</p>
+                  ) : (
+                    todaysGameWinners.map((winner, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-white dark:bg-neutral-800 p-2 rounded-lg border border-amber-100 dark:border-neutral-700 shadow-sm">
+                        <div>
+                          <p className="text-xs font-bold text-neutral-900 dark:text-white">{winner.name} <span className="text-[10px] text-neutral-400 font-mono">({winner.phone})</span></p>
+                          <p className="text-[10px] font-black text-green-600 dark:text-green-400">{winner.lastPrizeWon}</p>
+                        </div>
+                        <button 
+                          onClick={() => handlePrintGameWinner(winner)}
+                          className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm flex gap-1 items-center"
+                        >
+                          🖨️ 0 Bill
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
 
               {/* सर्च इनपुट */}
               <div className="flex gap-2">
@@ -5166,6 +5200,15 @@ export default function BbCafeDesktopPos() {
                           {isClaimingReward ? "अपडेट हो रहा है..." : "✓ इनाम दिया (Mark as Claimed)"}
                         </button>
                       )}
+                      
+                      {/* नया बटन: 0 Bill & KOT (सिंगल सर्च के लिए) */}
+                      <button 
+                        type="button"
+                        onClick={() => handlePrintGameWinner(gameVerifyResult)}
+                        className="w-full mt-2 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-black uppercase shadow-lg transition-all"
+                      >
+                        🖨️ 0 Bill & KOT निकालें (विजेता)
+                      </button>
                     </div>
                   )}
                 </div>
