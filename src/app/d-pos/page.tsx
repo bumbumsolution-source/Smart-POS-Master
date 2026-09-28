@@ -265,6 +265,60 @@ export default function BbCafeDesktopPos() {
     }
   };
 
+  // 🏆 गेम विजेता का 0 रुपये का बिल और KOT छापना
+  const handlePrintGameWinner = async (winnerData: any) => {
+    if (!winnerData) return;
+    triggerBeep('success');
+    const toastId = toast.loading("विजेता की KOT और Bill प्रिंट हो रहा है...");
+
+    const winnerOrderObj = {
+      billNumber: 0, 
+      tokenNumber: "WIN",
+      customerName: winnerData.name || "Game Winner",
+      customerPhone: winnerData.phone || winnerData.id || "",
+      items: [{
+        cartItemId: `win-${Date.now()}`,
+        id: "game_prize",
+        name: winnerData.lastPrizeWon,
+        price: 0,
+        quantity: 1,
+        note: "यह गेम विजेता है 🎰"
+      }],
+      subtotal: 0,
+      discountType: "amount",
+      discountValue: 0,
+      discountAmount: 0,
+      gstRate: 0,
+      gstAmount: 0,
+      deliveryFee: 0,
+      packingCharge: 0,
+      total: 0,
+      timestamp: new Date(),
+      status: 'completed',
+      paymentSettled: true,
+      paymentMethod: 'cash',
+      fulfillmentType: 'pickup',
+      tableNumber: winnerData.table || '',
+      source: 'PC_POS',
+      address: ''
+    };
+
+    try {
+      if (navigator.onLine) {
+        const docRef = await addDoc(collection(db, "orders"), winnerOrderObj);
+        setLiveOrders(prev => [{ id: docRef.id, ...winnerOrderObj }, ...prev]);
+      }
+    } catch (err) {
+      console.error("Game order save failed", err);
+    }
+
+    await handlePrintReceiptDirect(winnerOrderObj, true); // Kitchen KOT
+    await handlePrintReceiptDirect(winnerOrderObj, false); // Customer Bill
+
+    toast.dismiss(toastId);
+    toast.success("KOT और Bill प्रिंट हो गई! ✅");
+  };
+
   // Menu States
   const [liveOrders, setLiveOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
