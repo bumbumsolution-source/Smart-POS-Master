@@ -2068,46 +2068,59 @@ export default function BbCafeDesktopPos() {
         let prevVisits = 0;
         
         if (userDoc.exists()) {
-                const data = userDoc.data();
-                prevPoints = Number(data.points) || 0;
-                prevSpent = Number(data.totalSpent) || 0;
-                prevVisits = Number(data.totalVisits) || 0;
-              }
+          const data = userDoc.data();
+          prevPoints = Number(data.points) || 0;
+          prevSpent = Number(data.totalSpent) || 0;
+          prevVisits = Number(data.totalVisits) || 0;
+        }
 
-              // 🛡️ चेक करें कि क्या यह पुराना कम्प्लीट बिल एडिट हो रहा है?
-              const isReEditingCompletedBill = 
-                activeEditingPreviousOrder && 
-                (activeEditingPreviousOrder.status === 'completed' || activeEditingPreviousOrder.paymentSettled);
+        // 🛡️ चेक करें कि क्या यह पुराना कम्प्लीट बिल एडिट हो रहा है?
+        const isReEditingCompletedBill = 
+          activeEditingPreviousOrder && 
+          (activeEditingPreviousOrder.status === 'completed' || activeEditingPreviousOrder.paymentSettled);
 
-              let newSpent = prevSpent + finalTotal;
-              let newVisits = prevVisits + 1;
+        let newSpent = prevSpent + finalTotal;
+        let newVisits = prevVisits + 1;
 
-              if (isReEditingCompletedBill) {
-                // अगर पुराना बिल एडिट हुआ है, तो पहले पुराने बिल का अमाउंट व पॉइंट्स घटाएं
-                const oldTotal = Number(activeEditingPreviousOrder.total) || 0;
-                const oldEarned = Number(activeEditingPreviousOrder.pointsEarned) || 0;
-                const oldRedeemed = Number(activeEditingPreviousOrder.pointsRedeemed) || 0;
+        if (isReEditingCompletedBill) {
+          // अगर पुराना बिल एडिट हुआ है
+          const oldTotal = Number(activeEditingPreviousOrder.total) || 0;
+          const oldEarned = Number(activeEditingPreviousOrder.pointsEarned) || 0;
+          const oldRedeemed = Number(activeEditingPreviousOrder.pointsRedeemed) || 0;
 
-                const rolledBackPoints = prevPoints - oldEarned + oldRedeemed;
-                remainingPts = Math.max(0, rolledBackPoints - redeemed) + earned;
-                newSpent = Math.max(0, prevSpent - oldTotal + finalTotal);
-                newVisits = prevVisits; // 👈 विज़िट दोबारा नहीं बढ़ेगी!
-              } else {
-                // नया बिल है, तो सामान्य रूप से जुड़ेगा
-                remainingPts = Math.max(0, prevPoints - redeemed) + earned;
-                newSpent = prevSpent + finalTotal;
-                newVisits = prevVisits + 1;
-              }
+          // 👉 पुराने बिल के अमाउंट को हटाकर, नया अमाउंट जोड़ें
+          const spentBeforeOldBill = Math.max(0, prevSpent - oldTotal);
+          newSpent = spentBeforeOldBill + finalTotal;
+          
+          // 👉 SMART LOGIC: पुराने टोटल स्पेंड और नए टोटल स्पेंड के गैप के हिसाब से नए पॉइंट निकालें
+          earned = Math.floor(newSpent / 100) - Math.floor(spentBeforeOldBill / 100);
 
-             await setDoc(userRef, { 
-                name: customerName || "Walk-in Guest", 
-                phone: cleanPhone, 
-                points: remainingPts, 
-                totalSpent: newSpent,
-                totalVisits: newVisits,
-                lastActive: new Date() 
-              }, { merge: true });
-      } // 👈 यह ब्रैकेट छूट गया था
+          const rolledBackPoints = prevPoints - oldEarned + oldRedeemed;
+          remainingPts = Math.max(0, rolledBackPoints - redeemed) + Math.max(0, earned);
+          newVisits = prevVisits; // 👈 विज़िट दोबारा नहीं बढ़ेगी!
+        } else {
+          // नया बिल है, तो पुराने खर्च में नया खर्च जोड़कर पॉइंट कैलकुलेट करें
+          newSpent = prevSpent + finalTotal;
+          
+          // 👉 SMART LOGIC: (पिछला खर्च + नया खर्च) / 100 माइनस (पिछला खर्च) / 100
+          earned = Math.floor(newSpent / 100) - Math.floor(prevSpent / 100);
+          
+          remainingPts = Math.max(0, prevPoints - redeemed) + Math.max(0, earned);
+          newVisits = prevVisits + 1;
+        }
+
+        await setDoc(userRef, { 
+          name: customerName || "Walk-in Guest", 
+          phone: cleanPhone, 
+          points: remainingPts, 
+          totalSpent: newSpent,
+          totalVisits: newVisits,
+          lastActive: new Date() 
+        }, { merge: true });
+      } else {
+        // ऑफलाइन या बिना मोबाइल वाले ग्राहकों के लिए
+        remainingPts = Math.max(0, customerPoints - redeemed) + earned;
+      }ा
 
       billNumber = activeEditingBillNumber || getNextBillNumber();
       const orderObj = { 
