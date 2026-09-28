@@ -3189,23 +3189,24 @@ export default function BbCafeDesktopPos() {
 
              
 {/* FULFILLMENT MODE & 6 TABLE SELECTOR */}
-                    <div className="space-y-1.5 mb-2 shrink-0 border-t border-neutral-300 dark:border-neutral-800 pt-1.5">
-                      <div className="grid grid-cols-3 gap-1 bg-neutral-200 dark:bg-neutral-800 p-1 rounded-xl">
-                        {(['pickup', 'table', 'delivery'] as const).map((type) => (
-                          <button 
-                            key={type} 
-                            onClick={() => { 
-                              triggerBeep('tap'); 
-                              setFulfillmentType(type); 
-                              // नया: डिलीवरी सेलेक्ट होते ही चार्ज बॉक्स ऑन हो जाएगा
-                              if(type === 'delivery') setApplyDeliveryFee(true);
-                            }} 
-                            className={`py-1 rounded-lg text-[10px] font-black uppercase transition-all ${fulfillmentType === type ? "bg-orange-600 text-white shadow" : "text-neutral-700 dark:text-neutral-300"}`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
+<div className="space-y-1.5 mb-2 shrink-0 border-t border-neutral-300 dark:border-neutral-800 pt-1.5">
+  <div className="grid grid-cols-3 gap-1 bg-neutral-200 dark:bg-neutral-800 p-1 rounded-xl">
+    {(['pickup', 'table', 'delivery'] as const).map((type) => (
+      <button 
+        key={type} 
+        onClick={() => { 
+          triggerBeep('tap'); 
+          setFulfillmentType(type); 
+          // बदलाव: अब 'delivery' पर क्लिक करने से अपने-आप टिक नहीं होगा।
+          // अगर हम 'pickup' या 'table' पर जाते हैं, तो पुराना टिक हट जाएगा (सेफ्टी के लिए)।
+          if (type !== 'delivery') setApplyDeliveryFee(false);
+        }} 
+        className={`py-1 rounded-lg text-[10px] font-black uppercase transition-all ${fulfillmentType === type ? "bg-orange-600 text-white shadow" : "text-neutral-700 dark:text-neutral-300"}`}
+      >
+        {type}
+      </button>
+    ))}
+  </div>
 
                       {fulfillmentType === 'table' && (
                         <div className="bg-amber-500/10 border border-amber-500/30 p-1.5 rounded-xl space-y-1">
