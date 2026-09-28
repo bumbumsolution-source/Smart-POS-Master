@@ -3237,7 +3237,7 @@ export default function BbCafeDesktopPos() {
                               {cartCustHistory.map((h, i) => (
                                 <div key={i} className="flex justify-between items-center text-[10px] bg-blue-50 dark:bg-blue-900/20 p-1.5 rounded border border-blue-100 dark:border-blue-800/30">
                                   <span className="font-bold text-neutral-700 dark:text-neutral-300">Bill #{h.billNumber}</span>
-                                  <span className="text-neutral-500 truncate max-w-[100px] px-1">{h.items?.map((it) => it.name).join(', ')}</span>
+                                  <span className="text-neutral-500 truncate max-w-[100px] px-1">{h.items?.map((it: any) => it.name).join(', ')}</span>
                                   <span className="font-black text-green-600 dark:text-green-400">₹{h.total}</span>
                                 </div>
                               ))}
