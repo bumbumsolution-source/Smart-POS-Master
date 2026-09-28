@@ -2147,7 +2147,7 @@ export default function BbCafeDesktopPos() {
           totalVisits: newVisits,
           lastActive: new Date() 
         }, { merge: true });
-      } else {
+     } else {
         // ऑफलाइन या बिना मोबाइल वाले ग्राहकों के लिए
         remainingPts = Math.max(0, customerPoints - redeemed) + earned;
       }
