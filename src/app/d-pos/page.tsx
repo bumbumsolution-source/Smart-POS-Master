@@ -1429,7 +1429,7 @@ export default function BbCafeDesktopPos() {
       }
 
       setCustomerName(nameTrim);
-      setCartCustSearchInput(`${nameTrim} - ${cleanPhone}`); // 👉 यह लाइन जोड़ें
+      setCartCustSearchInput(`${nameTrim} - ${cleanPhone}`); 
       setAddress(newCustAddressInput.trim());
       setCustomerPoints(0);
       setShowNewCustForm(false);
@@ -1439,11 +1439,6 @@ export default function BbCafeDesktopPos() {
       toast.success("Customer saved & linked! ✅");
       setTimeout(() => searchInputRef.current?.focus(), 60);
     } catch (err) {
-      toast.dismiss(toastId);
-      toast.error("Failed to save customer");
-    }
-  };
-  } catch (err) {
       toast.dismiss(toastId);
       toast.error("Failed to save customer");
     }
