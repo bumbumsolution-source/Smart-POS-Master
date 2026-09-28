@@ -2120,7 +2120,7 @@ export default function BbCafeDesktopPos() {
       } else {
         // ऑफलाइन या बिना मोबाइल वाले ग्राहकों के लिए
         remainingPts = Math.max(0, customerPoints - redeemed) + earned;
-      }ा
+      }
 
       billNumber = activeEditingBillNumber || getNextBillNumber();
       const orderObj = { 
