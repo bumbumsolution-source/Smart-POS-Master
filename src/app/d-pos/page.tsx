@@ -2205,12 +2205,14 @@ export default function BbCafeDesktopPos() {
           newVisits = prevVisits + 1;
         }
 
-        await setDoc(userRef, { 
+       await setDoc(userRef, { 
           name: customerName || "Walk-in Guest", 
           phone: cleanPhone, 
           points: remainingPts, 
           totalSpent: newSpent,
           totalVisits: newVisits,
+          lastBillNumber: activeEditingBillNumber || billNumber, // 👉 NEW: सेव बिल नंबर
+          lastBillAmount: finalTotal, // 👉 NEW: सेव अमाउंट
           lastActive: new Date() 
         }, { merge: true });
       } else {
