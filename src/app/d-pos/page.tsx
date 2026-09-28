@@ -170,12 +170,25 @@ export default function BbCafeDesktopPos() {
  // Cash Change Calculator
   const [cashTendered, setCashTendered] = useState<number | ''>('');
 
-  // 🎰 GAME VERIFICATION STATES & FUNCTIONS (यह छूट गया था)
   const [isGameVerifyModalOpen, setIsGameVerifyModalOpen] = useState(false);
   const [gameSearchInput, setGameSearchInput] = useState('');
   const [gameVerifyResult, setGameVerifyResult] = useState<any>(null);
   const [isGameVerifying, setIsGameVerifying] = useState(false);
   const [isClaimingReward, setIsClaimingReward] = useState(false);
+  const [showTodaysWinnersList, setShowTodaysWinnersList] = useState(false); 
+
+  // आज के विजेताओं की लिस्ट ढूँढने के लिए 
+  const todaysGameWinners = useMemo(() => {
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    return allCustomers.filter(c => {
+       if (c.lastPrizeWon && c.lastPrizeWon !== 'Better Luck') {
+         const playedTime = c.lastPlayedAt?.toDate ? c.lastPlayedAt.toDate().getTime() : new Date(c.lastPlayedAt || 0).getTime();
+         return playedTime >= todayStart;
+       }
+       return false;
+    });
+  }, [allCustomers]);
 
   // गेम कूपन / नंबर चेक करने का फंक्शन
   const handleVerifyGameCode = async (searchVal: string) => {
