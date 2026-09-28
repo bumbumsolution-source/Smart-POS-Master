@@ -173,6 +173,7 @@ export default function BbCafeDesktopPos() {
   const [isGameVerifyModalOpen, setIsGameVerifyModalOpen] = useState(false);
   const [gameSearchInput, setGameSearchInput] = useState('');
   const [gameVerifyResult, setGameVerifyResult] = useState<any>(null);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
   const [isGameVerifying, setIsGameVerifying] = useState(false);
   const [isClaimingReward, setIsClaimingReward] = useState(false);
   const [showTodaysWinnersList, setShowTodaysWinnersList] = useState(false); 
@@ -442,7 +443,7 @@ export default function BbCafeDesktopPos() {
   };
   // ----------------------------------
   // --- CUSTOMER DIRECTORY TAB STATES & LOGIC ---
-  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  
   const [isCustomersLoading, setIsCustomersLoading] = useState(false);
   const [customerTabSearch, setCustomerTabSearch] = useState('');
 // 👉 NEW: CUSTOMER SORTING & FILTERING
