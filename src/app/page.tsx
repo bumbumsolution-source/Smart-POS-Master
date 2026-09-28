@@ -1092,49 +1092,37 @@ export default function BbCafeHome() {
   };
 
   // --- RE-MODULARIZED AND BRACKET-BALANCED COMPACT HYBRID GEOLOCATION HANDLER ---
- // --- RE-MODULARIZED GEOLOCATION HANDLER ---
   const handleDetectLocation = () => {
     triggerHaptic();
     if (typeof window === "undefined") return;
 
-    setAddress(isHindi ? "⏳ सटीक लोकेशन खोजी जा रही है..." : "⏳ Finding accurate location...");
-    const toastId = toast.loading(isHindi ? "लोकेशन खोजी जा रही है..." : "Finding location...");
-
-    const processLocation = (lat: number, lon: number, locationType: string) => {
-      setDistanceKm(Number(calculateDistanceInKm(lat, lon, storeCoordinates.lat, storeCoordinates.lng).toFixed(2)));
-      setCustomerCoordinates({ lat, lng: lon });
-
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=en`, {
-        headers: { 'User-Agent': 'BumBumCafeApp/1.0' }
-      })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        const textAddress = data?.display_name || "";
-        const mapLink = `https://www.google.com/maps?q=${lat.toFixed(6)},${lon.toFixed(6)}`;
-        const finalAddressText = textAddress 
-          ? `📍 ${locationType}: ${textAddress}\n🔗 Maps Link: ${mapLink}`
-          : `My GPS Location: ${mapLink}`;
-
-        setAddress(finalAddressText);
-        toast.dismiss(toastId);
-        toast.success(isHindi ? "लोकेशन मिल गई!" : "Location found!");
-      })
-      .catch(() => {
-        setAddress(`My GPS Location: https://www.google.com/maps?q=${lat.toFixed(6)},${lon.toFixed(6)}`);
-        toast.dismiss(toastId);
-        toast.success(isHindi ? "GPS कोऑर्डिनेट्स मिल गए!" : "GPS coordinates found!");
-      });
-    };
+    setAddress(isHindi ? "⏳ सटीक लोकेशन खोजी जा रही है (GPS)..." : "⏳ Finding highly accurate location (GPS)...");
+    const toastId = toast.loading(isHindi ? "सटीक लोकेशन खोजी जा रही है..." : "Finding accurate location...");
 
     const fallbackToIP = () => {
-      setAddress(isHindi ? "⏳ नेटवर्क लोकेशन खोजी जा रही है..." : "⏳ Finding network location...");
+      setAddress(isHindi ? "⏳ नेटवर्क लोकेशन खोजी जा रही है (Approx)..." : "⏳ Finding network location...");
       fetch('https://ipapi.co/json/')
         .then((res) => {
           if (res.ok) return res.json();
           throw new Error("IP Geolocation failed");
         })
         .then((ipData) => {
-          processLocation(ipData.latitude, ipData.longitude, "Approx Area (IP)");
+          const lat = ipData.latitude;
+          const lon = ipData.longitude;
+          const city = ipData.city || "";
+          const region = ipData.region || "";
+
+          setDistanceKm(Number(calculateDistanceInKm(lat, lon, storeCoordinates.lat, storeCoordinates.lng).toFixed(2)));
+          setCustomerCoordinates({ lat, lng: lon });
+
+          const mapLink = `https://www.google.com/maps?q=${lat.toFixed(6)},${lon.toFixed(6)}`;
+          const finalAddressText = city 
+            ? `📍 Approx Area: ${city}, ${region} (IP Location)\n🔗 Maps Link: ${mapLink}`
+            : `My GPS Location: ${mapLink}`;
+
+          setAddress(finalAddressText);
+          toast.dismiss(toastId);
+          toast.success(isHindi ? "लोकेशन डिटेक्ट की गई!" : "Location successfully detected!");
         })
         .catch(() => {
           setAddress("");
@@ -1149,18 +1137,109 @@ export default function BbCafeHome() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => processLocation(position.coords.latitude, position.coords.longitude, "Accurate Address"),
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const distance = calculateDistanceInKm(latitude, longitude, storeCoordinates.lat, storeCoordinates.lng);
+        setDistanceKm(Number(distance.toFixed(2)));
+        setCustomerCoordinates({ lat: latitude, lng: longitude });
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`, {
+          headers: { 'User-Agent': 'BumBumCafeApp/1.0' }
+        })
+          .then((res) => {
+            if (res.ok) return res.json();
+            return null;
+          })
+          .then((data) => {
+            const textAddress = data?.display_name || "";
+            const mapLink = `https://www.google.com/maps?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+            const finalAddressText = textAddress 
+              ? `📍 Accurate Address: ${textAddress}\n🔗 Maps Link: ${mapLink}`
+              : `My GPS Location: ${mapLink}`;
+
+            setAddress(finalAddressText);
+            toast.dismiss(toastId);
+            toast.success(isHindi ? "लोकेशन सफलतापूर्वक मिल गई!" : "Location successfully found!");
+          })
+          .catch(() => {
+            const mapLink = `https://www.google.com/maps?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+            setAddress(`My GPS Location: ${mapLink}`);
+            toast.dismiss(toastId);
+            toast.success(isHindi ? "लोकेशन सफलतापूर्वक मिल गई!" : "Location successfully found!");
+          });
+      },
       () => {
+        setAddress(isHindi ? "⏳ वैकल्पिक लोकेशन खोजी जा रही है (Network)..." : "⏳ Finding alternative location...");
         navigator.geolocation.getCurrentPosition(
-          (pos) => processLocation(pos.coords.latitude, pos.coords.longitude, "Approx Address"),
-          fallbackToIP, 
-          { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            const distance = calculateDistanceInKm(latitude, longitude, storeCoordinates.lat, storeCoordinates.lng);
+            setDistanceKm(Number(distance.toFixed(2)));
+            setCustomerCoordinates({ lat: latitude, lng: longitude });
+
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`, {
+              headers: { 'User-Agent': 'BumBumCafeApp/1.0' }
+            })
+              .then((res) => {
+                if (res.ok) return res.json();
+                return null;
+              })
+              .then((data) => {
+                const textAddress = data?.display_name || "";
+                const mapLink = `https://www.google.com/maps?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+                const finalAddressText = textAddress 
+                  ? `📍 Address (approx): ${textAddress}\n🔗 Maps Link: ${mapLink}`
+                  : `My GPS Location: ${mapLink}`;
+
+                setAddress(finalAddressText);
+                toast.dismiss(toastId);
+                toast.success(isHindi ? "लोकेशन सफलतापूर्वक मिल गई!" : "Location successfully found!");
+              })
+              .catch(() => {
+                const mapLink = `https://www.google.com/maps?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+                setAddress(`My GPS Location: ${mapLink}`);
+                toast.dismiss(toastId);
+                toast.success(isHindi ? "लोकेशन सफलतापूर्वक मिल गई!" : "Location successfully found!");
+              });
+          },
+          () => {
+            setAddress(isHindi ? "⏳ नेटवर्क लोकेशन खोजी जा रही है (Approx)..." : "⏳ Finding network location...");
+            fetch('https://ipapi.co/json/')
+              .then((res) => {
+                if (res.ok) return res.json();
+                throw new Error("IP Geolocation failed");
+              })
+              .then((ipData) => {
+                const lat = ipData.latitude;
+                const lon = ipData.longitude;
+                const city = ipData.city || "";
+                const region = ipData.region || "";
+
+                setDistanceKm(Number(calculateDistanceInKm(lat, lon, storeCoordinates.lat, storeCoordinates.lng).toFixed(2)));
+                setCustomerCoordinates({ lat, lng: lon });
+
+                const mapLink = `https://www.google.com/maps?q=${lat.toFixed(6)},${lon.toFixed(6)}`;
+                const finalAddressText = city 
+                  ? `📍 Approx Area: ${city}, ${region} (IP Location)\n🔗 Maps Link: ${mapLink}`
+                  : `My GPS Location: ${mapLink}`;
+
+                setAddress(finalAddressText);
+                toast.dismiss(toastId);
+                toast.success(isHindi ? "लोकेशन डिटेक्ट की गई!" : "Location successfully detected!");
+              })
+              .catch(() => {
+                setAddress("");
+                toast.dismiss(toastId);
+                toast.error(isHindi ? "लोकेशन खोजने में असमर्थ। कृपया मैन्युअली लिखें।" : "Unable to retrieve location. Please type manually.");
+              });
+          },
+          { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
         );
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
     );
   };
-    
+
   const handleShareApp = async () => {
     triggerHaptic();
     const shareText = isHindi 
@@ -1589,15 +1668,15 @@ export default function BbCafeHome() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen dark:bg-[#09090b] bg-gray-50 flex flex-col items-center justify-center dark:text-white text-gray-900">
-        <Loader2 className="animate-spin text-orange-500 mb-3" size={32} />
-        <span className="text-sm font-bold tracking-wider">Bum Bum Cafe Loading...</span>
+      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center text-white">
+        <Loader2 className="animate-spin text-orange-500 mb-2" size={32} />
+        <span className="text-xs font-bold uppercase tracking-wider">Bum Bum Cafe Loading...</span>
       </div>
     );
   }
 
   return (
-    <div className="dark:bg-[#09090b] bg-gray-50 min-h-screen dark:text-gray-100 text-gray-900 pb-36 font-sans relative overflow-x-hidden transition-colors duration-300">
+    <div className="dark:bg-[#050505] bg-neutral-50 min-h-screen dark:text-white text-neutral-800 pb-32 font-sans relative overflow-x-clip transition-colors duration-200">
       
       <link rel="manifest" href="/manifest.json" />
 
@@ -1609,25 +1688,24 @@ export default function BbCafeHome() {
             background: '#222',
             color: '#fff',
             fontWeight: 'bold',
-            fontSize: '13px',
-            borderRadius: '12px',
+            fontSize: '12px'
           }
         }} 
       />
 
       {/* Network Status Banner */}
       {!isOnline && (
-        <div className="bg-red-600 text-white font-bold py-2 px-4 text-center text-sm flex items-center justify-center gap-2 shadow-lg sticky top-0 z-[150]">
-          <WifiOff size={16} className="animate-pulse" />
+        <div className="bg-red-600 text-white font-black py-2 px-4 text-center text-xs flex items-center justify-center gap-2 shadow-lg sticky top-0 z-[150]">
+          <WifiOff size={14} className="animate-pulse" />
           <span>आप ऑफ़लाइन हैं। कैश्ड मेनू दिखाया जा रहा है।</span>
         </div>
       )}
 
       {/* Closing Warning Timer Ribbon */}
       {closingMinutesLeft !== null && storeOpen && (
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold py-2 px-4 text-center text-xs flex items-center justify-center gap-1.5 shadow-md">
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-extrabold py-2 px-4 text-center text-[10px] flex items-center justify-center gap-1.5 shadow-md">
           <span>⏰</span>
-          <span>आर्डर चेतावनी: बम बम कैफ़े अगले {closingMinutesLeft} मिनट में बंद होने वाला है! आर्डर जल्दी पूरा करें।</span>
+          <span>आर्डर चेतावनी:  बम बम कैफ़े अगले {closingMinutesLeft} minute में बंद होने वाला है!  आर्डर जल्दी पूरा करें।</span>
         </div>
       )}
 
@@ -1638,10 +1716,10 @@ export default function BbCafeHome() {
             initial={{ opacity: 0, y: 50, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 20, x: '-50%' }}
-            className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[100] bg-black/90 backdrop-blur-md border border-orange-500/30 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-2.5 max-w-[90%] text-center"
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] bg-black/90 backdrop-blur-md border border-orange-500/30 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 max-w-[90%] text-center"
           >
-            <span className="text-base">🔥</span>
-            <span className="text-xs font-bold tracking-wide truncate text-white">{socialProofs[socialAlertIndex]?.text}</span>
+            <span className="text-sm">🔥</span>
+            <span className="text-[10px] font-black tracking-wide truncate text-white">{socialProofs[socialAlertIndex]?.text}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1673,25 +1751,24 @@ export default function BbCafeHome() {
       )}
 
       {/* PREMIUM HERO HEADER */}
-      <header className="relative pt-10 pb-8 px-5 overflow-hidden shadow-sm flex flex-col justify-end min-h-[160px] bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative z-20 w-full mt-auto bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/10 shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <header className="relative pt-6 pb-4 px-4 overflow-hidden shadow-md flex flex-col justify-end min-h-[120px] bg-neutral-950 border-b dark:border-white/5 border-neutral-200">
+        <div className="relative z-20 max-w-[85%] mt-auto bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/10 shadow-md">
           <motion.div
-            initial={{ x: -20, opacity: 0 }}
+            initial={{ x: -25, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className="space-y-1.5"
+            className="space-y-0.5"
           >
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-yellow-400 font-sans block leading-none">
+            <h1 className="text-base font-black tracking-wide text-yellow-300 font-sans block leading-none mb-1">
               {isHindi ? "बम बम कैफ़े" : "Bum Bum Cafe"}
             </h1>
-            <p className="text-xs md:text-sm text-gray-200 font-medium max-w-[280px] leading-tight">
+            <p className="text-[9px] text-gray-300 font-bold">
               {isHindi ? "पिज्जा, स्पेशल सैंडविच और पनीर डिलाइट्स तुरंत आदेश करें!" : "Order Pizza, Special Sandwich & Paneer Delights instantly!"}
             </p>
           </motion.div>
           <button 
             onClick={scrollToMenu}
-            className="w-full sm:w-auto flex-shrink-0 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold text-sm px-6 py-3 rounded-2xl uppercase tracking-wider shadow-lg transition-all active:scale-95 text-center"
+            className="mt-1 bg-orange-600 hover:bg-orange-700 text-white font-black text-[7px] px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-md transition-all active:scale-95"
           >
             {isHindi ? "ऑर्डर करें" : "Order Now"}
           </button>
@@ -1699,30 +1776,31 @@ export default function BbCafeHome() {
       </header>
 
       {/* FIXED STICKY SEARCH BAR */}
-      <div className="sticky top-0 z-40 dark:bg-[#09090b]/80 bg-gray-50/80 backdrop-blur-xl py-4 px-4 border-b dark:border-white/5 border-gray-200 transition-colors duration-300 shadow-sm">
-        <div className="relative max-w-2xl mx-auto flex items-center gap-2 sm:gap-3">
+      <div className="sticky top-0 z-40 dark:bg-[#050505]/95 bg-white/95 backdrop-blur-md py-3 px-4 border-b dark:border-white/5 border-neutral-300 transition-colors duration-200 shadow-sm">
+        <div className="relative max-w-sm mx-auto flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-gray-400" size={16} />
             <input 
               type="text" 
               placeholder={isHindi ? "पिज़्ज़ा, सैंडविच, पनीर स्पेशल खोजें..." : "Search pizza, sandwich, paneer special..."} 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full dark:bg-neutral-800/60 bg-white dark:text-white text-gray-900 py-3.5 px-12 rounded-2xl outline-none text-sm font-medium dark:placeholder-gray-400 placeholder-gray-500 border dark:border-neutral-700 border-gray-200 transition-all duration-200 shadow-sm focus:ring-2 focus:ring-orange-500/30" 
+              className="w-full dark:bg-neutral-800 bg-neutral-100 dark:text-white text-neutral-900 py-2.5 px-11 rounded-xl outline-none text-xs font-semibold dark:placeholder-gray-400 placeholder-neutral-500 border dark:border-neutral-700 border-neutral-300 transition-colors duration-200 shadow-sm" 
             />
           </div>
 
+          {/* HINDI / ENGLISH LANGUAGE TOGGLE */}
           <button 
             onClick={() => { triggerHaptic(); setIsHindi(!isHindi); }}
-            className="p-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl text-xs font-bold tracking-wider flex-shrink-0 transition-all active:scale-95 shadow-sm flex items-center gap-1.5"
+            className="px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-[10px] font-black tracking-wider flex-shrink-0 transition-all active:scale-95 shadow flex items-center gap-1 min-w-[65px]"
           >
-            <Globe size={16} />
-            <span className="hidden sm:inline">{isHindi ? "English" : "हिंदी"}</span>
+            <Globe size={12} />
+            <span>{isHindi ? "English" : "हिंदी"}</span>
           </button>
           
           <a 
             href="tel:+919714293759"
-            className="p-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl shadow-sm flex items-center justify-center transition-colors flex-shrink-0"
+            className="p-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl border border-transparent shadow flex items-center justify-center transition-colors flex-shrink-0"
             title="Direct call to cafe"
           >
             <Phone size={18} />
@@ -1730,7 +1808,7 @@ export default function BbCafeHome() {
 
           <button 
             onClick={() => { triggerHaptic(); setIsProfileOpen(true); }}
-            className="p-3.5 dark:bg-neutral-800/60 bg-white dark:text-white text-gray-900 rounded-2xl border dark:border-neutral-700 border-gray-200 hover:border-orange-500 hover:text-orange-500 transition-colors shadow-sm flex-shrink-0"
+            className="p-2.5 dark:bg-neutral-800 bg-neutral-100 dark:text-white text-neutral-900 rounded-xl border dark:border-neutral-700 border-neutral-300 hover:border-orange-500 hover:text-orange-500 transition-colors shadow flex-shrink-0"
             title="My Profile & Loyalty Rewards"
           >
             <User size={18} />
@@ -1739,11 +1817,12 @@ export default function BbCafeHome() {
       </div>
 
       {!storeOpen && (
-        <div className="bg-red-600 text-white font-bold py-3 px-4 text-center text-sm flex items-center justify-center gap-2 shadow-lg border-b border-red-500">
-          <span className="animate-pulse text-lg">⚠️</span>
-          <span>{isHindi ? "बम बम कैफ़े अभी बंद है। आप केवल हमारा मेनू देख सकते हैं।" : "Bum Bum Cafe is closed now. You can only view our menu."}</span>
+        <div className="bg-red-600 text-white font-black py-3 px-4 text-center text-xs flex items-center justify-center gap-2 shadow-lg border-b border-red-500">
+          <span className="animate-pulse">⚠️</span>
+          <span>{isHindi ? "बम बम कैफ़े अभी बंद है।  आप केवल हमारा मेनू देख सकते हैं।" : "Bum Bum Cafe is closed now. You can only view our menu."}</span>
         </div>
       )}
+
       {/* MAIN LAYOUT WRAPPER */}
       <main ref={menuRef} className="pt-3 px-3 max-w-lg mx-auto space-y-4 font-sans font-bold">
 
