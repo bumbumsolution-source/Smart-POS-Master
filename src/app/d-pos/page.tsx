@@ -176,7 +176,23 @@ export default function BbCafeDesktopPos() {
   const [gameVerifyResult, setGameVerifyResult] = useState<any>(null);
   const [isGameVerifying, setIsGameVerifying] = useState(false);
   const [isClaimingReward, setIsClaimingReward] = useState(false);
+  const [gameModalTab, setGameModalTab] = useState<'verify' | 'history'>('verify');
 
+  // 👉 NEW: आज बांटे गए इनामों की लिस्ट निकालने का लॉजिक
+  const todaysClaimedRewards = useMemo(() => {
+    const today = new Date();
+    return allCustomers.filter(c => {
+      if (!c.voucherClaimed || !c.voucherClaimedAt) return false;
+      const cDate = c.voucherClaimedAt?.toDate ? c.voucherClaimedAt.toDate() : new Date(c.voucherClaimedAt);
+      return cDate.getDate() === today.getDate() && 
+             cDate.getMonth() === today.getMonth() && 
+             cDate.getFullYear() === today.getFullYear();
+    }).sort((a, b) => {
+      const timeA = a.voucherClaimedAt?.toDate ? a.voucherClaimedAt.toDate().getTime() : new Date(a.voucherClaimedAt).getTime();
+      const timeB = b.voucherClaimedAt?.toDate ? b.voucherClaimedAt.toDate().getTime() : new Date(b.voucherClaimedAt).getTime();
+      return timeB - timeA; // नया इनाम ऊपर दिखेगा
+    });
+  }, [allCustomers]);
   // गेम कूपन / नंबर चेक करने का फंक्शन
   const handleVerifyGameCode = async (searchVal: string) => {
     const term = searchVal.trim();
