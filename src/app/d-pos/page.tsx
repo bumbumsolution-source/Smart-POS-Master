@@ -2147,8 +2147,8 @@ export default function BbCafeDesktopPos() {
     const redeemed = isRedeemingPoints ? pointsToRedeem : 0;
     const cleanPhone = getSanitizedPhone(customerPhone);
 
-    try {
-      let billNumber: number;
+   try {
+      let billNumber: number = activeEditingBillNumber || getNextBillNumber(); // 👉 सबसे पहले बिल नंबर बना लें
       let remainingPts = customerPoints;
 
       if (cleanPhone.length === 10 && navigator.onLine) {
