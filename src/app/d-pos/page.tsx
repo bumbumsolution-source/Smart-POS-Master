@@ -2206,7 +2206,7 @@ export default function BbCafeDesktopPos() {
           points: remainingPts, 
           totalSpent: newSpent,
           totalVisits: newVisits,
-          lastBillNumber: activeEditingBillNumber || billNumber, // 👉 NEW: सेव बिल नंबर
+          lastBillNumber: billNumber, // 👉 NEW: सेव बिल नंबर (ऊपर बना हुआ इस्तेमाल करें)
           lastBillAmount: finalTotal, // 👉 NEW: सेव अमाउंट
           lastActive: new Date() 
         }, { merge: true });
@@ -2215,9 +2215,8 @@ export default function BbCafeDesktopPos() {
         remainingPts = Math.max(0, customerPoints - redeemed) + earned;
       }
 
-      billNumber = activeEditingBillNumber || getNextBillNumber();
       const orderObj = { 
-        billNumber, 
+        billNumber,
         tokenNumber: token, 
         customerName: customerName || "Walk-in Guest", 
         customerPhone: cleanPhone ? `+91${cleanPhone}` : "", 
