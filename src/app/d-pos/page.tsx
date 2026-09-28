@@ -2052,7 +2052,7 @@ export default function BbCafeDesktopPos() {
     const finalTotal = getTotalBillPrice();
     const discountAmt = getCalculatedDiscountAmount();
     const token = getDailyTokenNumber();
-    const earned = Math.floor(finalTotal / 100);
+    let earned = Math.floor(finalTotal / 100); // 👈 (यहाँ const की जगह let कर दिया)
     const redeemed = isRedeemingPoints ? pointsToRedeem : 0;
     const cleanPhone = getSanitizedPhone(customerPhone);
 
