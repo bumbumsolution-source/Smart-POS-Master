@@ -4481,18 +4481,21 @@ export default function BbCafeDesktopPos() {
                           ) : (
                             <p className="text-[11px] text-neutral-400 italic mb-2">No address provided</p>
                           )}
-                          
-                          <div className="flex gap-4 pt-2 border-t border-dashed border-neutral-200 dark:border-neutral-800">
+                         <div className="flex justify-between pt-2 border-t border-dashed border-neutral-200 dark:border-neutral-800">
                              <div>
-                               <p className="text-[9px] font-black uppercase text-neutral-500">Total Spent</p>
-                               <p className="text-sm font-mono font-black text-green-600 dark:text-green-500">₹{cust.totalSpent || 0}</p>
+                               <p className="text-[9px] font-black uppercase text-neutral-500">Spent / Visits</p>
+                               <p className="text-sm font-mono font-black text-green-600 dark:text-green-500">₹{cust.totalSpent || 0} <span className="text-xs text-neutral-400">({cust.totalVisits || 0})</span></p>
                              </div>
-                             <div>
-                               <p className="text-[9px] font-black uppercase text-neutral-500">Visits</p>
-                               <p className="text-sm font-mono font-black text-blue-600 dark:text-blue-500">{cust.totalVisits || 0} times</p>
+                             <div className="text-right">
+                               <p className="text-[9px] font-black uppercase text-neutral-500">Last Bill (पिछला बिल)</p>
+                               <p className="text-sm font-mono font-black text-blue-600 dark:text-blue-400">
+                                 {cartCustHistory.find((h:any) => h.customerPhone?.includes(cust.phone || cust.id)) 
+                                    ? `#${cartCustHistory.find((h:any) => h.customerPhone?.includes(cust.phone || cust.id)).billNumber} - ₹${cartCustHistory.find((h:any) => h.customerPhone?.includes(cust.phone || cust.id)).total}` 
+                                    : 'N/A'
+                                 }
+                               </p>
                              </div>
                           </div>
-                        </div>
                         
                         <div className="flex gap-1.5 items-center">
                           {/* 🗑️ डिलीट बटन */}
