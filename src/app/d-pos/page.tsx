@@ -176,23 +176,7 @@ export default function BbCafeDesktopPos() {
   const [gameVerifyResult, setGameVerifyResult] = useState<any>(null);
   const [isGameVerifying, setIsGameVerifying] = useState(false);
   const [isClaimingReward, setIsClaimingReward] = useState(false);
-  const [gameModalTab, setGameModalTab] = useState<'verify' | 'history'>('verify');
 
-  // 👉 NEW: आज बांटे गए इनामों की लिस्ट निकालने का लॉजिक
-  const todaysClaimedRewards = useMemo(() => {
-    const today = new Date();
-    return allCustomers.filter(c => {
-      if (!c.voucherClaimed || !c.voucherClaimedAt) return false;
-      const cDate = c.voucherClaimedAt?.toDate ? c.voucherClaimedAt.toDate() : new Date(c.voucherClaimedAt);
-      return cDate.getDate() === today.getDate() && 
-             cDate.getMonth() === today.getMonth() && 
-             cDate.getFullYear() === today.getFullYear();
-    }).sort((a, b) => {
-      const timeA = a.voucherClaimedAt?.toDate ? a.voucherClaimedAt.toDate().getTime() : new Date(a.voucherClaimedAt).getTime();
-      const timeB = b.voucherClaimedAt?.toDate ? b.voucherClaimedAt.toDate().getTime() : new Date(b.voucherClaimedAt).getTime();
-      return timeB - timeA; // नया इनाम ऊपर दिखेगा
-    });
-  }, [allCustomers]);
   // गेम कूपन / नंबर चेक करने का फंक्शन
   const handleVerifyGameCode = async (searchVal: string) => {
     const term = searchVal.trim();
@@ -246,7 +230,7 @@ export default function BbCafeDesktopPos() {
     }
   };
 
-  // इनाम को इस्तेमाल (Redeem) मार्क करना और बिल में जोड़ना
+  // इनाम को इस्तेमाल (Redeem) मार्क करना
   const handleClaimGameReward = async () => {
     if (!gameVerifyResult) return;
     setIsClaimingReward(true);
@@ -258,22 +242,8 @@ export default function BbCafeDesktopPos() {
         voucherClaimedAt: new Date()
       });
 
-      // 👉 NEW: इनाम को कार्ट (बिल) में ₹0 में जोड़ें ताकि स्टॉक/हिसाब सही रहे
-      const rewardItemName = `🎁 ${gameVerifyResult.lastPrizeWon}`;
-      setCart((prev) => [
-        ...prev, 
-        { 
-          cartItemId: `reward_${Date.now()}`,
-          id: 'game_reward',
-          name: rewardItemName,
-          price: 0, // ₹0 क्योंकि यह फ्री इनाम है
-          quantity: 1,
-          note: "Free Game Reward"
-        }
-      ]);
-
       setGameVerifyResult((prev: any) => ({ ...prev, voucherClaimed: true }));
-      toast.success("🎉 इनाम दिया गया और बिल में ₹0 में जुड़ गया!");
+      toast.success("🎉 इनाम दे दिया गया और सिस्टम में लॉक हो गया!");
       fetchAllCustomers();
     } catch (e) {
       toast.error("स्टेटस अपडेट नहीं हो सका");
@@ -2147,7 +2117,7 @@ export default function BbCafeDesktopPos() {
           totalVisits: newVisits,
           lastActive: new Date() 
         }, { merge: true });
-     } else {
+      } else {
         // ऑफलाइन या बिना मोबाइल वाले ग्राहकों के लिए
         remainingPts = Math.max(0, customerPoints - redeemed) + earned;
       }
@@ -5029,156 +4999,107 @@ export default function BbCafeDesktopPos() {
       <AnimatePresence>
         {isGameVerifyModalOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4 flex flex-col max-h-[85vh]">
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4">
               
               {/* हेडर */}
-              <div className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 pb-3 shrink-0">
+              <div className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="p-2 bg-purple-500/10 text-purple-600 rounded-xl text-lg">🎰</span>
                   <div>
                     <h3 className="font-black text-sm uppercase text-purple-600 dark:text-purple-400">
-                      गेम इनाम व हिस्ट्री
+                      गेम इनाम वेरिफिकेशन
                     </h3>
-                    <p className="text-[10px] text-neutral-500 font-bold">कूपन वेरीफाई करें या आज की लिस्ट देखें</p>
+                    <p className="text-[10px] text-neutral-500 font-bold">ग्राहक का 10-अंकों का नंबर या BOM-XXXX कोड डालें</p>
                   </div>
                 </div>
-                <button onClick={() => { setIsGameVerifyModalOpen(false); setGameModalTab('verify'); setGameVerifyResult(null); setGameSearchInput(''); }} className="text-neutral-500 hover:text-black dark:hover:text-white">
+                <button onClick={() => setIsGameVerifyModalOpen(false)} className="text-neutral-500 hover:text-black dark:hover:text-white">
                   <X size={20} />
                 </button>
               </div>
 
-              {/* TABS (वेरीफाई vs हिस्ट्री) */}
-              <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl shrink-0">
-                <button onClick={() => setGameModalTab('verify')} className={`flex-1 py-1.5 text-[11px] font-black uppercase rounded-lg transition-all ${gameModalTab === 'verify' ? 'bg-purple-600 text-white shadow' : 'text-neutral-600 dark:text-neutral-400'}`}>
-                  🔎 वेरीफाई करें
-                </button>
-                <button onClick={() => setGameModalTab('history')} className={`flex-1 py-1.5 text-[11px] font-black uppercase rounded-lg flex items-center justify-center gap-1 transition-all ${gameModalTab === 'history' ? 'bg-purple-600 text-white shadow' : 'text-neutral-600 dark:text-neutral-400'}`}>
-                  🎁 आज के इनाम ({todaysClaimedRewards.length})
+              {/* सर्च इनपुट */}
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  autoFocus
+                  placeholder="उदा. 9876543210 या BOM-4821" 
+                  value={gameSearchInput}
+                  onChange={e => setGameSearchInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleVerifyGameCode(gameSearchInput)}
+                  className="flex-1 bg-neutral-100 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-bold outline-none font-mono uppercase" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => handleVerifyGameCode(gameSearchInput)}
+                  disabled={isGameVerifying}
+                  className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase shadow"
+                >
+                  {isGameVerifying ? "..." : "जांचें"}
                 </button>
               </div>
 
-              {/* TAB 1: VERIFY CODE */}
-              {gameModalTab === 'verify' && (
-                <div className="space-y-4 overflow-y-auto pr-1">
-                  {/* सर्च इनपुट */}
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      autoFocus
-                      placeholder="उदा. 9876543210 या BOM-4821" 
-                      value={gameSearchInput}
-                      onChange={e => setGameSearchInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleVerifyGameCode(gameSearchInput)}
-                      className="flex-1 bg-neutral-100 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-bold outline-none font-mono uppercase" 
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => handleVerifyGameCode(gameSearchInput)}
-                      disabled={isGameVerifying}
-                      className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase shadow"
-                    >
-                      {isGameVerifying ? "..." : "जांचें"}
-                    </button>
-                  </div>
-
-                  {/* परिणाम कार्ड */}
-                  {gameVerifyResult && (
-                    <div className={`p-4 rounded-2xl border space-y-2.5 ${
-                      gameVerifyResult.voucherClaimed 
-                        ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800'
-                        : gameVerifyResult.lastPrizeWon === 'Better Luck'
-                        ? 'bg-neutral-100 dark:bg-neutral-800 border-neutral-300'
-                        : 'bg-green-50 dark:bg-green-950/20 border-green-400 dark:border-green-700'
-                    }`}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-black text-sm text-neutral-900 dark:text-white uppercase flex items-center gap-1.5">
-                            👤 {gameVerifyResult.name || 'ग्राहक'}
-                            <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[9px] px-1.5 py-0.5 rounded font-black">
-                              🎰 Game User
-                            </span>
-                          </p>
-                          <p className="text-xs font-mono text-neutral-500 mt-0.5">📞 {gameVerifyResult.phone || gameVerifyResult.id}</p>
-                          {gameVerifyResult.table && (
-                            <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">🪑 {gameVerifyResult.table}</p>
-                          )}
-                        </div>
-
-                        {gameVerifyResult.voucherCode && (
-                          <span className="font-mono font-black text-xs bg-white dark:bg-neutral-900 border px-2 py-1 rounded-lg text-blue-600 shadow-sm">
-                            {gameVerifyResult.voucherCode}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* जीता हुआ इनाम */}
-                      <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
-                        <span className="text-xs font-bold text-neutral-500">जीता हुआ इनाम:</span>
-                        <span className={`text-sm font-black ${
-                          gameVerifyResult.lastPrizeWon === 'Better Luck' ? 'text-neutral-500' : 'text-green-600 dark:text-green-400'
-                        }`}>
-                          {gameVerifyResult.lastPrizeWon || 'कोई इनाम नहीं'}
+              {/* परिणाम कार्ड */}
+              {gameVerifyResult && (
+                <div className={`p-4 rounded-2xl border space-y-2.5 ${
+                  gameVerifyResult.voucherClaimed 
+                    ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800'
+                    : gameVerifyResult.lastPrizeWon === 'Better Luck'
+                    ? 'bg-neutral-100 dark:bg-neutral-800 border-neutral-300'
+                    : 'bg-green-50 dark:bg-green-950/20 border-green-400 dark:border-green-700'
+                }`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-black text-sm text-neutral-900 dark:text-white uppercase flex items-center gap-1.5">
+                        👤 {gameVerifyResult.name || 'ग्राहक'}
+                        <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[9px] px-1.5 py-0.5 rounded font-black">
+                          🎰 Game User
                         </span>
-                      </div>
-
-                      <p className="text-[10px] text-neutral-400 italic">
-                        खेला गया: {gameVerifyResult.minutesAgo === 0 ? 'अभी-अभी' : `${gameVerifyResult.minutesAgo} मिनट पहले`}
                       </p>
-
-                      {/* एक्शन बटन */}
-                      {gameVerifyResult.lastPrizeWon !== 'Better Luck' && (
-                        <div className="pt-2">
-                          {gameVerifyResult.voucherClaimed ? (
-                            <div className="w-full py-2 bg-red-500/10 text-red-600 border border-red-500/20 text-center rounded-xl text-xs font-black uppercase">
-                              🚫 यह इनाम पहले ही दिया जा चुका है!
-                            </div>
-                          ) : (
-                            <button 
-                              type="button"
-                              onClick={handleClaimGameReward}
-                              disabled={isClaimingReward}
-                              className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase shadow-lg transition-all"
-                            >
-                              {isClaimingReward ? "अपडेट हो रहा है..." : "✓ इनाम दें और कार्ट में जोड़ें"}
-                            </button>
-                          )}
-                        </div>
+                      <p className="text-xs font-mono text-neutral-500 mt-0.5">📞 {gameVerifyResult.phone || gameVerifyResult.id}</p>
+                      {gameVerifyResult.table && (
+                        <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">🪑 {gameVerifyResult.table}</p>
                       )}
                     </div>
-                  )}
-                </div>
-              )}
 
-              {/* TAB 2: TODAY'S REWARDS HISTORY */}
-              {gameModalTab === 'history' && (
-                <div className="flex-1 overflow-y-auto pr-1 space-y-2">
-                  {todaysClaimedRewards.length === 0 ? (
-                    <div className="text-center py-10">
-                      <span className="text-3xl mb-2 block">🎁</span>
-                      <p className="text-xs text-neutral-500 font-bold">आज अभी तक किसी को इनाम नहीं दिया गया है।</p>
+                    {gameVerifyResult.voucherCode && (
+                      <span className="font-mono font-black text-xs bg-white dark:bg-neutral-900 border px-2 py-1 rounded-lg text-blue-600 shadow-sm">
+                        {gameVerifyResult.voucherCode}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* जीता हुआ इनाम */}
+                  <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
+                    <span className="text-xs font-bold text-neutral-500">जीता हुआ इनाम:</span>
+                    <span className={`text-sm font-black ${
+                      gameVerifyResult.lastPrizeWon === 'Better Luck' ? 'text-neutral-500' : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {gameVerifyResult.lastPrizeWon || 'कोई इनाम नहीं'}
+                    </span>
+                  </div>
+
+                  <p className="text-[10px] text-neutral-400 italic">
+                    खेला गया: {gameVerifyResult.minutesAgo === 0 ? 'अभी-अभी' : `${gameVerifyResult.minutesAgo} मिनट पहले`}
+                  </p>
+
+                  {/* एक्शन बटन */}
+                  {gameVerifyResult.lastPrizeWon !== 'Better Luck' && (
+                    <div className="pt-2">
+                      {gameVerifyResult.voucherClaimed ? (
+                        <div className="w-full py-2 bg-red-500/10 text-red-600 border border-red-500/20 text-center rounded-xl text-xs font-black uppercase">
+                          🚫 यह इनाम पहले ही दिया जा चुका है!
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={handleClaimGameReward}
+                          disabled={isClaimingReward}
+                          className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase shadow-lg transition-all"
+                        >
+                          {isClaimingReward ? "अपडेट हो रहा है..." : "✓ इनाम दिया (Mark as Claimed)"}
+                        </button>
+                      )}
                     </div>
-                  ) : (
-                    todaysClaimedRewards.map((cust, idx) => {
-                       const claimTime = cust.voucherClaimedAt?.toDate ? cust.voucherClaimedAt.toDate() : new Date(cust.voucherClaimedAt);
-                       return (
-                         <div key={idx} className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-3 rounded-xl flex justify-between items-center shadow-sm">
-                           <div>
-                             <p className="font-bold text-xs text-neutral-900 dark:text-white uppercase flex items-center gap-1">
-                               👤 {cust.name || 'ग्राहक'}
-                             </p>
-                             <p className="text-[10px] text-neutral-500 font-mono mt-0.5">📞 {cust.phone || cust.id}</p>
-                             <p className="text-[9px] text-neutral-400 mt-0.5">⏰ {claimTime.toLocaleTimeString()}</p>
-                           </div>
-                           <div className="text-right">
-                             <span className="text-[10px] font-bold text-neutral-500">इनाम दिया:</span>
-                             <br />
-                             <span className="text-[11px] font-black text-green-600 dark:text-green-400 uppercase bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded border border-green-200 dark:border-green-800/30 inline-block mt-1">
-                               🎁 {cust.lastPrizeWon || 'N/A'}
-                             </span>
-                           </div>
-                         </div>
-                       )
-                    })
                   )}
                 </div>
               )}
