@@ -246,7 +246,7 @@ export default function BbCafeDesktopPos() {
     }
   };
 
-  // इनाम को इस्तेमाल (Redeem) मार्क करना
+  // इनाम को इस्तेमाल (Redeem) मार्क करना और बिल में जोड़ना
   const handleClaimGameReward = async () => {
     if (!gameVerifyResult) return;
     setIsClaimingReward(true);
@@ -258,8 +258,22 @@ export default function BbCafeDesktopPos() {
         voucherClaimedAt: new Date()
       });
 
+      // 👉 NEW: इनाम को कार्ट (बिल) में ₹0 में जोड़ें ताकि स्टॉक/हिसाब सही रहे
+      const rewardItemName = `🎁 ${gameVerifyResult.lastPrizeWon}`;
+      setCart((prev) => [
+        ...prev, 
+        { 
+          cartItemId: `reward_${Date.now()}`,
+          id: 'game_reward',
+          name: rewardItemName,
+          price: 0, // ₹0 क्योंकि यह फ्री इनाम है
+          quantity: 1,
+          note: "Free Game Reward"
+        }
+      ]);
+
       setGameVerifyResult((prev: any) => ({ ...prev, voucherClaimed: true }));
-      toast.success("🎉 इनाम दे दिया गया और सिस्टम में लॉक हो गया!");
+      toast.success("🎉 इनाम दिया गया और बिल में ₹0 में जुड़ गया!");
       fetchAllCustomers();
     } catch (e) {
       toast.error("स्टेटस अपडेट नहीं हो सका");
