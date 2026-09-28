@@ -1443,6 +1443,33 @@ export default function BbCafeDesktopPos() {
       toast.error("Failed to save customer");
     }
   };
+  } catch (err) {
+      toast.dismiss(toastId);
+      toast.error("Failed to save customer");
+    }
+  };
+
+  // 👉 NEW: कार्ट में ग्राहक सेलेक्ट होते ही उसके पिछले 3 बिल निकाल लें
+  useEffect(() => {
+    if (customerPhone.length === 10) {
+      const fetchCartCustHistory = async () => {
+        try {
+          const q = query(collection(db, "orders"), orderBy("timestamp", "desc"), limit(100));
+          const snap = await getDocs(q);
+          const matched = snap.docs
+            .map(d => d.data())
+            .filter((o: any) => String(o.customerPhone || '').includes(customerPhone))
+            .slice(0, 3); // सिर्फ पिछले 3 बिल
+          setCartCustHistory(matched);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchCartCustHistory();
+    } else {
+      setCartCustHistory([]);
+    }
+  }, [customerPhone]);
 
   // Search input keydown with support for QTY*CODE (e.g. 3*101)
   const handleSearchInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
