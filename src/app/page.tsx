@@ -1092,10 +1092,74 @@ export default function BbCafeHome() {
   };
 
   // --- RE-MODULARIZED AND BRACKET-BALANCED COMPACT HYBRID GEOLOCATION HANDLER ---
+ // --- RE-MODULARIZED GEOLOCATION HANDLER ---
   const handleDetectLocation = () => {
     triggerHaptic();
     if (typeof window === "undefined") return;
 
+    setAddress(isHindi ? "⏳ सटीक लोकेशन खोजी जा रही है..." : "⏳ Finding accurate location...");
+    const toastId = toast.loading(isHindi ? "लोकेशन खोजी जा रही है..." : "Finding location...");
+
+    const processLocation = (lat: number, lon: number, locationType: string) => {
+      setDistanceKm(Number(calculateDistanceInKm(lat, lon, storeCoordinates.lat, storeCoordinates.lng).toFixed(2)));
+      setCustomerCoordinates({ lat, lng: lon });
+
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=en`, {
+        headers: { 'User-Agent': 'BumBumCafeApp/1.0' }
+      })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        const textAddress = data?.display_name || "";
+        const mapLink = `https://www.google.com/maps?q=${lat.toFixed(6)},${lon.toFixed(6)}`;
+        const finalAddressText = textAddress 
+          ? `📍 ${locationType}: ${textAddress}\n🔗 Maps Link: ${mapLink}`
+          : `My GPS Location: ${mapLink}`;
+
+        setAddress(finalAddressText);
+        toast.dismiss(toastId);
+        toast.success(isHindi ? "लोकेशन मिल गई!" : "Location found!");
+      })
+      .catch(() => {
+        setAddress(`My GPS Location: https://www.google.com/maps?q=${lat.toFixed(6)},${lon.toFixed(6)}`);
+        toast.dismiss(toastId);
+        toast.success(isHindi ? "GPS कोऑर्डिनेट्स मिल गए!" : "GPS coordinates found!");
+      });
+    };
+
+    const fallbackToIP = () => {
+      setAddress(isHindi ? "⏳ नेटवर्क लोकेशन खोजी जा रही है..." : "⏳ Finding network location...");
+      fetch('https://ipapi.co/json/')
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error("IP Geolocation failed");
+        })
+        .then((ipData) => {
+          processLocation(ipData.latitude, ipData.longitude, "Approx Area (IP)");
+        })
+        .catch(() => {
+          setAddress("");
+          toast.dismiss(toastId);
+          toast.error(isHindi ? "लोकेशन खोजने में असमर्थ। कृपया मैन्युअली लिखें।" : "Unable to retrieve location. Please type manually.");
+        });
+    };
+
+    if (!navigator.geolocation) {
+      fallbackToIP();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => processLocation(position.coords.latitude, position.coords.longitude, "Accurate Address"),
+      () => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => processLocation(pos.coords.latitude, pos.coords.longitude, "Approx Address"),
+          fallbackToIP, 
+          { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  };
     setAddress(isHindi ? "⏳ सटीक लोकेशन खोजी जा रही है (GPS)..." : "⏳ Finding highly accurate location (GPS)...");
     const toastId = toast.loading(isHindi ? "सटीक लोकेशन खोजी जा रही है..." : "Finding accurate location...");
 
