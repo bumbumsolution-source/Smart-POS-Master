@@ -162,6 +162,7 @@ export default function BbCafeDesktopPos() {
   const [address, setAddress] = useState('');
   const [isRedeemingPoints, setIsRedeemingPoints] = useState(false);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [cartCustHistory, setCartCustHistory] = useState<any[]>([]); // 👉 NEW: कार्ट में हिस्ट्री दिखाने के लिए
 
   const [showNewCustForm, setShowNewCustForm] = useState(false);
   const [newCustNameInput, setNewCustNameInput] = useState('');
