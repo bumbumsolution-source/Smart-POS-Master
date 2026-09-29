@@ -4887,6 +4887,32 @@ export default function BbCafeDesktopPos() {
                    <textarea rows={2} placeholder="Full Delivery Address..." value={custFormAddress} onChange={e => setCustFormAddress(e.target.value)} className="w-full bg-neutral-100 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-xl p-2.5 font-bold outline-none focus:border-orange-500 text-xs resize-none" />
                 </div>
 
+                {/* 👉 NEW: CUSTOMER NOTES & SPECIAL DATES */}
+                <div className="space-y-1 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                   <label className="text-[10px] font-black uppercase text-neutral-500">📝 Customer Note (Preference)</label>
+                   <input type="text" placeholder="e.g. Jain Food, Less Spicy, No Mayo..." value={custFormNote} onChange={e => setCustFormNote(e.target.value)} className="w-full bg-neutral-100 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-xl p-2.5 font-bold outline-none focus:border-orange-500 text-xs" />
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                   <div className="flex justify-between items-center">
+                     <label className="text-[10px] font-black uppercase text-neutral-500">📅 Special Dates (Birthdays)</label>
+                     <button type="button" onClick={() => setCustFormSpecialDates([...custFormSpecialDates, {type: 'Birthday', name: '', date: ''}])} className="text-[9px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md font-black uppercase">+ Add Date</button>
+                   </div>
+                   <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1">
+                     {custFormSpecialDates.map((item, index) => (
+                       <div key={index} className="flex gap-1.5 items-center bg-neutral-50 dark:bg-neutral-900/50 p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                          <select value={item.type} onChange={e => { const newArr = [...custFormSpecialDates]; newArr[index].type = e.target.value; setCustFormSpecialDates(newArr); }} className="w-20 bg-transparent text-[10px] outline-none font-bold text-neutral-700 dark:text-neutral-300">
+                            <option value="Birthday">Birthday</option>
+                            <option value="Anniversary">Anniversary</option>
+                          </select>
+                          <input type="text" placeholder="Name (Self/Kid)" value={item.name} onChange={e => { const newArr = [...custFormSpecialDates]; newArr[index].name = e.target.value; setCustFormSpecialDates(newArr); }} className="w-20 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded p-1 text-[10px] outline-none" />
+                          <input type="date" value={item.date} onChange={e => { const newArr = [...custFormSpecialDates]; newArr[index].date = e.target.value; setCustFormSpecialDates(newArr); }} className="flex-1 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded p-1 text-[10px] outline-none" />
+                          <button type="button" onClick={() => setCustFormSpecialDates(custFormSpecialDates.filter((_, i) => i !== index))} className="text-red-500 hover:bg-red-100 p-1 rounded"><X size={14}/></button>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+
                 <div className="flex gap-2 pt-2">
                   <button type="button" onClick={() => setIsAddEditCustModalOpen(false)} className="flex-1 py-2.5 bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-white font-black uppercase text-xs rounded-xl hover:bg-neutral-300 transition-colors">Cancel</button>
                   <button type="submit" className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 text-white font-black uppercase text-xs rounded-xl shadow-lg">Save Profile</button>
