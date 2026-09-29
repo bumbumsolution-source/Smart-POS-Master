@@ -537,8 +537,9 @@ export default function BbCafeDesktopPos() {
     try {
       if (navigator.onLine) {
         const cleanPhone = cust.phone || cust.id;
-        // Fetch recent 50 orders
-        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"), limit(50));
+        
+       // Fetch recent 150 orders (ताकि ग्राहक की पूरी पसंद पता चल सके)
+        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"), limit(150));
         const snap = await getDocs(q);
         
         // Filter those orders that match the customer's phone
