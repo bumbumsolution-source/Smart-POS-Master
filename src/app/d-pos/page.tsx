@@ -536,9 +536,9 @@ export default function BbCafeDesktopPos() {
     const today = new Date();
     const events: any[] = [];
 
-    allCustomers.forEach(cust => {
+    allCustomers.forEach((cust: any) => {
       if (cust.specialDates && Array.isArray(cust.specialDates)) {
-        cust.specialDates.forEach(sd => {
+        cust.specialDates.forEach((sd: any) => {
           if (!sd.date) return;
           const [year, month, day] = sd.date.split('-');
           if (!month || !day) return;
