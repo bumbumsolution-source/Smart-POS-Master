@@ -4453,10 +4453,7 @@ export default function BbCafeDesktopPos() {
                              <div className="text-right">
                                <p className="text-[9px] font-black uppercase text-neutral-500">Last Bill (पिछला बिल)</p>
                                <p className="text-sm font-mono font-black text-blue-600 dark:text-blue-400">
-                                 {cartCustHistory.find(h => h.customerPhone?.includes(cust.phone || cust.id)) 
-                                    ? `#${cartCustHistory.find(h => h.customerPhone?.includes(cust.phone || cust.id))?.billNumber} - ₹${cartCustHistory.find(h => h.customerPhone?.includes(cust.phone || cust.id))?.total}` 
-                                    : 'N/A'
-                                 }
+                                 {cust.lastBillNumber ? `#${cust.lastBillNumber} - ₹${cust.lastBillAmount}` : 'N/A'}
                                </p>
                              </div>
                           </div>
