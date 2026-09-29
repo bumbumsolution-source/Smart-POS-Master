@@ -157,22 +157,27 @@ export default function CatchGamePage() {
     setBasketX(Math.max(5, Math.min(95, x))); 
   };
 
-  // 3. मेन गेम लूप (गिरते हुए आइटम्स)
+  // 3. मेन गेम लूप (गिरते हुए आइटम्स) - 🔥 HARD MODE 🔥
   useEffect(() => {
     if (step !== "playing") return;
 
     const gameLoop = (time: number) => {
-      const dropSpeed = Math.max(400, 800 - (score * 2)); 
+      // 👉 HARD MODE: स्पॉन स्पीड (आइटम्स जल्दी-जल्दी गिरेंगे)
+      const dropSpeed = Math.max(250, 700 - (score * 2.5)); 
       
       if (time - lastItemTime.current > dropSpeed) {
-        const isBomb = Math.random() < 0.25; 
+        // 👉 HARD MODE: बम गिरने के चांस (स्कोर बढ़ने के साथ बम 25% से बढ़कर 45% तक हो जाएंगे)
+        const bombChance = 0.25 + Math.min(0.20, score / 8000);
+        const isBomb = Math.random() < bombChance; 
+        
         const newItem = {
           id: Date.now(),
           type: isBomb ? "bomb" : "food",
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
           x: Math.random() * 90 + 5, 
           y: -10, 
-          speed: Math.random() * 0.8 + 0.8 + (score / 1000) 
+          // 👉 HARD MODE: गिरने की स्पीड (तेज़ी से गिरेंगे)
+          speed: Math.random() * 1.0 + 1.2 + (score / 600) 
         };
         setItems(prev => [...prev, newItem]);
         lastItemTime.current = time;
@@ -185,7 +190,9 @@ export default function CatchGamePage() {
 
         activeItems = activeItems.map(item => ({ ...item, y: item.y + item.speed })).filter(item => {
           if (item.y > 100) return false; 
-          if (item.y > 85 && item.y < 95 && Math.abs(item.x - basketX) < 15) {
+          
+          // 👉 HARD MODE: बास्केट का कैच एरिया (Hitbox) 11 कर दिया है (अब ज्यादा सटीक पकड़ना होगा)
+          if (item.y > 85 && item.y < 95 && Math.abs(item.x - basketX) < 11) {
             if (item.type === "bomb") {
               lostLife = true;
             } else {
@@ -215,11 +222,20 @@ export default function CatchGamePage() {
     return () => cancelAnimationFrame(requestRef.current!);
   }, [step, basketX, score]);
 
-  // 4. गेम खत्म होने पर पॉइंट्स सेव करना
+  // 4. गेम खत्म होने पर पॉइंट्स सेव करना (Anti-Cheat + Game Points Merge Fix)
   const savePointsToDatabase = async () => {
+    if (isSaving) return; // 👉 FIX: Double Call Loophole
     setIsSaving(true);
     
-    // 👉 NEW LOGIC: मिनिमम 1000 स्कोर पर 10 रुपये मिलेंगे
+    // 👉 FIX: Anti-Cheat System (अगर कोई हैक करके स्कोर 5000 से ज्यादा कर दे)
+    if (score > 5000) {
+      setIsSaving(false);
+      return toast.error("⚠️ चीटिंग पकड़ी गई! (Abnormal Score Detected)", {
+        style: { background: "#ef4444", color: "#fff" }
+      });
+    }
+
+    // लॉजिक: मिनिमम 1000 स्कोर पर 10 रुपये मिलेंगे
     let pointsWon = 0;
     if (score >= 2000) pointsWon = 20;
     else if (score >= 1000) pointsWon = 10;
@@ -229,10 +245,10 @@ export default function CatchGamePage() {
       const userRef = doc(db, "customer_points", phone);
       const userSnap = await getDoc(userRef);
       
-      let prevGamePoints = 0; // 👉 NEW: सिर्फ गेम पॉइंट्स पढ़ रहे हैं
+      let prevGamePoints = 0; 
       let todayGamePoints = 0;
       let lastGameDate = "";
-      const todayStr = new Date().toDateString();
+      const todayStr = new Date().toDateString(); // मोबाइल का लोकल टाइम
 
       if (userSnap.exists()) {
         const data = userSnap.data();
@@ -241,15 +257,28 @@ export default function CatchGamePage() {
         lastGameDate = data.lastGameDate || "";
       }
 
+      // 👉 FIX: Time Spoofing (तारीख बदलने) से बचने के लिए चेक
       if (lastGameDate !== todayStr) {
-        todayGamePoints = 0;
+        if (new Date(lastGameDate) > new Date(todayStr)) {
+           todayGamePoints = 20; // यूज़र ने फ़ोन का टाइम पीछे किया है
+        } else {
+           todayGamePoints = 0; // नॉर्मल नया दिन
+        }
       }
 
       const remainingLimit = Math.max(0, 20 - todayGamePoints);
       const finalPointsToAdd = Math.min(pointsWon, remainingLimit);
 
+      // अगर लिमिट खत्म हो गई है, तो बेवजह डेटाबेस अपडेट मत करो
+      if (pointsWon > 0 && finalPointsToAdd === 0) {
+        toast("आप आज की लिमिट (20 पॉइंट्स) पार कर चुके हैं।", { icon: "⚠️" });
+        setIsSaving(false);
+        return;
+      }
+
+      // डेटाबेस में अपडेट करना (Game Points)
       await setDoc(userRef, {
-        gamePoints: prevGamePoints + finalPointsToAdd, // 👉 NEW: गेम पॉइंट्स अलग से सेव हो रहे हैं
+        gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
       }, { merge: true });
@@ -260,11 +289,9 @@ export default function CatchGamePage() {
       localStorage.setItem("catch_game_cooldown", Date.now().toString());
       localStorage.setItem("catch_game_locked_phone", phone);
 
-      if (pointsWon > 0 && finalPointsToAdd === 0) {
-        toast("आप आज की लिमिट (20 पॉइंट्स) पार कर चुके हैं।", { icon: "⚠️" });
-      } else if (finalPointsToAdd > 0) {
+      if (finalPointsToAdd > 0) {
         toast.success(`बधाई हो! आपको ${finalPointsToAdd} पॉइंट्स मिले! 🎉`);
-      } else {
+      } else if (score < 1000) {
         toast.error("टारगेट पूरा नहीं हुआ (कम से कम 1000 स्कोर चाहिए)!");
       }
 
