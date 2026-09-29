@@ -603,11 +603,13 @@ export default function BbCafeDesktopPos() {
     const toastId = toast.loading("Saving customer...");
     try {
       const userRef = doc(db, "customer_points", cleanPhone);
-      const payload = {
+     const payload = {
         name: custFormName.trim(),
         phone: cleanPhone,
         address: custFormAddress.trim(),
         points: Number(custFormPoints) || 0,
+        note: custFormNote.trim(), // 👉 NEW: कस्टमर की पसंद का नोट
+        specialDates: custFormSpecialDates, // 👉 NEW: बच्चों या फॅमिली के बर्थडे
         lastActive: editingCustProfile ? editingCustProfile.lastActive : new Date()
       };
       
