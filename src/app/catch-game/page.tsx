@@ -24,10 +24,11 @@ export default function CatchGamePage() {
   const [step, setStep] = useState<"login" | "playing" | "gameover">("login");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [birthday, setBirthday] = useState(""); // 👉 NEW: Birthday State
+  const [birthday, setBirthday] = useState(""); 
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   const [isLoading, setIsLoading] = useState(false);
-const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता लगाने के लिए कि पुराना ग्राहक है या नया
+  const [isReturningUser, setIsReturningUser] = useState(false); // 👉 स्मार्ट ऑटो-फिल के लिए
+
   // गेम स्टेट्स
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -53,13 +54,14 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
       }
     }
   }, []);
-// 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा और बर्थडे छुप जाएगा)
+
+  // 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा और बर्थडे छुप जाएगा)
   useEffect(() => {
     if (phone.length === 10) {
-      getDoc(doc(db, "customer_points", phone)).then(snap => {
+      getDoc(doc(db, "customer_points", phone)).then((snap) => {
         if (snap.exists() && snap.data().name) {
           setName(snap.data().name); // नाम ऑटो-फिल
-          setIsReturningUser(true); // पुराना ग्राहक है (बर्थडे छुपा दें)
+          setIsReturningUser(true); // पुराना ग्राहक है
         } else {
           setIsReturningUser(false); // नया ग्राहक
         }
@@ -68,14 +70,14 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
       setIsReturningUser(false);
     }
   }, [phone]);
-  // 🚀 1. लॉगिन हैंडलर (Device Lock & CRM Birthday Saving)
+
+  // 🚀 1. लॉगिन हैंडलर 
   const handleStartGame = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = formatNameTitleCase(name.trim());
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     const cleanPhone = phone.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -107,14 +109,13 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
         const data = userSnap.data();
         existingSpecialDates = data.specialDates || [];
         
-        // चेक करें कि आज की लिमिट पूरी तो नहीं हो गई (Max 20 pts per day)
         const todayStr = new Date().toDateString();
         if (data.lastGameDate === todayStr && data.todayGamePoints >= 20) {
           toast("⚠️ आप आज की 20 पॉइंट्स की लिमिट पार कर चुके हैं, लेकिन आप मजे के लिए खेल सकते हैं!", { icon: '🎮' });
         }
       }
 
-     // 👉 CRM के लिए बर्थडे सेव करें (सिर्फ तब जब नया ग्राहक बर्थडे डाले)
+      // 👉 CRM के लिए बर्थडे सेव करें (सिर्फ तब जब नया ग्राहक बर्थडे डाले)
       if (birthday) {
         const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
         if (!hasBirthday) {
@@ -126,7 +127,7 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
         name: cleanName, 
         phone: cleanPhone, 
         table: tableNo,
-        specialDates: existingSpecialDates, // 👉 CRM Dashboard (Pink Box) में जाएगा
+        specialDates: existingSpecialDates, 
         lastActive: serverTimestamp(),
         importSource: 'CatchGame'
       }, { merge: true });
@@ -148,12 +149,12 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
     }
   };
 
-  // 2. बास्केट को मूव करना (Touch & Mouse)
+  // 2. बास्केट को मूव करना
   const handleMove = (clientX: number) => {
     if (!gameContainerRef.current) return;
     const rect = gameContainerRef.current.getBoundingClientRect();
     const x = ((clientX - rect.left) / rect.width) * 100;
-    setBasketX(Math.max(5, Math.min(95, x))); // बाउंड्री के अंदर रखना
+    setBasketX(Math.max(5, Math.min(95, x))); 
   };
 
   // 3. मेन गेम लूप (गिरते हुए आइटम्स)
@@ -161,18 +162,17 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
     if (step !== "playing") return;
 
     const gameLoop = (time: number) => {
-      // हर 800ms में नया आइटम गिराना (जैसे-जैसे स्कोर बढ़ेगा, गेम तेज़ होगा)
       const dropSpeed = Math.max(400, 800 - (score * 2)); 
       
       if (time - lastItemTime.current > dropSpeed) {
-        const isBomb = Math.random() < 0.25; // 25% चांस बम गिरने के
+        const isBomb = Math.random() < 0.25; 
         const newItem = {
           id: Date.now(),
           type: isBomb ? "bomb" : "food",
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
-          x: Math.random() * 90 + 5, // X पोजीशन (5% से 95% के बीच)
-          y: -10, // स्क्रीन के ऊपर से शुरू
-          speed: Math.random() * 0.8 + 0.8 + (score / 1000) // स्पीड स्कोर के साथ बढ़ेगी
+          x: Math.random() * 90 + 5, 
+          y: -10, 
+          speed: Math.random() * 0.8 + 0.8 + (score / 1000) 
         };
         setItems(prev => [...prev, newItem]);
         lastItemTime.current = time;
@@ -184,16 +184,14 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
         let lostLife = false;
 
         activeItems = activeItems.map(item => ({ ...item, y: item.y + item.speed })).filter(item => {
-          if (item.y > 100) return false; // मिस हो गया
-
-          // टक्कर (Collision) चेक करना (Basket Range)
+          if (item.y > 100) return false; 
           if (item.y > 85 && item.y < 95 && Math.abs(item.x - basketX) < 15) {
             if (item.type === "bomb") {
               lostLife = true;
             } else {
-              currentScore += 10; // एक खाना पकड़ने पर 10 स्कोर
+              currentScore += 10; 
             }
-            return false; // आइटम गायब कर दो
+            return false; 
           }
           return true; 
         });
@@ -218,16 +216,14 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
   }, [step, basketX, score]);
 
   // 4. गेम खत्म होने पर पॉइंट्स सेव करना
-  useEffect(() => {
-    if (step === "gameover") {
-      savePointsToDatabase();
-    }
-  }, [step]);
-
   const savePointsToDatabase = async () => {
     setIsSaving(true);
-    // हर 100 स्कोर पर 1 पॉइंट (₹1)
-    const pointsWon = Math.floor(score / 100); 
+    
+    // 👉 NEW LOGIC: मिनिमम 1000 स्कोर पर 10 रुपये मिलेंगे
+    let pointsWon = 0;
+    if (score >= 2000) pointsWon = 20;
+    else if (score >= 1000) pointsWon = 10;
+    else pointsWon = 0;
 
     try {
       const userRef = doc(db, "customer_points", phone);
@@ -245,12 +241,10 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
         lastGameDate = data.lastGameDate || "";
       }
 
-      // अगर दिन बदल गया है, तो लिमिट रिसेट कर दो
       if (lastGameDate !== todayStr) {
         todayGamePoints = 0;
       }
 
-      // 1 दिन में मैक्सिमम 20 पॉइंट्स (₹20) ही मिल सकते हैं (नुकसान से बचने के लिए)
       const remainingLimit = Math.max(0, 20 - todayGamePoints);
       const finalPointsToAdd = Math.min(pointsWon, remainingLimit);
 
@@ -262,14 +256,16 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
 
       setEarnedPoints(finalPointsToAdd);
       
-      // 🛑 DEVICE LOCKING (1 घंटे के लिए डिवाइस लॉक)
+      // 🛑 DEVICE LOCKING 
       localStorage.setItem("catch_game_cooldown", Date.now().toString());
       localStorage.setItem("catch_game_locked_phone", phone);
 
-      if (pointsWon > remainingLimit && remainingLimit === 0) {
-        toast("आप आज की लिमिट (20 पॉइंट्स) पार कर चुके हैं। कल फिर खेलें!", { icon: "⚠️" });
+      if (pointsWon > 0 && finalPointsToAdd === 0) {
+        toast("आप आज की लिमिट (20 पॉइंट्स) पार कर चुके हैं।", { icon: "⚠️" });
       } else if (finalPointsToAdd > 0) {
         toast.success(`बधाई हो! आपको ${finalPointsToAdd} पॉइंट्स मिले! 🎉`);
+      } else {
+        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 1000 स्कोर चाहिए)!");
       }
 
     } catch (err) {
@@ -278,6 +274,12 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (step === "gameover") {
+      savePointsToDatabase();
+    }
+  }, [step]);
 
   // UI (डिज़ाइन)
   return (
@@ -299,18 +301,10 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
             <h2 className="text-xl font-black uppercase text-blue-400 tracking-wider">Catch & Win Game</h2>
             <p className="text-xs text-neutral-400 font-bold leading-relaxed">
               बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
-              <span className="text-green-400">100 Score = 1 Point (₹1 छूट)</span>
+              <span className="text-green-400">1000 Score = 10 Points (₹10 छूट)</span>
             </p>
             
             <form onSubmit={handleStartGame} className="space-y-3 pt-2">
-              <input 
-                type="text" 
-                placeholder="आपका नाम" 
-                value={name} 
-                onChange={(e) => setName(formatNameTitleCase(e.target.value))} 
-                required 
-                className="w-full bg-[#0f172a] border-2 border-blue-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-blue-400" 
-              />
               <input 
                 type="tel" 
                 maxLength={10}
@@ -319,6 +313,14 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
                 onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
                 required
                 className="w-full bg-[#0f172a] border-2 border-yellow-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-yellow-400" 
+              />
+              <input 
+                type="text" 
+                placeholder="आपका नाम" 
+                value={name} 
+                onChange={(e) => setName(formatNameTitleCase(e.target.value))} 
+                required 
+                className="w-full bg-[#0f172a] border-2 border-blue-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-blue-400" 
               />
               
               {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
@@ -333,15 +335,6 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
                   />
                 </div>
               )}
-                <span className="absolute -top-2 left-4 bg-[#1e293b] px-1 text-[10px] text-pink-400 font-bold">जन्मदिन (Birthday) 🎂</span>
-                <input 
-                  type="date" 
-                  value={birthday} 
-                  onChange={(e) => setBirthday(e.target.value)} 
-                  required 
-                  className="w-full bg-[#0f172a] border-2 border-pink-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-pink-400" 
-                />
-              </div>
 
               <button 
                 type="submit" 
@@ -409,8 +402,8 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
           </div>
 
           {isSaving ? (
-             <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर सेव हो रहा है...</p>
-          ) : (
+             <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर चेक हो रहा है...</p>
+          ) : earnedPoints > 0 ? (
             <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl space-y-2">
               <p className="text-[11px] font-black uppercase text-green-500 tracking-wider">डिस्काउंट पॉइंट्स जीते</p>
               <p className="text-4xl font-black text-green-400 drop-shadow-md">⭐ {earnedPoints}</p>
@@ -418,6 +411,11 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
                 यह पॉइंट्स आपके मोबाइल नंबर <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर जोड़ दिए गए हैं।
                 <br/><br/><span className="text-yellow-400 bg-yellow-400/10 p-1.5 rounded block">बिल बनवाते समय कैशियर को अपना नंबर बताएं और छूट पाएं!</span>
               </p>
+            </div>
+          ) : (
+            <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
+               <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
+               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 Points) जीतने के लिए 1000 स्कोर बनाना ज़रूरी है!</p>
             </div>
           )}
 
