@@ -4786,7 +4786,27 @@ export default function BbCafeDesktopPos() {
                       <button onClick={() => { localStorage.setItem("bb_pos_owner_phone", ownerPhoneConfig); toast.success("Owner Phone Saved!"); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-black uppercase">Save</button>
                     </div>
                   </div>
-
+{/* 👉 NEW: ACTIVE GAME SETTING (कस्टमर का गेम बदलें) */}
+                  <div className="space-y-3 border-b border-neutral-300 dark:border-neutral-800 pb-5">
+                    <div>
+                      <p className="text-xs font-black uppercase text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><Gamepad2 size={16}/> 🎮 Active Customer Game (QR Code):</p>
+                      <p className="text-[10px] text-neutral-500 font-bold mt-0.5">टेबल के QR कोड को स्कैन करने पर कस्टमर के फोन में कौन सा गेम खुलेगा, उसे यहाँ से बदलें।</p>
+                    </div>
+                    <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-2xl w-full max-w-sm border border-neutral-300 dark:border-neutral-700 shadow-inner">
+                      <button 
+                        onClick={() => handleToggleGame('SpinGame')} 
+                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all ${activeGameType === 'SpinGame' ? 'bg-white dark:bg-neutral-900 text-purple-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🎡 Spin Wheel
+                      </button>
+                      <button 
+                        onClick={() => handleToggleGame('CatchGame')} 
+                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all ${activeGameType === 'CatchGame' ? 'bg-white dark:bg-neutral-900 text-orange-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🍔 Catch Game
+                      </button>
+                    </div>
+                  </div>
                   {/* THEME SETTING */}
                   <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
                     <p className="text-xs font-bold uppercase">UI Theme:</p>
