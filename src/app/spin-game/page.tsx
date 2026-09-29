@@ -83,7 +83,21 @@ export default function SurpriseArcadeGame() {
       }
     }
   }, []);
-
+// 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा)
+  useEffect(() => {
+    if (phoneNumber.length === 10) {
+      getDoc(doc(db, "customer_points", phoneNumber)).then(snap => {
+        if (snap.exists() && snap.data().name) {
+          setName(snap.data().name);
+          setIsReturningUser(true);
+        } else {
+          setIsReturningUser(false);
+        }
+      });
+    } else {
+      setIsReturningUser(false);
+    }
+  }, [phoneNumber]);
   useEffect(() => {
     if (!isLoggedIn || !lastPlayedTime) return;
 
