@@ -508,6 +508,7 @@ export default function BbCafeDesktopPos() {
   const [selectedHistoryCust, setSelectedHistoryCust] = useState<any>(null);
   const [custHistoryList, setCustHistoryList] = useState<any[]>([]);
   const [isCustHistoryLoading, setIsCustHistoryLoading] = useState(false);
+  const [activeWaDropdown, setActiveWaDropdown] = useState<string | null>(null); // 👉 NEW: WhatsApp Menu के लिए
 // 👉 NEW: Customer Analytics (Favorite Items & Points)
   const customerInsights = useMemo(() => {
     if (!custHistoryList || custHistoryList.length === 0) return null;
