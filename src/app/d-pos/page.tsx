@@ -3209,19 +3209,7 @@ export default function BbCafeDesktopPos() {
                             <p className="text-[10px] text-neutral-400 italic">इस ग्राहक के पास अभी कोई रिडीम पॉइंट नहीं हैं।</p>
                           )}
 
-                          {/* 👉 NEW: कार्ट के अंदर पिछली खरीदारी (Bill History) */}
-                          {cartCustHistory.length > 0 && (
-                            <div className="pt-2 mt-1 border-t border-neutral-200 dark:border-neutral-800 space-y-1">
-                              <p className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400">🛍️ पिछली खरीदारी (Recent Bills):</p>
-                              {cartCustHistory.map((h, i) => (
-                                <div key={i} className="flex justify-between items-center text-[10px] bg-blue-50 dark:bg-blue-900/20 p-1.5 rounded border border-blue-100 dark:border-blue-800/30">
-                                  <span className="font-bold text-neutral-700 dark:text-neutral-300">Bill #{h.billNumber}</span>
-                                  <span className="text-neutral-500 truncate max-w-[100px] px-1">{h.items?.map((it: any) => it.name).join(', ')}</span>
-                                  <span className="font-black text-green-600 dark:text-green-400">₹{h.total}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                         
                         </div>
                       )}
 
