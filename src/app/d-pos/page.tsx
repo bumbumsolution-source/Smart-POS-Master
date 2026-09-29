@@ -2244,19 +2244,26 @@ export default function BbCafeDesktopPos() {
     const cleanPhone = getSanitizedPhone(customerPhone);
 
    try {
-      let billNumber: number = activeEditingBillNumber || getNextBillNumber(); // 👉 सबसे पहले बिल नंबर बना लें
-      let remainingPts = customerPoints;
+      let billNumber: number = activeEditingBillNumber || getNextBillNumber(); 
+
+      // 👉 Offline के लिए लॉजिक
+      let gamePtsDeductedOffline = Math.min(redeemed, customerGamePoints);
+      let loyPtsDeductedOffline = redeemed - gamePtsDeductedOffline;
+      let remainingPts = Math.max(0, customerPoints - loyPtsDeductedOffline) + earned;
+      let remainingGamePts = customerGamePoints - gamePtsDeductedOffline;
 
       if (cleanPhone.length === 10 && navigator.onLine) {
         const userRef = doc(db, "customer_points", cleanPhone);
         const userDoc = await getDoc(userRef);
         let prevPoints = 0;
+        let prevGamePoints = 0; // 👉 NEW
         let prevSpent = 0;
         let prevVisits = 0;
         
         if (userDoc.exists()) {
           const data = userDoc.data();
           prevPoints = Number(data.points) || 0;
+          prevGamePoints = Number(data.gamePoints) || 0; // 👉 NEW
           prevSpent = Number(data.totalSpent) || 0;
           prevVisits = Number(data.totalVisits) || 0;
         }
