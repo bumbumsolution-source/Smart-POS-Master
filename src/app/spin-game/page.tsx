@@ -56,11 +56,12 @@ const triggerConfetti = () => {
 export default function SurpriseArcadeGame() {
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [birthday, setBirthday] = useState(""); // 👉 NEW: Birthday State
+  const [birthday, setBirthday] = useState(""); 
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
-  const [isReturningUser, setIsReturningUser] = useState(false);
+  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isReturningUser, setIsReturningUser] = useState(false); // 👉 स्मार्ट ऑटो-फिल के लिए
   
   // गेम स्टेट्स
   const [lastPlayedTime, setLastPlayedTime] = useState<number | null>(null);
@@ -83,7 +84,8 @@ export default function SurpriseArcadeGame() {
       }
     }
   }, []);
-// 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा)
+
+  // 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा)
   useEffect(() => {
     if (phoneNumber.length === 10) {
       getDoc(doc(db, "customer_points", phoneNumber)).then(snap => {
@@ -98,6 +100,7 @@ export default function SurpriseArcadeGame() {
       setIsReturningUser(false);
     }
   }, [phoneNumber]);
+
   useEffect(() => {
     if (!isLoggedIn || !lastPlayedTime) return;
 
@@ -133,14 +136,13 @@ export default function SurpriseArcadeGame() {
     return () => clearInterval(interval);
   }, [isLoggedIn, lastPlayedTime, couponCode]);
 
-  // 🚀 लॉगिन हैंडलर (यहाँ डिवाइस लॉकिंग और बर्थडे सेविंग है)
+  // 🚀 लॉगिन हैंडलर 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = formatNameTitleCase(name.trim());
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     const cleanPhone = phoneNumber.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    // (बर्थडे की शर्त हटा दी गई है)
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -190,7 +192,7 @@ export default function SurpriseArcadeGame() {
         }
       }
 
-      // 👉 CRM के लिए बर्थडे सेव करें (सिर्फ तब जब नया ग्राहक बर्थडे डाले)
+      // 👉 CRM के लिए बर्थडे सेव करें 
       if (birthday) {
         const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
         if (!hasBirthday) {
@@ -221,6 +223,7 @@ export default function SurpriseArcadeGame() {
       setIsLoading(false);
     }
   };
+
   // डेटाबेस में रिजल्ट सेव करें और डिवाइस लॉक करें
   const generateResultAndSave = async () => {
     const rand = Math.random() * 100;
@@ -282,20 +285,16 @@ export default function SurpriseArcadeGame() {
           <div style={{ fontSize: "42px", marginBottom: "8px" }}>🎁</div>
           <h2 style={{ fontSize: "18px", margin: "0 0 16px 0", color: "#38bdf8", fontWeight: "bold" }}>खेलने के लिए विवरण दर्ज करें</h2>
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #f1c40f", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
             <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #3b82f6", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
             
-            <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #f1c40f", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
-            
-           {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
+            {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
             {!isReturningUser && (
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", top: "-8px", left: "15px", backgroundColor: "#1e293b", padding: "0 5px", fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>जन्मदिन (Optional) 🎂</span>
                 <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "2px solid #ec4899", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none", boxSizing: "border-box" }} />
               </div>
             )}
-              <span style={{ position: "absolute", top: "-8px", left: "15px", backgroundColor: "#1e293b", padding: "0 5px", fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>जन्मदिन (Birthday) 🎂</span>
-              <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} required style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "2px solid #ec4899", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none", boxSizing: "border-box" }} />
-            </div>
 
             <button type="submit" disabled={isLoading} style={{ padding: "14px", borderRadius: "25px", border: "none", backgroundColor: "#22c55e", color: "#fff", fontSize: "16px", fontWeight: "900", cursor: isLoading ? "not-allowed" : "pointer", marginTop: "10px" }}>
               {isLoading ? "प्रतीक्षा करें..." : "स्पिन गेम खेलें ➔"}
