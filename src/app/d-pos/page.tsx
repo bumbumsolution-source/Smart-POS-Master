@@ -760,12 +760,14 @@ export default function BbCafeDesktopPos() {
     reader.readAsText(file);
     e.target.value = ''; // इनपुट रीसेट
   };
-  const openAddCustomerModal = () => {
+ const openAddCustomerModal = () => {
     setEditingCustProfile(null);
     setCustFormName('');
     setCustFormPhone('');
     setCustFormAddress('');
     setCustFormPoints(0);
+    setCustFormNote(''); // 👉 NEW
+    setCustFormSpecialDates([]); // 👉 NEW
     setIsAddEditCustModalOpen(true);
   };
 
@@ -775,6 +777,8 @@ export default function BbCafeDesktopPos() {
     setCustFormPhone(cust.phone || cust.id || '');
     setCustFormAddress(cust.address || '');
     setCustFormPoints(cust.points || 0);
+    setCustFormNote(cust.note || ''); // 👉 NEW
+    setCustFormSpecialDates(cust.specialDates || []); // 👉 NEW
     setIsAddEditCustModalOpen(true);
   };
   // ---------------------------------------------
