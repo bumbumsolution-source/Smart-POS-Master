@@ -56,6 +56,7 @@ const triggerConfetti = () => {
 export default function SurpriseArcadeGame() {
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [birthday, setBirthday] = useState(""); // 👉 NEW: Birthday State
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -118,14 +119,14 @@ export default function SurpriseArcadeGame() {
     return () => clearInterval(interval);
   }, [isLoggedIn, lastPlayedTime, couponCode]);
 
-
-  // 🚀 लॉगिन हैंडलर (यहाँ डिवाइस लॉकिंग जोड़ी गई है)
+  // 🚀 लॉगिन हैंडलर (यहाँ डिवाइस लॉकिंग और बर्थडे सेविंग है)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = formatNameTitleCase(name.trim());
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     const cleanPhone = phoneNumber.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
+    if (!birthday) return toast.error("कृपया अपनी जन्मतिथि (Birthday) चुनें!"); // 👉 NEW
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -138,7 +139,6 @@ export default function SurpriseArcadeGame() {
     if (deviceLastPlayed && lockedPhone) {
       const elapsedDevice = now - parseInt(deviceLastPlayed, 10);
       
-      // अगर 1 घंटा नहीं हुआ है और यूजर कोई "नया नंबर" डाल रहा है
       if (elapsedDevice < ONE_HOUR && lockedPhone !== cleanPhone) {
         setIsLoading(false);
         return toast.error("🚫 इस फोन से पहले ही खेला जा चुका है! कृपया अपना वही नंबर डालें या 1 घंटे प्रतीक्षा करें।", {
@@ -149,12 +149,16 @@ export default function SurpriseArcadeGame() {
     }
 
     try {
-      // 2. DATABASE CHECK (नंबर चेकिंग)
+      // 2. DATABASE CHECK & UPDATE
       const userRef = doc(db, "customer_points", cleanPhone);
       const userSnap = await getDoc(userRef);
+      
+      let existingSpecialDates: any[] = [];
 
       if (userSnap.exists()) {
         const data = userSnap.data();
+        existingSpecialDates = data.specialDates || [];
+
         if (data?.lastPlayedAt) {
           const playedMillis = (data.lastPlayedAt as Timestamp).toMillis();
           const elapsed = now - playedMillis;
@@ -172,13 +176,21 @@ export default function SurpriseArcadeGame() {
         }
       }
 
+      // 👉 NEW: चेक करें कि क्या इसका बर्थडे पहले से सेव है, अगर नहीं तो ऐड करें
+      const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
+      if (!hasBirthday) {
+        existingSpecialDates.push({ type: 'Birthday', date: birthday, name: cleanName });
+      }
+
       await setDoc(userRef, { 
-  name: cleanName, 
-  phone: cleanPhone, 
-  table: tableNo,
-  lastActive: serverTimestamp(),  // <-- यह लाइन D-POS में लिस्ट दिखाने के लिए है
-  importSource: 'SpinGame'        // <-- यह लाइन D-POS में 🎰 Game का टैग लगाने के लिए है
-}, { merge: true });
+        name: cleanName, 
+        phone: cleanPhone, 
+        table: tableNo,
+        specialDates: existingSpecialDates, // 👉 NEW: CRM के लिए बर्थडे सेव हो रहा है
+        lastActive: serverTimestamp(),
+        importSource: 'SpinGame'
+      }, { merge: true });
+
       setName(cleanName);
       setPhoneNumber(cleanPhone);
       setLastPlayedTime(null);
@@ -207,7 +219,6 @@ export default function SurpriseArcadeGame() {
     const voucher = prize !== "Better Luck" ? `BOM-${Math.floor(1000 + Math.random() * 9000)}` : null;
 
     try {
-      // डेटाबेस में सेव
       await setDoc(doc(db, "customer_points", phoneNumber), {
         lastPlayedAt: serverTimestamp(),
         lastPrizeWon: prize,
@@ -216,7 +227,6 @@ export default function SurpriseArcadeGame() {
         voucherClaimed: false,
       }, { merge: true });
 
-      // 🛑 DEVICE LOCKING (इस मोबाइल को इस नंबर के साथ लॉक कर दें)
       localStorage.setItem("device_cooldown_time", Date.now().toString());
       localStorage.setItem("device_locked_phone", phoneNumber);
 
@@ -258,8 +268,16 @@ export default function SurpriseArcadeGame() {
           <h2 style={{ fontSize: "18px", margin: "0 0 16px 0", color: "#38bdf8", fontWeight: "bold" }}>खेलने के लिए विवरण दर्ज करें</h2>
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #3b82f6", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
+            
             <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #f1c40f", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
-            <button type="submit" disabled={isLoading} style={{ padding: "14px", borderRadius: "25px", border: "none", backgroundColor: "#22c55e", color: "#fff", fontSize: "16px", fontWeight: "900", cursor: isLoading ? "not-allowed" : "pointer" }}>
+            
+            {/* 👉 NEW: Birthday Input */}
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", top: "-8px", left: "15px", backgroundColor: "#1e293b", padding: "0 5px", fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>जन्मदिन (Birthday) 🎂</span>
+              <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} required style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "2px solid #ec4899", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none", boxSizing: "border-box" }} />
+            </div>
+
+            <button type="submit" disabled={isLoading} style={{ padding: "14px", borderRadius: "25px", border: "none", backgroundColor: "#22c55e", color: "#fff", fontSize: "16px", fontWeight: "900", cursor: isLoading ? "not-allowed" : "pointer", marginTop: "10px" }}>
               {isLoading ? "प्रतीक्षा करें..." : "स्पिन गेम खेलें ➔"}
             </button>
           </form>
