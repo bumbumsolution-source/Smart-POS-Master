@@ -144,7 +144,24 @@ export default function BbCafeDesktopPos() {
   const [upiIdConfig, setUpiIdConfig] = useState<string>('Q991347275@ybl');
   const [ownerPhoneConfig, setOwnerPhoneConfig] = useState<string>('919714293759');
   const [manualInvoiceCounterInput, setManualInvoiceCounterInput] = useState<string>('200');
+// 👉 NEW: स्मार्ट गेम कंट्रोलर (POS से गेम बदलने के लिए)
+  const [activeGameType, setActiveGameType] = useState('SpinGame'); 
 
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const unsub = onSnapshot(doc(db, "system_settings", "game_config"), (docSnap) => {
+      if (docSnap.exists()) {
+        setActiveGameType(docSnap.data().activeGame || 'SpinGame');
+      }
+    });
+    return () => unsub();
+  }, [isLoggedIn]);
+
+  const handleToggleGame = async (gameType: string) => {
+    triggerBeep('tap');
+    await setDoc(doc(db, "system_settings", "game_config"), { activeGame: gameType }, { merge: true });
+    toast.success(`सफलतापूर्वक ${gameType === 'SpinGame' ? 'Spin Wheel' : 'Catch Game'} चालू कर दिया गया! 🎮`);
+  };
   // Customer Directory & Numeric Search
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
