@@ -53,7 +53,21 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
       }
     }
   }, []);
-
+// 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा और बर्थडे छुप जाएगा)
+  useEffect(() => {
+    if (phone.length === 10) {
+      getDoc(doc(db, "customer_points", phone)).then(snap => {
+        if (snap.exists() && snap.data().name) {
+          setName(snap.data().name); // नाम ऑटो-फिल
+          setIsReturningUser(true); // पुराना ग्राहक है (बर्थडे छुपा दें)
+        } else {
+          setIsReturningUser(false); // नया ग्राहक
+        }
+      });
+    } else {
+      setIsReturningUser(false);
+    }
+  }, [phone]);
   // 🚀 1. लॉगिन हैंडलर (Device Lock & CRM Birthday Saving)
   const handleStartGame = async (e: React.FormEvent) => {
     e.preventDefault();
