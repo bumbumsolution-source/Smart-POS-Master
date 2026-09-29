@@ -176,6 +176,7 @@ export default function BbCafeDesktopPos() {
   const [custSuggestions, setCustSuggestions] = useState<any[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [customerPoints, setCustomerPoints] = useState(0);
+  const [customerGamePoints, setCustomerGamePoints] = useState(0); // 👉 NEW: गेम पॉइंट्स स्टेट
   const [address, setAddress] = useState('');
   const [isRedeemingPoints, setIsRedeemingPoints] = useState(false);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
