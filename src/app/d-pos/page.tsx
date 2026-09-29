@@ -505,7 +505,28 @@ export default function BbCafeDesktopPos() {
   const [selectedHistoryCust, setSelectedHistoryCust] = useState<any>(null);
   const [custHistoryList, setCustHistoryList] = useState<any[]>([]);
   const [isCustHistoryLoading, setIsCustHistoryLoading] = useState(false);
+// 👉 NEW: Customer Analytics (Favorite Items & Points)
+  const customerInsights = useMemo(() => {
+    if (!custHistoryList || custHistoryList.length === 0) return null;
+    let itemCounts: any = {};
+    let totalEarned = 0;
+    let totalRedeemed = 0;
 
+    custHistoryList.forEach(order => {
+       totalEarned += (Number(order.pointsEarned) || 0);
+       totalRedeemed += (Number(order.pointsRedeemed) || 0);
+       order.items?.forEach((it: any) => {
+          itemCounts[it.name] = (itemCounts[it.name] || 0) + (it.quantity || 1);
+       });
+    });
+
+    // सबसे ज्यादा बिकने वाले टॉप 3 आइटम
+    const favoriteItems = Object.entries(itemCounts)
+       .sort((a: any, b: any) => b[1] - a[1])
+       .slice(0, 3);
+
+    return { favoriteItems, totalEarned, totalRedeemed };
+  }, [custHistoryList]);
   const handleViewCustomerHistory = async (cust: any) => {
     triggerBeep('tap');
     setSelectedHistoryCust(cust);
