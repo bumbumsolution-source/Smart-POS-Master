@@ -114,10 +114,12 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
         }
       }
 
-      // 👉 CRM के लिए बर्थडे सेव करें (अगर पहले से सेव नहीं है)
-      const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
-      if (!hasBirthday) {
-        existingSpecialDates.push({ type: 'Birthday', date: birthday, name: cleanName });
+     // 👉 CRM के लिए बर्थडे सेव करें (सिर्फ तब जब नया ग्राहक बर्थडे डाले)
+      if (birthday) {
+        const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
+        if (!hasBirthday) {
+          existingSpecialDates.push({ type: 'Birthday', date: birthday, name: cleanName });
+        }
       }
 
       await setDoc(userRef, { 
