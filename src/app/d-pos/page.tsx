@@ -4533,16 +4533,27 @@ export default function BbCafeDesktopPos() {
                           
                           <div className="flex gap-1.5 items-center relative overflow-visible">
                             
-                            {/* 👉 NEW: Smart WhatsApp Dropdown Button */}
-                            <div className="relative group flex-1">
-                              <button className="w-full py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-colors">
+                            {/* 👉 NEW: Click-to-open WhatsApp Dropdown Button */}
+                            <div className="relative flex-1">
+                              <button 
+                                onClick={() => setActiveWaDropdown(activeWaDropdown === cust.id ? null : cust.id)}
+                                className="w-full py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-colors"
+                              >
                                 <SafeShare2 size={13} /> Message
                               </button>
-                              <div className="absolute bottom-full left-0 mb-1 hidden group-hover:flex flex-col bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-48 overflow-hidden z-[100]">
-                                 <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, we miss you at Bum Bum Cafe! ☕ Visit us soon and enjoy a 20% OFF using code COMEBACK20.`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🥺 We Miss You Offer</button>
-                                 <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Happy Birthday to your family member from Bum Bum Cafe! 🎂 Celebrate with us and get a surprise gift!`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🎂 Birthday Booking</button>
-                                 <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, your Loyalty Points Balance is ⭐ ${cust.points || 0}. Redeem them on your next visit!`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">⭐ Points Update</button>
-                              </div>
+                              
+                              {/* क्लिक करने पर खुलने वाला मेनू */}
+                              {activeWaDropdown === cust.id && (
+                                <div className="absolute bottom-full left-0 mb-1 flex flex-col bg-white dark:bg-neutral-800 border border-green-500/30 rounded-xl shadow-2xl w-48 overflow-hidden z-[100]">
+                                   <div className="bg-green-50 dark:bg-green-900/30 px-3 py-1.5 flex justify-between items-center border-b border-green-200 dark:border-green-800">
+                                     <span className="text-[9px] font-black uppercase text-green-700 dark:text-green-400">Select Message</span>
+                                     <button onClick={() => setActiveWaDropdown(null)} className="text-red-500 hover:text-red-700"><X size={12} /></button>
+                                   </div>
+                                   <button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, we miss you at Bum Bum Cafe! ☕ Visit us soon and enjoy a 20% OFF using code COMEBACK20.`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🥺 We Miss You Offer</button>
+                                   <button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Happy Birthday to your family member from Bum Bum Cafe! 🎂 Celebrate with us and get a surprise gift!`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🎂 Birthday Booking</button>
+                                   <button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, your Loyalty Points Balance is ⭐ ${cust.points || 0}. Redeem them on your next visit!`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">⭐ Points Update</button>
+                                </div>
+                              )}
                             </div>
 
                             {/* 🗑️ डिलीट बटन */}
