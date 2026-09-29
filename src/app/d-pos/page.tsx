@@ -3297,22 +3297,26 @@ export default function BbCafeDesktopPos() {
                         <div className="bg-white dark:bg-neutral-900 p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs space-y-1.5">
                           <div className="flex justify-between items-center font-bold">
                             <span className="text-neutral-900 dark:text-white">👤 {customerName}</span>
-                            <span className="text-amber-600 dark:text-amber-400 font-mono font-black">⭐ {customerPoints} Pts</span>
+                            <div className="flex flex-col items-end gap-0.5">
+                              {customerPoints > 0 && <span className="text-amber-600 dark:text-amber-400 font-mono font-black text-[11px]">⭐ {customerPoints} Loyalty</span>}
+                              {customerGamePoints > 0 && <span className="text-purple-600 dark:text-purple-400 font-mono font-black text-[11px]">🎰 {customerGamePoints} Game</span>}
+                              {(customerPoints === 0 && customerGamePoints === 0) && <span className="text-neutral-400 font-mono font-black text-[11px]">0 Pts</span>}
+                            </div>
                           </div>
                           {address && <p className="text-[10px] text-neutral-500 truncate">📍 {address}</p>}
 
-                          {customerPoints > 0 ? (
+                          {(customerPoints + customerGamePoints) > 0 ? (
                             <div className="pt-1.5 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                               <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                                रिडीम पॉइंट्स (1 Pt = ₹1):
+                                रिडीम (1 Pt = ₹1):
                               </span>
                               <div className="flex items-center gap-1.5">
                                 <input 
                                   type="number" 
                                   min={1} 
-                                  max={customerPoints}
+                                  max={customerPoints + customerGamePoints}
                                   value={pointsToRedeem || ''}
-                                  onChange={e => setPointsToRedeem(Math.min(Number(e.target.value), customerPoints))}
+                                  onChange={e => setPointsToRedeem(Math.min(Number(e.target.value), customerPoints + customerGamePoints))}
                                   placeholder="Pts"
                                   className="w-14 bg-neutral-100 dark:bg-neutral-800 border rounded p-1 text-center font-mono text-xs font-bold" 
                                 />
