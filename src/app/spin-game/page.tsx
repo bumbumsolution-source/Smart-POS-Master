@@ -58,7 +58,7 @@ export default function SurpriseArcadeGame() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [birthday, setBirthday] = useState(""); // 👉 NEW: Birthday State
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
-  
+  const [isReturningUser, setIsReturningUser] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
