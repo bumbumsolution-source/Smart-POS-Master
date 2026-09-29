@@ -27,7 +27,7 @@ export default function CatchGamePage() {
   const [birthday, setBirthday] = useState(""); // 👉 NEW: Birthday State
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   const [isLoading, setIsLoading] = useState(false);
-
+const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता लगाने के लिए कि पुराना ग्राहक है या नया
   // गेम स्टेट्स
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
