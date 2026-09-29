@@ -1486,6 +1486,7 @@ export default function BbCafeDesktopPos() {
     setCustomerPhone(cust.phone || cust.id);
     setCustomerName(cust.name || 'Valued Guest');
     setCustomerPoints(cust.points || 0);
+    setCustomerGamePoints(cust.gamePoints || 0); // 👉 NEW
     setAddress(cust.address || '');
     setCartCustSearchInput(`${cust.name} - ${cust.phone || ''}`); // इनपुट बॉक्स में नाम दिखेगा
     setShowCustDropdown(false);
