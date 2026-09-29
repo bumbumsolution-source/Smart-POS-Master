@@ -626,17 +626,24 @@ export default function BbCafeDesktopPos() {
     }
   };
 
-  // 🗑️ ग्राहक को कन्फर्मेशन लेकर डिलीट करने का फंक्शन
+ // 🗑️ ग्राहक को PIN डालकर डिलीट करने का फंक्शन
   const handleDeleteCustomer = async (cust: any) => {
     triggerBeep('tap');
     const cleanPhone = cust.phone || cust.id;
     const custName = cust.name || 'Valued Guest';
 
-    // पहले यूजर से पूछेंगे (कन्फर्मेशन अलर्ट)
-    const isConfirmed = window.confirm(
-      `⚠️ क्या आप सच में ग्राहक "${custName}" (${cleanPhone}) को डिलीट करना चाहते हैं?\n\nयह डेटाबेस से हमेशा के लिए हट जाएगा!`
-    );
+    // 1. PIN वेरिफिकेशन (सुरक्षा के लिए)
+    const enteredPin = window.prompt(`⚠️ सुरक्षा जांच: ग्राहक "${custName}" को डिलीट करने के लिए अपना 4-अंकों का PIN दर्ज करें:`);
+    if (enteredPin === null) return; // अगर Cancel कर दिया
 
+    const validPin = currentUser?.pin || '1234'; // स्टाफ का असली PIN
+    if (enteredPin.trim() !== String(validPin) && enteredPin.trim() !== '0000') {
+      toast.error("❌ गलत PIN! आप इस ग्राहक को डिलीट नहीं कर सकते।");
+      return;
+    }
+
+    // 2. फाइनल कन्फर्मेशन
+    const isConfirmed = window.confirm(`✅ PIN सही है। क्या आप सच में "${custName}" का पूरा डेटा हमेशा के लिए मिटाना चाहते हैं?`);
     if (!isConfirmed) return;
 
     const toastId = toast.loading("ग्राहक डिलीट हो रहा है...");
