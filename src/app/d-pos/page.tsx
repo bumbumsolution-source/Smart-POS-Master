@@ -2276,30 +2276,33 @@ export default function BbCafeDesktopPos() {
         let newSpent = prevSpent + finalTotal;
         let newVisits = prevVisits + 1;
 
-        if (isReEditingCompletedBill) {
-          // अगर पुराना बिल एडिट हुआ है
+       if (isReEditingCompletedBill) {
           const oldTotal = Number(activeEditingPreviousOrder.total) || 0;
           const oldEarned = Number(activeEditingPreviousOrder.pointsEarned) || 0;
           const oldRedeemed = Number(activeEditingPreviousOrder.pointsRedeemed) || 0;
 
-          // 👉 पुराने बिल के अमाउंट को हटाकर, नया अमाउंट जोड़ें
           const spentBeforeOldBill = Math.max(0, prevSpent - oldTotal);
           newSpent = spentBeforeOldBill + finalTotal;
-          
-          // 👉 SMART LOGIC: पुराने टोटल स्पेंड और नए टोटल स्पेंड के गैप के हिसाब से नए पॉइंट निकालें
           earned = Math.floor(newSpent / 100) - Math.floor(spentBeforeOldBill / 100);
 
+          // 👉 SMART REDEMPTION LOGIC: पहले गेम पॉइंट्स काटें
+          let gamePtsDeducted = Math.min(redeemed, prevGamePoints);
+          let loyPtsDeducted = redeemed - gamePtsDeducted;
+
           const rolledBackPoints = prevPoints - oldEarned + oldRedeemed;
-          remainingPts = Math.max(0, rolledBackPoints - redeemed) + Math.max(0, earned);
-          newVisits = prevVisits; // 👈 विज़िट दोबारा नहीं बढ़ेगी!
+          remainingPts = Math.max(0, rolledBackPoints - loyPtsDeducted) + Math.max(0, earned);
+          remainingGamePts = prevGamePoints - gamePtsDeducted; // 👉 NEW
+          newVisits = prevVisits; 
         } else {
-          // नया बिल है, तो पुराने खर्च में नया खर्च जोड़कर पॉइंट कैलकुलेट करें
           newSpent = prevSpent + finalTotal;
-          
-          // 👉 SMART LOGIC: (पिछला खर्च + नया खर्च) / 100 माइनस (पिछला खर्च) / 100
           earned = Math.floor(newSpent / 100) - Math.floor(prevSpent / 100);
           
-          remainingPts = Math.max(0, prevPoints - redeemed) + Math.max(0, earned);
+          // 👉 SMART REDEMPTION LOGIC: पहले गेम पॉइंट्स काटें
+          let gamePtsDeducted = Math.min(redeemed, prevGamePoints);
+          let loyPtsDeducted = redeemed - gamePtsDeducted;
+
+          remainingPts = Math.max(0, prevPoints - loyPtsDeducted) + Math.max(0, earned);
+          remainingGamePts = prevGamePoints - gamePtsDeducted; // 👉 NEW
           newVisits = prevVisits + 1;
         }
 
@@ -2307,6 +2310,7 @@ export default function BbCafeDesktopPos() {
           name: customerName || "Walk-in Guest", 
           phone: cleanPhone, 
           points: remainingPts, 
+          gamePoints: remainingGamePts, // 👉 NEW: बचे हुए गेम पॉइंट्स सेव करें
           totalSpent: newSpent,
           totalVisits: newVisits,
           lastBillNumber: billNumber, // 👉 NEW: सेव बिल नंबर (ऊपर बना हुआ इस्तेमाल करें)
