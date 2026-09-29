@@ -13,7 +13,7 @@ import {
   Trash2, UserPlus, Edit3, FileText, LayoutGrid, ChevronLeft, ChevronRight, 
   PackagePlus, BarChart3, HelpCircle, PauseCircle, PlayCircle, 
   Share2, Receipt, Send, Check, Plus, Eye,
-  ArrowLeftRight, History, ChevronDown, ChevronUp, BellRing, Tag, Ticket, IndianRupee
+  ArrowLeftRight, History, ChevronDown, ChevronUp, BellRing, Tag, Ticket, IndianRupee, Gamepad2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
