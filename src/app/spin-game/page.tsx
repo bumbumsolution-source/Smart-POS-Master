@@ -140,13 +140,13 @@ export default function SurpriseArcadeGame() {
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     const cleanPhone = phoneNumber.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    
+    // (बर्थडे की शर्त हटा दी गई है)
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
     const now = Date.now();
 
-    // 🛑 1. DEVICE LOCK CHECK (एक मोबाइल = एक नंबर)
+    // 🛑 1. DEVICE LOCK CHECK
     const deviceLastPlayed = localStorage.getItem("device_cooldown_time");
     const lockedPhone = localStorage.getItem("device_locked_phone");
 
@@ -190,17 +190,19 @@ export default function SurpriseArcadeGame() {
         }
       }
 
-      // 👉 NEW: चेक करें कि क्या इसका बर्थडे पहले से सेव है, अगर नहीं तो ऐड करें
-      const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
-      if (!hasBirthday) {
-        existingSpecialDates.push({ type: 'Birthday', date: birthday, name: cleanName });
+      // 👉 CRM के लिए बर्थडे सेव करें (सिर्फ तब जब नया ग्राहक बर्थडे डाले)
+      if (birthday) {
+        const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
+        if (!hasBirthday) {
+          existingSpecialDates.push({ type: 'Birthday', date: birthday, name: cleanName });
+        }
       }
 
       await setDoc(userRef, { 
         name: cleanName, 
         phone: cleanPhone, 
         table: tableNo,
-        specialDates: existingSpecialDates, // 👉 NEW: CRM के लिए बर्थडे सेव हो रहा है
+        specialDates: existingSpecialDates, 
         lastActive: serverTimestamp(),
         importSource: 'SpinGame'
       }, { merge: true });
@@ -219,7 +221,6 @@ export default function SurpriseArcadeGame() {
       setIsLoading(false);
     }
   };
-
   // डेटाबेस में रिजल्ट सेव करें और डिवाइस लॉक करें
   const generateResultAndSave = async () => {
     const rand = Math.random() * 100;
