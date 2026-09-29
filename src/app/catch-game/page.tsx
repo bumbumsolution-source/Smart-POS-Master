@@ -27,7 +27,7 @@ export default function CatchGamePage() {
   const [birthday, setBirthday] = useState(""); 
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   const [isLoading, setIsLoading] = useState(false);
-  const [isReturningUser, setIsReturningUser] = useState(false); // 👉 स्मार्ट ऑटो-फिल के लिए
+  const [isReturningUser, setIsReturningUser] = useState(false);
 
   // गेम स्टेट्स
   const [score, setScore] = useState(0);
@@ -36,6 +36,7 @@ export default function CatchGamePage() {
   const [items, setItems] = useState<any[]>([]);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [gameStartTime, setGameStartTime] = useState(0); // 👉 NEW: Anti-Cheat Timer
 
   // गेम लूप के लिए Refs
   const requestRef = useRef<number>();
@@ -55,15 +56,15 @@ export default function CatchGamePage() {
     }
   }, []);
 
-  // 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा और बर्थडे छुप जाएगा)
+  // स्मार्ट ऑटो-फिल
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
         if (snap.exists() && snap.data().name) {
-          setName(snap.data().name); // नाम ऑटो-फिल
-          setIsReturningUser(true); // पुराना ग्राहक है
+          setName(snap.data().name); 
+          setIsReturningUser(true);
         } else {
-          setIsReturningUser(false); // नया ग्राहक
+          setIsReturningUser(false); 
         }
       });
     } else {
@@ -115,7 +116,7 @@ export default function CatchGamePage() {
         }
       }
 
-      // 👉 CRM के लिए बर्थडे सेव करें (सिर्फ तब जब नया ग्राहक बर्थडे डाले)
+      // बर्थडे सेव करें
       if (birthday) {
         const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
         if (!hasBirthday) {
@@ -139,6 +140,7 @@ export default function CatchGamePage() {
       setScore(0);
       setLives(3);
       setItems([]);
+      setGameStartTime(Date.now()); // 👉 Timer On
       setStep("playing");
       toast.success(`गेम में आपका स्वागत है 🎮`);
 
@@ -157,17 +159,17 @@ export default function CatchGamePage() {
     setBasketX(Math.max(5, Math.min(95, x))); 
   };
 
-  // 3. मेन गेम लूप (गिरते हुए आइटम्स) - 🔥 HARD MODE 🔥
+  // 3. मेन गेम लूप (गिरते हुए आइटम्स) - 🔥 EXTREME HARD MODE 🔥
   useEffect(() => {
     if (step !== "playing") return;
 
     const gameLoop = (time: number) => {
-      // 👉 HARD MODE: स्पॉन स्पीड (आइटम्स जल्दी-जल्दी गिरेंगे)
-      const dropSpeed = Math.max(250, 700 - (score * 2.5)); 
+      // 1. स्पॉन स्पीड: आइटम्स बहुत जल्दी-जल्दी गिरेंगे (Max 150ms)
+      const dropSpeed = Math.max(150, 600 - (score * 3)); 
       
       if (time - lastItemTime.current > dropSpeed) {
-        // 👉 HARD MODE: बम गिरने के चांस (स्कोर बढ़ने के साथ बम 25% से बढ़कर 45% तक हो जाएंगे)
-        const bombChance = 0.25 + Math.min(0.20, score / 8000);
+        // 2. बमों की बारिश: बम 30% से शुरू होंगे और 60% तक जाएँगे
+        const bombChance = 0.30 + Math.min(0.30, score / 4000);
         const isBomb = Math.random() < bombChance; 
         
         const newItem = {
@@ -176,8 +178,8 @@ export default function CatchGamePage() {
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
           x: Math.random() * 90 + 5, 
           y: -10, 
-          // 👉 HARD MODE: गिरने की स्पीड (तेज़ी से गिरेंगे)
-          speed: Math.random() * 1.0 + 1.2 + (score / 600) 
+          // 3. तूफानी स्पीड: गिरने की स्पीड (Gravity) बहुत ज्यादा बढ़ा दी गई है
+          speed: Math.random() * 1.5 + 1.8 + (score / 350) 
         };
         setItems(prev => [...prev, newItem]);
         lastItemTime.current = time;
@@ -191,8 +193,8 @@ export default function CatchGamePage() {
         activeItems = activeItems.map(item => ({ ...item, y: item.y + item.speed })).filter(item => {
           if (item.y > 100) return false; 
           
-          // 👉 HARD MODE: बास्केट का कैच एरिया (Hitbox) 11 कर दिया है (अब ज्यादा सटीक पकड़ना होगा)
-          if (item.y > 85 && item.y < 95 && Math.abs(item.x - basketX) < 11) {
+          // 4. टाइट हिटबॉक्स: कैच एरिया 8 कर दिया है (अब बिल्कुल सटीक पकड़ना होगा)
+          if (item.y > 85 && item.y < 95 && Math.abs(item.x - basketX) < 8) {
             if (item.type === "bomb") {
               lostLife = true;
             } else {
@@ -222,23 +224,24 @@ export default function CatchGamePage() {
     return () => cancelAnimationFrame(requestRef.current!);
   }, [step, basketX, score]);
 
-  // 4. गेम खत्म होने पर पॉइंट्स सेव करना (Anti-Cheat + Game Points Merge Fix)
+  // 4. गेम खत्म होने पर पॉइंट्स सेव करना (Advanced Anti-Cheat + NEW REWARD RULES)
   const savePointsToDatabase = async () => {
-    if (isSaving) return; // 👉 FIX: Double Call Loophole
+    if (isSaving) return;
     setIsSaving(true);
     
-    // 👉 FIX: Anti-Cheat System (अगर कोई हैक करके स्कोर 5000 से ज्यादा कर दे)
-    if (score > 5000) {
+    // 👉 Advanced Anti-Cheat System (Time + Score Check)
+    const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
+    if (score > 0 && ((score / playTimeSeconds > 65) || score > 8000)) {
       setIsSaving(false);
-      return toast.error("⚠️ चीटिंग पकड़ी गई! (Abnormal Score Detected)", {
+      return toast.error("⚠️ चीटिंग पकड़ी गई! (Speed/Score Hack Detected)", {
         style: { background: "#ef4444", color: "#fff" }
       });
     }
 
-    // लॉजिक: मिनिमम 1000 स्कोर पर 10 रुपये मिलेंगे
+    // 👉 NEW LOGIC: 2000 स्कोर = 10 Points, 4000 स्कोर = 20 Points (Max 20)
     let pointsWon = 0;
-    if (score >= 2000) pointsWon = 20;
-    else if (score >= 1000) pointsWon = 10;
+    if (score >= 4000) pointsWon = 20;
+    else if (score >= 2000) pointsWon = 10;
     else pointsWon = 0;
 
     try {
@@ -248,35 +251,35 @@ export default function CatchGamePage() {
       let prevGamePoints = 0; 
       let todayGamePoints = 0;
       let lastGameDate = "";
-      const todayStr = new Date().toDateString(); // मोबाइल का लोकल टाइम
+      const todayStr = new Date().toDateString(); 
 
       if (userSnap.exists()) {
         const data = userSnap.data();
-        prevGamePoints = Number(data.gamePoints) || 0; // 👉 'points' की जगह 'gamePoints'
+        prevGamePoints = Number(data.gamePoints) || 0; 
         todayGamePoints = Number(data.todayGamePoints) || 0;
         lastGameDate = data.lastGameDate || "";
       }
 
-      // 👉 FIX: Time Spoofing (तारीख बदलने) से बचने के लिए चेक
+      // Time Spoofing (तारीख बदलने) से बचने के लिए चेक
       if (lastGameDate !== todayStr) {
         if (new Date(lastGameDate) > new Date(todayStr)) {
            todayGamePoints = 20; // यूज़र ने फ़ोन का टाइम पीछे किया है
         } else {
-           todayGamePoints = 0; // नॉर्मल नया दिन
+           todayGamePoints = 0; 
         }
       }
 
       const remainingLimit = Math.max(0, 20 - todayGamePoints);
       const finalPointsToAdd = Math.min(pointsWon, remainingLimit);
 
-      // अगर लिमिट खत्म हो गई है, तो बेवजह डेटाबेस अपडेट मत करो
+      // अगर लिमिट खत्म हो गई है
       if (pointsWon > 0 && finalPointsToAdd === 0) {
         toast("आप आज की लिमिट (20 पॉइंट्स) पार कर चुके हैं।", { icon: "⚠️" });
         setIsSaving(false);
         return;
       }
 
-      // डेटाबेस में अपडेट करना (Game Points)
+      // डेटाबेस अपडेट (Game Points Wallet)
       await setDoc(userRef, {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
@@ -291,8 +294,8 @@ export default function CatchGamePage() {
 
       if (finalPointsToAdd > 0) {
         toast.success(`बधाई हो! आपको ${finalPointsToAdd} पॉइंट्स मिले! 🎉`);
-      } else if (score < 1000) {
-        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 1000 स्कोर चाहिए)!");
+      } else if (score < 2000) {
+        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 2000 स्कोर चाहिए)!");
       }
 
     } catch (err) {
@@ -326,9 +329,14 @@ export default function CatchGamePage() {
           <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-5 relative z-10">
             <div className="text-5xl animate-bounce">🍔☕</div>
             <h2 className="text-xl font-black uppercase text-blue-400 tracking-wider">Catch & Win Game</h2>
+            
+            {/* 👉 NEW: UI Rule Update */}
             <p className="text-xs text-neutral-400 font-bold leading-relaxed">
               बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
-              <span className="text-green-400">1000 Score = 10 Points (₹10 छूट)</span>
+              <span className="text-green-400 inline-block mt-1 bg-green-900/30 px-2 py-1 rounded-lg border border-green-500/20">
+                2000 Score = 10 Points (₹10)<br/>
+                4000 Score = 20 Points (₹20)
+              </span>
             </p>
             
             <form onSubmit={handleStartGame} className="space-y-3 pt-2">
@@ -350,7 +358,6 @@ export default function CatchGamePage() {
                 className="w-full bg-[#0f172a] border-2 border-blue-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-blue-400" 
               />
               
-              {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
               {!isReturningUser && (
                 <div className="relative mt-2">
                   <span className="absolute -top-2 left-4 bg-[#1e293b] px-1 text-[10px] text-pink-400 font-bold">जन्मदिन (Optional) 🎂</span>
@@ -442,12 +449,12 @@ export default function CatchGamePage() {
           ) : (
             <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
                <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
-               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 Points) जीतने के लिए 1000 स्कोर बनाना ज़रूरी है!</p>
+               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 Points) जीतने के लिए 2000 स्कोर बनाना ज़रूरी है!</p>
             </div>
           )}
 
           <div className="pt-4">
-            <button onClick={() => { setScore(0); setLives(3); setItems([]); setStep("playing"); }} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm uppercase rounded-xl tracking-wider transition-all shadow-lg shadow-blue-600/30">
+            <button onClick={() => { setScore(0); setLives(3); setItems([]); setGameStartTime(Date.now()); setStep("playing"); }} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm uppercase rounded-xl tracking-wider transition-all shadow-lg shadow-blue-600/30">
                🔁 फिर से खेलें (Play Again)
             </button>
           </div>
