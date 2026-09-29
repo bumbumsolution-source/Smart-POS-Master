@@ -4464,151 +4464,114 @@ export default function BbCafeDesktopPos() {
                     ) : (
                       paginatedCustomers.map(cust => (
                         <div key={cust.id} className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-2xl flex flex-col justify-between shadow-sm hover:border-orange-500 transition-colors gap-3">
-                        <div>
-                          <div className="flex justify-between items-start mb-2">
-                             <div>
-  <div className="flex items-center gap-2 flex-wrap">
-    <p className="font-black text-sm text-neutral-900 dark:text-white uppercase">{cust.name || 'Valued Guest'}</p>
-    
-    {/* 👉 NEW: ऑटोमैटिक VIP / Regular / Sleeping Tags */}
-    {(() => {
-      let tag = ''; let tagClass = '';
-      const spent = cust.totalSpent || 0;
-      const visits = cust.totalVisits || 0;
-      const daysSinceActive = cust.lastActive ? Math.floor((Date.now() - (cust.lastActive.toDate ? cust.lastActive.toDate().getTime() : new Date(cust.lastActive).getTime())) / (1000 * 3600 * 24)) : 0;
-      
-      if (daysSinceActive > 30) { tag = '😴 Sleeping'; tagClass = 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-700'; }
-      else if (spent >= 5000 || visits >= 10) { tag = '👑 VIP Guest'; tagClass = 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700/50'; }
-      else if (spent >= 2000) { tag = '🌟 Regular'; tagClass = 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700/50'; }
-      
-      return tag ? <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm border ${tagClass}`}>{tag}</span> : null;
-    })()}
+                          <div>
+                            <div className="flex justify-between items-start mb-2">
+                               <div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-black text-sm text-neutral-900 dark:text-white uppercase">{cust.name || 'Valued Guest'}</p>
+                                    
+                                    {/* 👉 NEW: ऑटोमैटिक VIP / Regular / Sleeping Tags */}
+                                    {(() => {
+                                      let tag = ''; let tagClass = '';
+                                      const spent = cust.totalSpent || 0;
+                                      const visits = cust.totalVisits || 0;
+                                      const daysSinceActive = cust.lastActive ? Math.floor((Date.now() - (cust.lastActive.toDate ? cust.lastActive.toDate().getTime() : new Date(cust.lastActive).getTime())) / (1000 * 3600 * 24)) : 0;
+                                      
+                                      if (daysSinceActive > 30) { tag = '😴 Sleeping'; tagClass = 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-700'; }
+                                      else if (spent >= 5000 || visits >= 10) { tag = '👑 VIP Guest'; tagClass = 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700/50'; }
+                                      else if (spent >= 2000) { tag = '🌟 Regular'; tagClass = 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700/50'; }
+                                      
+                                      return tag ? <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm border ${tagClass}`}>{tag}</span> : null;
+                                    })()}
 
-    {cust.importSource === 'SpinGame' && (
-      <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/30 text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm">
-        🎰 Game
-      </span>
-    )}
-  </div>
-  <p className="text-xs font-mono text-neutral-500 mt-0.5">📞 {cust.phone || cust.id}</p>
-</div>
-                             <span className="bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 px-2 py-1 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 shadow-sm shrink-0">
-                               ⭐ {cust.points || 0} Pts
-                             </span>
-                          </div>
-                          
-                          {/* 👉 NEW: Customer Note Display */}
-                          {cust.note && (
-                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 px-2 py-1.5 rounded-lg mb-2">
-                              <p className="text-[10px] font-bold text-yellow-800 dark:text-yellow-400">📝 Note: {cust.note}</p>
+                                    {cust.importSource === 'SpinGame' && (
+                                      <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/30 text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm">
+                                        🎰 Game
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs font-mono text-neutral-500 mt-0.5">📞 {cust.phone || cust.id}</p>
+                               </div>
+                               <span className="bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 px-2 py-1 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 shadow-sm shrink-0">
+                                 ⭐ {cust.points || 0} Pts
+                               </span>
                             </div>
-                          )}
+                            
+                            {/* 👉 NEW: Customer Note Display */}
+                            {cust.note && (
+                              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 px-2 py-1.5 rounded-lg mb-2">
+                                <p className="text-[10px] font-bold text-yellow-800 dark:text-yellow-400">📝 Note: {cust.note}</p>
+                              </div>
+                            )}
 
-                          {cust.address ? (
-                            <p className="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">📍 {cust.address}</p>
-                          ) : (
-                            <p className="text-[11px] text-neutral-400 italic mb-2">No address provided</p>
-                          )}
-                         <div className="flex justify-between pt-2 border-t border-dashed border-neutral-200 dark:border-neutral-800">
-                             <div>
-                               <p className="text-[9px] font-black uppercase text-neutral-500">Spent / Visits</p>
-                               <p className="text-sm font-mono font-black text-green-600 dark:text-green-500">₹{cust.totalSpent || 0} <span className="text-xs text-neutral-400">({cust.totalVisits || 0})</span></p>
-                             </div>
-                             <div className="text-right">
-                               <p className="text-[9px] font-black uppercase text-neutral-500">Last Bill (पिछला बिल)</p>
-                               <p className="text-sm font-mono font-black text-blue-600 dark:text-blue-400">
-                                 {cust.lastBillNumber ? `#${cust.lastBillNumber} - ₹${cust.lastBillAmount}` : 'N/A'}
-                               </p>
-                             </div>
+                            {cust.address ? (
+                              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">📍 {cust.address}</p>
+                            ) : (
+                              <p className="text-[11px] text-neutral-400 italic mb-2">No address provided</p>
+                            )}
+                            <div className="flex justify-between pt-2 border-t border-dashed border-neutral-200 dark:border-neutral-800">
+                               <div>
+                                 <p className="text-[9px] font-black uppercase text-neutral-500">Spent / Visits</p>
+                                 <p className="text-sm font-mono font-black text-green-600 dark:text-green-500">₹{cust.totalSpent || 0} <span className="text-xs text-neutral-400">({cust.totalVisits || 0})</span></p>
+                               </div>
+                               <div className="text-right">
+                                 <p className="text-[9px] font-black uppercase text-neutral-500">Last Bill (पिछला बिल)</p>
+                                 <p className="text-sm font-mono font-black text-blue-600 dark:text-blue-400">
+                                   {cust.lastBillNumber ? `#${cust.lastBillNumber} - ₹${cust.lastBillAmount}` : 'N/A'}
+                                 </p>
+                               </div>
+                            </div>
                           </div>
-                          </div>
-                        
-                        <div className="flex gap-1.5 items-center relative overflow-visible">
                           
-                          {/* 👉 NEW: Smart WhatsApp Dropdown Button */}
-                          <div className="relative group flex-1">
-                            <button className="w-full py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-colors">
-                              <SafeShare2 size={13} /> Message
+                          <div className="flex gap-1.5 items-center relative overflow-visible">
+                            
+                            {/* 👉 NEW: Smart WhatsApp Dropdown Button */}
+                            <div className="relative group flex-1">
+                              <button className="w-full py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-colors">
+                                <SafeShare2 size={13} /> Message
+                              </button>
+                              <div className="absolute bottom-full left-0 mb-1 hidden group-hover:flex flex-col bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-48 overflow-hidden z-[100]">
+                                 <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, we miss you at Bum Bum Cafe! ☕ Visit us soon and enjoy a 20% OFF using code COMEBACK20.`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🥺 We Miss You Offer</button>
+                                 <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Happy Birthday to your family member from Bum Bum Cafe! 🎂 Celebrate with us and get a surprise gift!`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🎂 Birthday Booking</button>
+                                 <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, your Loyalty Points Balance is ⭐ ${cust.points || 0}. Redeem them on your next visit!`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">⭐ Points Update</button>
+                              </div>
+                            </div>
+
+                            {/* 🗑️ डिलीट बटन */}
+                            <button 
+                              type="button"
+                              onClick={() => handleDeleteCustomer(cust)} 
+                              className="p-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-600 hover:text-white text-red-600 border border-red-200 dark:border-red-800/40 rounded-xl transition-all shrink-0 shadow-sm"
+                              title="ग्राहक को डिलीट करें"
+                            >
+                               <SafeTrash2 size={14} />
                             </button>
-                            <div className="absolute bottom-full left-0 mb-1 hidden group-hover:flex flex-col bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-48 overflow-hidden z-[100]">
-                               <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, we miss you at Bum Bum Cafe! ☕ Visit us soon and enjoy a 20% OFF using code COMEBACK20.`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🥺 We Miss You Offer</button>
-                               <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Happy Birthday to your family member from Bum Bum Cafe! 🎂 Celebrate with us and get a surprise gift!`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🎂 Birthday Booking</button>
-                               <button onClick={() => window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, your Loyalty Points Balance is ⭐ ${cust.points || 0}. Redeem them on your next visit!`, '_blank')} className="px-3 py-2 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">⭐ Points Update</button>
-                            </div>
-                          </div>
 
-                          {/* 1. Edit Button */}
-    {/* यह लाइन गेम से आये कस्टमर को 🎰 Game का टैग दे देगी */}
-    {cust.importSource === 'SpinGame' && (
-      <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/30 text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm">
-        🎰 Game
-      </span>
-    )}
-  </div>
-  <p className="text-xs font-mono text-neutral-500 mt-0.5">📞 {cust.phone || cust.id}</p>
-</div>
-                             <span className="bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 px-2 py-1 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 shadow-sm">
-                               ⭐ {cust.points || 0} Pts
-                             </span>
-                          </div>
-                          
-                          {cust.address ? (
-                            <p className="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">📍 {cust.address}</p>
-                          ) : (
-                            <p className="text-[11px] text-neutral-400 italic mb-2">No address provided</p>
-                          )}
-                         <div className="flex justify-between pt-2 border-t border-dashed border-neutral-200 dark:border-neutral-800">
-                             <div>
-                               <p className="text-[9px] font-black uppercase text-neutral-500">Spent / Visits</p>
-                               <p className="text-sm font-mono font-black text-green-600 dark:text-green-500">₹{cust.totalSpent || 0} <span className="text-xs text-neutral-400">({cust.totalVisits || 0})</span></p>
-                             </div>
-                             <div className="text-right">
-                               <p className="text-[9px] font-black uppercase text-neutral-500">Last Bill (पिछला बिल)</p>
-                               <p className="text-sm font-mono font-black text-blue-600 dark:text-blue-400">
-                                 {cust.lastBillNumber ? `#${cust.lastBillNumber} - ₹${cust.lastBillAmount}` : 'N/A'}
-                               </p>
-                             </div>
-                          </div>
-                          </div>
-                        
-                        <div className="flex gap-1.5 items-center">
-                          {/* 🗑️ डिलीट बटन */}
-                          <button 
-                            type="button"
-                            onClick={() => handleDeleteCustomer(cust)} 
-                            className="p-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-600 hover:text-white text-red-600 border border-red-200 dark:border-red-800/40 rounded-xl transition-all shrink-0 shadow-sm"
-                            title="ग्राहक को डिलीट करें"
-                          >
-                             <SafeTrash2 size={14} />
-                          </button>
+                            {/* 1. Edit Button */}
+                            <button onClick={() => openEditCustomerModal(cust)} className="flex-1 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-white border border-neutral-300 dark:border-neutral-700 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-colors">
+                               <SafeEdit3 size={13} /> Edit
+                            </button>
+                            
+                            {/* 2. History Button */}
+                            <button onClick={() => handleViewCustomerHistory(cust)} className="flex-1 py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-colors">
+                               <History size={14} /> History
+                            </button>
 
-                          {/* 1. Edit Button */}
-                          <button onClick={() => openEditCustomerModal(cust)} className="flex-1 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-white border border-neutral-300 dark:border-neutral-700 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-colors">
-                             <SafeEdit3 size={13} /> Edit
-                          </button>
-                          
-                          {/* 2. History Button */}
-                          <button onClick={() => handleViewCustomerHistory(cust)} className="flex-1 py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-colors">
-                             <History size={14} /> History
-                          </button>
-
-                          {/* 3. New Order Button (नया बटन जो डायरेक्ट कार्ट में ले जाएगा) */}
-                          <button onClick={() => {
-                             triggerBeep('tap');
-                             setCustomerPhone(cust.phone || cust.id);
-                             setCustomerName(cust.name || 'Valued Guest');
-                             setCustomerPoints(cust.points || 0);
-                             setAddress(cust.address || '');
-                             
-                             setActiveTab('billing');
-                             toast.success(`${cust.name} का आर्डर शुरू किया गया! 🛒`);
-                             
-                             setTimeout(() => searchInputRef.current?.focus(), 80);
-                          }} className="flex-1 py-2 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-colors">
-                             <SafeShoppingBag size={14} /> Order
-                          </button>
+                            {/* 3. New Order Button */}
+                            <button onClick={() => {
+                               triggerBeep('tap');
+                               setCustomerPhone(cust.phone || cust.id);
+                               setCustomerName(cust.name || 'Valued Guest');
+                               setCustomerPoints(cust.points || 0);
+                               setAddress(cust.address || '');
+                               setActiveTab('billing');
+                               toast.success(`${cust.name} का आर्डर शुरू किया गया! 🛒`);
+                               setTimeout(() => searchInputRef.current?.focus(), 80);
+                            }} className="flex-1 py-2 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-colors">
+                               <SafeShoppingBag size={14} /> Order
+                            </button>
+                          </div>
                         </div>
-                      </div>
                       ))
                     )}
                   </div>
