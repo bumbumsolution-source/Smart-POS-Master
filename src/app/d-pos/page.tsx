@@ -500,6 +500,9 @@ export default function BbCafeDesktopPos() {
   const [custFormPhone, setCustFormPhone] = useState('');
   const [custFormAddress, setCustFormAddress] = useState('');
   const [custFormPoints, setCustFormPoints] = useState<number | ''>(0);
+  // 👉 NEW CRM STATES (नोट्स और फॅमिली डेट्स के लिए)
+  const [custFormNote, setCustFormNote] = useState('');
+  const [custFormSpecialDates, setCustFormSpecialDates] = useState<{type: string, date: string, name: string}[]>([]);
 // NEW: CUSTOMER HISTORY STATES & FUNCTION
   const [isCustHistoryModalOpen, setIsCustHistoryModalOpen] = useState(false);
   const [selectedHistoryCust, setSelectedHistoryCust] = useState<any>(null);
