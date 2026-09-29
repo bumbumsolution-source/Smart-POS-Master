@@ -36,7 +36,7 @@ export default function CatchGamePage() {
   const [items, setItems] = useState<any[]>([]);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [gameStartTime, setGameStartTime] = useState(0); // 👉 NEW: Anti-Cheat Timer
+  const [gameStartTime, setGameStartTime] = useState(0); // 👉 Anti-Cheat Timer
 
   // गेम लूप के लिए Refs
   const requestRef = useRef<number>();
@@ -140,7 +140,7 @@ export default function CatchGamePage() {
       setScore(0);
       setLives(3);
       setItems([]);
-      setGameStartTime(Date.now()); // 👉 Timer On
+      setGameStartTime(Date.now()); // 👉 Timer On (For Anti-Cheat)
       setStep("playing");
       toast.success(`गेम में आपका स्वागत है 🎮`);
 
@@ -279,11 +279,12 @@ export default function CatchGamePage() {
         return;
       }
 
-      // डेटाबेस अपडेट (Game Points Wallet)
+      // 👉 डेटाबेस अपडेट (Game Points Wallet + POS Score)
       await setDoc(userRef, {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
+        lastCatchGameScore: score // POS में दिखाने के लिए
       }, { merge: true });
 
       setEarnedPoints(finalPointsToAdd);
@@ -292,8 +293,13 @@ export default function CatchGamePage() {
       localStorage.setItem("catch_game_cooldown", Date.now().toString());
       localStorage.setItem("catch_game_locked_phone", phone);
 
+      // 👉 Smart Messages
       if (finalPointsToAdd > 0) {
-        toast.success(`बधाई हो! आपको ${finalPointsToAdd} पॉइंट्स मिले! 🎉`);
+        if (pointsWon > finalPointsToAdd) {
+           toast.success(`🎉 आपको बचे हुए ${finalPointsToAdd} पॉइंट्स मिले! (आपकी आज की 20 पॉइंट्स की लिमिट पूरी हो गई है)`);
+        } else {
+           toast.success(`बधाई हो! आपको ${finalPointsToAdd} पॉइंट्स मिले! 🎉`);
+        }
       } else if (score < 2000) {
         toast.error("टारगेट पूरा नहीं हुआ (कम से कम 2000 स्कोर चाहिए)!");
       }
