@@ -285,8 +285,13 @@ export default function SurpriseArcadeGame() {
             
             <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #f1c40f", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
             
-            {/* 👉 NEW: Birthday Input */}
-            <div style={{ position: "relative" }}>
+           {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
+            {!isReturningUser && (
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", top: "-8px", left: "15px", backgroundColor: "#1e293b", padding: "0 5px", fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>जन्मदिन (Optional) 🎂</span>
+                <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "2px solid #ec4899", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none", boxSizing: "border-box" }} />
+              </div>
+            )}
               <span style={{ position: "absolute", top: "-8px", left: "15px", backgroundColor: "#1e293b", padding: "0 5px", fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>जन्मदिन (Birthday) 🎂</span>
               <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} required style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "2px solid #ec4899", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none", boxSizing: "border-box" }} />
             </div>
