@@ -531,6 +531,52 @@ export default function BbCafeDesktopPos() {
 
     return { favoriteItems, totalEarned, totalRedeemed };
   }, [custHistoryList]);
+  // 👉 NEW: Upcoming Special Dates Dashboard Logic (अगले 7 दिनों के बर्थडे/एनिवर्सरी)
+  const upcomingEvents = useMemo(() => {
+    const today = new Date();
+    const events: any[] = [];
+
+    allCustomers.forEach(cust => {
+      if (cust.specialDates && Array.isArray(cust.specialDates)) {
+        cust.specialDates.forEach(sd => {
+          if (!sd.date) return;
+          const [year, month, day] = sd.date.split('-');
+          if (!month || !day) return;
+
+          // इस साल की इवेंट डेट बनाएँ
+          let eventDateThisYear = new Date(today.getFullYear(), parseInt(month) - 1, parseInt(day));
+
+          // आज रात 12 बजे का समय लें ताकि दिन का सही अंतर निकले
+          const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          let diffTime = eventDateThisYear.getTime() - todayMidnight.getTime();
+          let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          // अगर इस साल की तारीख बीत चुकी है, तो अगले साल का चेक करें
+          if (diffDays < 0) {
+            eventDateThisYear = new Date(today.getFullYear() + 1, parseInt(month) - 1, parseInt(day));
+            diffTime = eventDateThisYear.getTime() - todayMidnight.getTime();
+            diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          }
+
+          // अगर इवेंट आज से लेकर अगले 7 दिन के अंदर है
+          if (diffDays >= 0 && diffDays <= 7) {
+            events.push({
+              customerId: cust.id || cust.phone,
+              customerName: cust.name,
+              customerPhone: cust.phone || cust.id,
+              eventType: sd.type, // Birthday या Anniversary
+              eventName: sd.name || cust.name, // किसका है (बच्चे का या खुद का)
+              eventDate: `${day}/${month}`,
+              daysLeft: diffDays
+            });
+          }
+        });
+      }
+    });
+
+    // जो सबसे पास है, वो सबसे पहले दिखेगा
+    return events.sort((a, b) => a.daysLeft - b.daysLeft);
+  }, [allCustomers]);
  const handleViewCustomerHistory = async (cust: any) => {
     triggerBeep('tap');
     setSelectedHistoryCust(cust);
