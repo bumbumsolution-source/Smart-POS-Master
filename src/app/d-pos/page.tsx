@@ -1506,6 +1506,7 @@ export default function BbCafeDesktopPos() {
         const data = snap.data();
         setCustomerName(data.name || 'Valued Guest');
         setCustomerPoints(Number(data.points) || 0);
+        setCustomerGamePoints(Number(data.gamePoints) || 0); // 👉 NEW
         setAddress(data.address || '');
         setShowNewCustForm(false);
         toast.success(`ग्राहक मिला: ${data.name} (${data.points || 0} Pts)`);
