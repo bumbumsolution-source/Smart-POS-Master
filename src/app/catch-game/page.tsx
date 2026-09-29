@@ -229,14 +229,14 @@ export default function CatchGamePage() {
       const userRef = doc(db, "customer_points", phone);
       const userSnap = await getDoc(userRef);
       
-      let prevPoints = 0;
+      let prevGamePoints = 0; // 👉 NEW: सिर्फ गेम पॉइंट्स पढ़ रहे हैं
       let todayGamePoints = 0;
       let lastGameDate = "";
       const todayStr = new Date().toDateString();
 
       if (userSnap.exists()) {
         const data = userSnap.data();
-        prevPoints = Number(data.points) || 0;
+        prevGamePoints = Number(data.gamePoints) || 0; // 👉 'points' की जगह 'gamePoints'
         todayGamePoints = Number(data.todayGamePoints) || 0;
         lastGameDate = data.lastGameDate || "";
       }
@@ -249,7 +249,7 @@ export default function CatchGamePage() {
       const finalPointsToAdd = Math.min(pointsWon, remainingLimit);
 
       await setDoc(userRef, {
-        points: prevPoints + finalPointsToAdd,
+        gamePoints: prevGamePoints + finalPointsToAdd, // 👉 NEW: गेम पॉइंट्स अलग से सेव हो रहे हैं
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
       }, { merge: true });
