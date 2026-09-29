@@ -4950,59 +4950,138 @@ export default function BbCafeDesktopPos() {
           </div>
         )}
       </AnimatePresence>
-      {/* POPUP: CUSTOMER ORDER HISTORY */}
+      
+      {/* POPUP: CUSTOMER ORDER HISTORY (SMART CRM) */}
       <AnimatePresence>
         {isCustHistoryModalOpen && selectedHistoryCust && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 max-w-2xl w-full rounded-3xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 max-w-2xl w-full rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+              
+              {/* Header */}
               <div className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 pb-3 shrink-0">
                 <div>
                   <h3 className="font-black text-sm uppercase text-blue-600 flex items-center gap-2">
-                    <History size={18} /> Order History: {selectedHistoryCust.name}
+                    <History size={18} /> Customer Profile & History
                   </h3>
-                  <p className="text-[10px] text-neutral-500 font-mono mt-1">📞 {selectedHistoryCust.phone || selectedHistoryCust.id} | ⭐ {selectedHistoryCust.points || 0} Points</p>
+                  <p className="text-[11px] text-neutral-900 dark:text-white font-black mt-1">
+                    👤 {selectedHistoryCust.name} <span className="text-neutral-500 font-mono">({selectedHistoryCust.phone || selectedHistoryCust.id})</span>
+                  </p>
                 </div>
-                <button onClick={() => setIsCustHistoryModalOpen(false)} className="text-neutral-500 hover:text-black dark:hover:text-white transition-colors">
+                <button onClick={() => setIsCustHistoryModalOpen(false)} className="text-neutral-500 hover:text-black dark:hover:text-white transition-colors bg-neutral-100 dark:bg-neutral-800 p-2 rounded-full">
                   <X size={20} />
                 </button>
               </div>
               
-              <div className="space-y-3 overflow-y-auto pr-1 flex-1">
+              <div className="overflow-y-auto pr-1 flex-1 space-y-4">
                 {isCustHistoryLoading ? (
                   <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
-                ) : custHistoryList.length === 0 ? (
-                  <div className="text-center py-10">
-                     <p className="text-xs text-neutral-500 font-bold">इस ग्राहक का कोई पुराना बिल नहीं मिला।</p>
-                  </div>
                 ) : (
-                  custHistoryList.map(order => {
-                    const orderDate = order.timestamp?.toDate ? order.timestamp.toDate() : new Date(order.timestamp || Date.now());
-                    return (
-                      <div key={order.id} className="bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 p-3 rounded-2xl flex flex-col gap-2 shadow-sm hover:border-blue-500 transition-colors">
-                        <div className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-700 pb-2">
-                          <div className="flex gap-2 items-center">
-                            <span className="font-mono font-black text-blue-600 dark:text-blue-400 text-sm">Bill #{order.billNumber}</span>
-                            <span className="text-[10px] font-bold text-neutral-500 bg-neutral-200 dark:bg-neutral-700 px-2 py-0.5 rounded uppercase">{order.fulfillmentType || 'pickup'}</span>
+                  <>
+                    {/* 📊 SMART INSIGHTS SECTION */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
+                      
+                      {/* Loyalty & Game Box */}
+                      <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 p-3 rounded-2xl flex flex-col justify-between">
+                        <div>
+                          <p className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-500 mb-1">⭐ Loyalty Analytics</p>
+                          <div className="flex justify-between items-center text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                            <span>Current Balance:</span>
+                            <span className="font-black text-amber-600 text-sm">{selectedHistoryCust.points || 0} Pts</span>
                           </div>
-                          <span className="text-[10px] font-bold text-neutral-500">{orderDate.toLocaleString()}</span>
+                          {customerInsights && (
+                            <>
+                              <div className="flex justify-between items-center text-[10px] mt-1">
+                                <span className="text-green-600 dark:text-green-400">Total Earned Lifetime:</span>
+                                <span>+{customerInsights.totalEarned} Pts</span>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-red-500 dark:text-red-400">Total Redeemed Lifetime:</span>
+                                <span>-{customerInsights.totalRedeemed} Pts</span>
+                              </div>
+                            </>
+                          )}
                         </div>
                         
-                        <div className="flex justify-between items-end">
-                          <div className="text-[11px] text-neutral-600 dark:text-neutral-300 font-medium space-y-0.5">
-                            {order.items?.map((it: any, i: number) => (
-                              <p key={i}>• {it.name} <span className="font-bold text-orange-600 dark:text-orange-400">x{it.quantity}</span></p>
+                        {/* Game Status */}
+                        {selectedHistoryCust.lastPrizeWon && (
+                          <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
+                             <p className="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">🎰 Spin Game Record</p>
+                             <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">Won: <span className="text-green-600">{selectedHistoryCust.lastPrizeWon}</span></p>
+                             <p className="text-[9px] text-neutral-500">Status: {selectedHistoryCust.voucherClaimed ? 'Claimed ✅' : 'Not Claimed Yet 🟡'}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Favorite Items Box */}
+                      <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50 p-3 rounded-2xl">
+                        <p className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-500 mb-2">❤️ Most Purchased Items (फेवरेट)</p>
+                        {customerInsights?.favoriteItems?.length ? (
+                          <div className="space-y-1.5">
+                            {customerInsights.favoriteItems.map(([itemName, qty]: any, idx: number) => (
+                              <div key={idx} className="flex justify-between items-center bg-white dark:bg-neutral-800 px-2 py-1.5 rounded-lg shadow-sm border border-blue-100 dark:border-neutral-700">
+                                <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate pr-2">#{idx+1} {itemName}</span>
+                                <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1.5 rounded">Ordered {qty}x</span>
+                              </div>
                             ))}
                           </div>
-                          <div className="text-right">
-                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded block mb-1 ${order.paymentMethod === 'upi' ? 'bg-blue-500/15 text-blue-600' : order.paymentMethod === 'due' ? 'bg-red-500/15 text-red-600' : 'bg-green-500/15 text-green-600'}`}>
-                              {order.paymentMethod || 'cash'}
-                            </span>
-                            <span className="font-mono font-black text-green-600 dark:text-green-400 text-base">₹{order.total}</span>
-                          </div>
-                        </div>
+                        ) : (
+                          <p className="text-xs text-neutral-500 italic">Not enough data yet.</p>
+                        )}
                       </div>
-                    );
-                  })
+                    </div>
+
+                    {/* 🛍️ BILLING HISTORY LIST */}
+                    <div className="pt-2">
+                      <h4 className="text-[10px] font-black uppercase text-neutral-500 mb-2">🛍️ Past Bills ({custHistoryList.length} Found)</h4>
+                      {custHistoryList.length === 0 ? (
+                        <div className="text-center py-10 border border-dashed rounded-xl border-neutral-300 dark:border-neutral-700">
+                           <p className="text-xs text-neutral-500 font-bold">इस ग्राहक का कोई पुराना बिल नहीं मिला।</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {custHistoryList.map((order, index) => {
+                            const orderDate = order.timestamp?.toDate ? order.timestamp.toDate() : new Date(order.timestamp || Date.now());
+                            return (
+                              <div key={order.id} className="bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-700/50 p-3 rounded-2xl flex flex-col gap-2 hover:border-blue-400 transition-colors">
+                                
+                                <div className="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-700 pb-2">
+                                  <div className="flex gap-2 items-center">
+                                    <span className="font-mono font-black text-blue-600 dark:text-blue-400 text-sm">Bill #{order.billNumber}</span>
+                                    <span className="text-[9px] font-black text-neutral-500 bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded uppercase">{order.fulfillmentType || 'pickup'}</span>
+                                    <span className="text-[9px] font-bold text-neutral-400">{orderDate.toLocaleString()}</span>
+                                  </div>
+                                  
+                                  {/* Point Transaction for this Bill */}
+                                  <div className="flex gap-1.5">
+                                    {order.pointsEarned > 0 && <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] font-black px-1.5 py-0.5 rounded border border-green-200 dark:border-green-800">+ {order.pointsEarned} Pts</span>}
+                                    {order.pointsRedeemed > 0 && <span className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[9px] font-black px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800">- {order.pointsRedeemed} Pts</span>}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex justify-between items-end">
+                                  <div className="text-[11px] text-neutral-600 dark:text-neutral-300 font-medium space-y-0.5">
+                                    {order.items?.map((it: any, i: number) => (
+                                      <p key={i}>• {it.name} <span className="font-bold text-orange-600 dark:text-orange-400">x{it.quantity}</span></p>
+                                    ))}
+                                    {order.promoCodeUsed && (
+                                      <p className="text-orange-500 mt-1 font-bold text-[10px]">🎟️ Coupon: {order.promoCodeUsed}</p>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded block mb-1 ${order.paymentMethod === 'upi' ? 'bg-blue-500/15 text-blue-600' : order.paymentMethod === 'due' ? 'bg-red-500/15 text-red-600' : 'bg-green-500/15 text-green-600'}`}>
+                                      {order.paymentMethod || 'cash'}
+                                    </span>
+                                    <span className="font-mono font-black text-green-600 dark:text-green-400 text-base">₹{order.total}</span>
+                                  </div>
+                                </div>
+
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </motion.div>
