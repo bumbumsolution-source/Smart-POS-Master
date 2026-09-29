@@ -75,7 +75,7 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     const cleanPhone = phone.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    if (!birthday) return toast.error("कृपया अपनी जन्मतिथि (Birthday) चुनें!");
+    
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
