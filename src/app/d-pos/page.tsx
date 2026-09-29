@@ -3204,8 +3204,9 @@ export default function BbCafeDesktopPos() {
                             <button onClick={() => { 
                               setCartCustSearchInput(''); 
                               setCustomerPhone(''); 
-                              setCustomerName(''); 
-                              setShowCustDropdown(false); 
+                             setCustomerName(''); 
+                              setCustomerGamePoints(0); // 👉 NEW
+                              setShowCustDropdown(false);
                               setShowNewCustForm(false); 
                               
                               // 👉 क्रॉस दबाते ही रिसेंट लिस्ट खोल दें
