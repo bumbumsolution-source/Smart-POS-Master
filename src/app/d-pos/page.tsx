@@ -527,7 +527,7 @@ export default function BbCafeDesktopPos() {
 
     return { favoriteItems, totalEarned, totalRedeemed };
   }, [custHistoryList]);
-  const handleViewCustomerHistory = async (cust: any) => {
+ const handleViewCustomerHistory = async (cust: any) => {
     triggerBeep('tap');
     setSelectedHistoryCust(cust);
     setIsCustHistoryModalOpen(true);
@@ -536,26 +536,38 @@ export default function BbCafeDesktopPos() {
     
     try {
       if (navigator.onLine) {
-        const cleanPhone = cust.phone || cust.id;
+        const cleanPhone = (cust.phone || cust.id).replace(/\D/g, '').slice(-10);
         
-       // Fetch recent 150 orders (ताकि ग्राहक की पूरी पसंद पता चल सके)
-        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"), limit(150));
-        const snap = await getDocs(q);
+        // 👉 स्मार्ट सर्च: सीधे ग्राहक के नंबर से पूरा डेटाबेस खंगालें (बिना किसी लिमिट के)
+        // हम दो तरह से सर्च करेंगे ( +91 के साथ और बिना +91 के ) ताकि कोई पुराना बिल छूटे नहीं!
+        const q1 = query(collection(db, "orders"), where("customerPhone", "==", `+91${cleanPhone}`));
+        const q2 = query(collection(db, "orders"), where("customerPhone", "==", cleanPhone));
         
-        // Filter those orders that match the customer's phone
-        const matchedOrders = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter((o: any) => String(o.customerPhone || '').includes(cleanPhone));
+        // दोनों को एक साथ डेटाबेस से लाएं
+        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
         
-        setCustHistoryList(matchedOrders);
+        // दोनों लिस्ट को मिला दें
+        let allMatchedOrders = [...snap1.docs, ...snap2.docs].map(d => ({ id: d.id, ...d.data() }));
+
+        // अगर कोई डुप्लीकेट बिल हो तो उसे हटा दें
+        const uniqueOrders = Array.from(new Map(allMatchedOrders.map(item => [item.id, item])).values());
+        
+        // 👉 सबसे नया बिल ऊपर दिखाने के लिए इसे डेट (तारीख) के हिसाब से सॉर्ट करें
+        uniqueOrders.sort((a: any, b: any) => {
+           const timeA = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : new Date(a.timestamp || 0).getTime();
+           const timeB = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : new Date(b.timestamp || 0).getTime();
+           return timeB - timeA;
+        });
+        
+        setCustHistoryList(uniqueOrders);
       }
     } catch (e) {
+      console.error("History fetch error:", e);
       toast.error("हिस्ट्री लोड करने में त्रुटि आई!");
     } finally {
       setIsCustHistoryLoading(false);
     }
   };
-  // 👉 FIX 1: 300 की लिमिट हटा दी गई है, अब सारे ग्राहक आएँगे!
  // 👉 FIX 1: 300 की लिमिट हटा दी गई है, अब सारे ग्राहक आएँगे!
   const fetchAllCustomers = async () => {
     setIsCustomersLoading(true);
