@@ -4496,6 +4496,48 @@ export default function BbCafeDesktopPos() {
                   </div>
                 </div>
 
+                {/* 👉 NEW: UPCOMING EVENTS DASHBOARD (अगले 7 दिनों के बर्थडे) */}
+                {upcomingEvents.length > 0 && (
+                  <div className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 border border-pink-200 dark:border-pink-800/50 p-3 rounded-2xl shrink-0 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-xs font-black uppercase text-pink-600 dark:text-pink-400 flex items-center gap-1.5">
+                        🎉 Upcoming Special Dates (अगले 7 दिन)
+                      </h3>
+                      <span className="text-[10px] font-bold bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 px-2 py-0.5 rounded-lg">
+                        {upcomingEvents.length} Events Found
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+                      {upcomingEvents.map((evt, idx) => (
+                        <div key={idx} className="min-w-[220px] bg-white dark:bg-neutral-900 border border-pink-100 dark:border-pink-800/30 p-2.5 rounded-xl shadow-sm flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-bold text-xs text-neutral-900 dark:text-white truncate pr-2">
+                                {evt.eventType === 'Birthday' ? '🎂' : '💍'} {evt.eventName}
+                              </p>
+                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${evt.daysLeft === 0 ? 'bg-green-500 text-white animate-pulse' : 'bg-pink-100 text-pink-600'}`}>
+                                {evt.daysLeft === 0 ? 'Today!' : `In ${evt.daysLeft} Days`}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-neutral-500">By: {evt.customerName} <span className="font-mono">({evt.customerPhone})</span></p>
+                          </div>
+                          
+                          {/* WhatsApp Invite Button */}
+                          <button 
+                            onClick={() => {
+                              const msg = `Hi ${evt.customerName}! 🎉 We noticed an upcoming ${evt.eventType} celebration for ${evt.eventName}! Celebrate your special day at Bum Bum Cafe and get a surprise gift / Special Discount. Reply to book your table! ☕🎂`;
+                              window.open(`https://wa.me/91${evt.customerPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                            }}
+                            className="w-full mt-2 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-1 transition-colors"
+                          >
+                            <SafeShare2 size={12} /> Send Invite
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* Search Bar */}
                 <div className="relative shrink-0">
                   <SafeSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
