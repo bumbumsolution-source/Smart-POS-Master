@@ -321,8 +321,18 @@ const [isReturningUser, setIsReturningUser] = useState(false); // 👉 पता
                 className="w-full bg-[#0f172a] border-2 border-yellow-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-yellow-400" 
               />
               
-              {/* 👉 NEW: Birthday Input */}
-              <div className="relative mt-2">
+              {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
+              {!isReturningUser && (
+                <div className="relative mt-2">
+                  <span className="absolute -top-2 left-4 bg-[#1e293b] px-1 text-[10px] text-pink-400 font-bold">जन्मदिन (Optional) 🎂</span>
+                  <input 
+                    type="date" 
+                    value={birthday} 
+                    onChange={(e) => setBirthday(e.target.value)} 
+                    className="w-full bg-[#0f172a] border-2 border-pink-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-pink-400" 
+                  />
+                </div>
+              )}
                 <span className="absolute -top-2 left-4 bg-[#1e293b] px-1 text-[10px] text-pink-400 font-bold">जन्मदिन (Birthday) 🎂</span>
                 <input 
                   type="date" 
