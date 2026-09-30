@@ -4827,24 +4827,30 @@ export default function BbCafeDesktopPos() {
                       <p className="text-xs font-black uppercase text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><Gamepad2 size={16}/> 🎮 Active Customer Game (QR Code):</p>
                       <p className="text-[10px] text-neutral-500 font-bold mt-0.5">टेबल के QR कोड को स्कैन करने पर कस्टमर के फोन में कौन सा गेम खुलेगा, उसे यहाँ से बदलें।</p>
                     </div>
-                    <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-2xl w-full max-w-lg border border-neutral-300 dark:border-neutral-700 shadow-inner">
+                    <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-2xl w-full max-w-2xl border border-neutral-300 dark:border-neutral-700 shadow-inner">
                       <button 
                         onClick={() => handleToggleGame('SpinGame')} 
-                        className={`flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'SpinGame' ? 'bg-white dark:bg-neutral-900 text-purple-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'SpinGame' ? 'bg-white dark:bg-neutral-900 text-purple-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
                       >
                         🎡 Spin Wheel
                       </button>
                       <button 
                         onClick={() => handleToggleGame('CatchGame')} 
-                        className={`flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'CatchGame' ? 'bg-white dark:bg-neutral-900 text-orange-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'CatchGame' ? 'bg-white dark:bg-neutral-900 text-orange-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
                       >
                         🍔 Catch Game
                       </button>
                       <button 
                         onClick={() => handleToggleGame('FruitNinja')} 
-                        className={`flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'FruitNinja' ? 'bg-white dark:bg-neutral-900 text-green-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'FruitNinja' ? 'bg-white dark:bg-neutral-900 text-green-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
                       >
                         🍉 Fruit Cutter
+                      </button>
+                      <button 
+                        onClick={() => handleToggleGame('MemoryGame')} 
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'MemoryGame' ? 'bg-white dark:bg-neutral-900 text-cyan-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🃏 Food Match
                       </button>
                     </div>
                   </div>
