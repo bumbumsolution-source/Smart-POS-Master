@@ -249,7 +249,9 @@ export default function BbCafeDesktopPos() {
         minutesAgo
       });
 
-      if (targetDoc.voucherClaimed) {
+     if (targetDoc.lastCatchGameScore !== undefined) {
+        toast.success(`Catch Game: ${targetDoc.lastCatchGameScore} Score, ${targetDoc.gamePoints} Points Balance 🎮`);
+      } else if (targetDoc.voucherClaimed) {
         toast.error("🚫 यह कूपन पहले ही इस्तेमाल हो चुका है!");
       } else if (targetDoc.lastPrizeWon === "Better Luck") {
         toast("⚠️ इस ग्राहक को कोई इनाम नहीं मिला था (Better Luck)!", { icon: "ℹ️" });
