@@ -4860,6 +4860,12 @@ export default function BbCafeDesktopPos() {
                       >
                         🧩 2048 Puzzle
                       </button>
+                      <button 
+                        onClick={() => handleToggleGame('HungrySnake')} 
+                        className={`flex-1 py-2.5 px-2 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${activeGameType === 'HungrySnake' ? 'bg-white dark:bg-neutral-900 text-green-500 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🐍 Hungry Snake
+                      </button>
                     </div>
                   </div>
                   {/* THEME SETTING */}
