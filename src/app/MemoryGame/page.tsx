@@ -315,16 +315,25 @@ export default function MemoryGamePage() {
               <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-cyan-500 text-center py-3 rounded-xl outline-none text-white focus:border-cyan-400 font-mono" />
               <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-blue-500 text-center py-3 rounded-xl outline-none text-white focus:border-blue-400 font-bold" />
               
+              {/* 👉 जन्मदिन वाला सेक्शन (स्पष्ट मैसेज के साथ) */}
               {!isReturningUser && (
-                <div className="flex gap-2">
-                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none">
-                    <option value="" disabled>दिन (Day) *</option>
-                    {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                  </select>
-                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none">
-                    <option value="" disabled>महीना (Month) *</option>
-                    {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                  </select>
+                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                    🎂 अपना या अपने बच्चे का जन्मदिन चुनें <span className="text-white">(अनिवार्य)</span>:
+                  </p>
+                  <div className="flex gap-2">
+                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>दिन (Day) *</option>
+                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                    </select>
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>महीना (Month) *</option>
+                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                    </select>
+                  </div>
+                  <p className="text-[9px] text-neutral-400 text-left">
+                    🎁 जन्मदिन के दिन कैफे आएं और पाएं स्पेशल सरप्राइज गिफ्ट!
+                  </p>
                 </div>
               )}
 
