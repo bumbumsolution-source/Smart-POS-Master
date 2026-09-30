@@ -17,6 +17,7 @@ export default function HungrySnakePage() {
   const [step, setStep] = useState<"login" | "playing" | "gameover">("login");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  
   const [birthDay, setBirthDay] = useState(""); 
   const [birthMonth, setBirthMonth] = useState(""); 
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
@@ -35,13 +36,26 @@ export default function HungrySnakePage() {
   const requestRef = useRef<number>();
   const touchStart = useRef<{ x: number, y: number } | null>(null);
 
+  // 🐍 स्नेक फ़ूड स्पॉनर (TypeScript Error Fixed)
+  const spawnFood = (snakeBody: {x: number, y: number}[]) => {
+    while (true) {
+      const newFood = {
+        x: Math.floor(Math.random() * GRID_SIZE),
+        y: Math.floor(Math.random() * GRID_SIZE),
+        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)]
+      };
+      const onSnake = snakeBody.some(segment => segment.x === newFood.x && segment.y === newFood.y);
+      if (!onSnake) return newFood;
+    }
+  };
+
   const gameState = useRef({
     snake: [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }],
     direction: { x: 0, y: -1 },
     nextDirection: { x: 0, y: -1 },
     food: { x: 5, y: 5, emoji: "🍔" },
     lastMoveTime: 0,
-    speed: 250 // शुरुआत में थोड़ी नॉर्मल स्पीड
+    speed: 200 // हार्ड मोड (शुरुआत में ही तेज़)
   });
 
   // URL से टेबल नंबर
@@ -62,25 +76,13 @@ export default function HungrySnakePage() {
           setIsReturningUser(true);
         } else {
           setIsReturningUser(false); 
+          setName("");
         }
       });
     } else {
       setIsReturningUser(false);
     }
   }, [phone]);
-
-  // 🐍 स्नेक फ़ूड स्पॉनर
-  const spawnFood = (snakeBody: {x: number, y: number}[]) => {
-    while (true) {
-      const newFood = {
-        x: Math.floor(Math.random() * GRID_SIZE),
-        y: Math.floor(Math.random() * GRID_SIZE),
-        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)]
-      };
-      const onSnake = snakeBody.some(segment => segment.x === newFood.x && segment.y === newFood.y);
-      if (!onSnake) return newFood;
-    }
-  };
 
   // 🚀 1. गेम शुरू करने का हैंडलर
   const handleStartGame = async (e: React.FormEvent) => {
@@ -90,7 +92,11 @@ export default function HungrySnakePage() {
     
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    if (!isReturningUser && (!birthDay || !birthMonth)) return toast.error("कृपया अपना जन्मदिन चुनें!");
+    
+    // 👉 अब सबके लिए (नए और पुराने) जन्मदिन अनिवार्य है
+    if (!birthDay || !birthMonth) {
+      return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
+    }
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -120,11 +126,14 @@ export default function HungrySnakePage() {
         }
       }
 
-      if (!isReturningUser && birthDay && birthMonth) {
-        const formattedDate = `2000-${birthMonth}-${birthDay}`;
-        if (!existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName)) {
-          existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName });
-        }
+      // 👉 सबके लिए बर्थडे सेव / अपडेट करें
+      const formattedDate = `2000-${birthMonth}-${birthDay}`;
+      const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
+      
+      if (bdayIndex > -1) {
+        existingSpecialDates[bdayIndex].date = formattedDate; 
+      } else {
+        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); 
       }
 
       await setDoc(userRef, { 
@@ -146,8 +155,8 @@ export default function HungrySnakePage() {
         direction: { x: 0, y: -1 },
         nextDirection: { x: 0, y: -1 },
         food: spawnFood([{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }]),
-        lastMoveTime: Date.now(), // 👉 FIX: सही समय
-        speed: 250
+        lastMoveTime: Date.now(), 
+        speed: 200
       };
       setGameStartTime(Date.now());
       setStep("playing");
@@ -174,7 +183,7 @@ export default function HungrySnakePage() {
 
     const gameLoop = () => {
       const state = gameState.current;
-      const now = Date.now(); // 👉 FIX: Time Clash को रोका गया
+      const now = Date.now(); 
 
       if (now - state.lastMoveTime > state.speed) {
         state.direction = { ...state.nextDirection };
@@ -201,7 +210,8 @@ export default function HungrySnakePage() {
         if (newHead.x === state.food.x && newHead.y === state.food.y) {
           setScore(s => {
             const newScore = s + 1;
-            state.speed = Math.max(80, 250 - (newScore * 3)); // स्पीड बढ़ाना
+            // स्पीड बढ़ाना (Hard mode)
+            state.speed = Math.max(60, 200 - (newScore * 3)); 
             return newScore;
           });
           state.food = spawnFood(state.snake);
@@ -299,7 +309,7 @@ export default function HungrySnakePage() {
     
     // Anti-Cheat Check
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
-    if (score > 0 && (score / playTimeSeconds > 5)) {
+    if (score > 0 && (score / playTimeSeconds > 6)) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई!", { style: { background: "#ef4444", color: "#fff" } });
     }
@@ -367,7 +377,7 @@ export default function HungrySnakePage() {
       
       {/* ---------------- LOGIN SCREEN ---------------- */}
       {step === "login" && (
-        <div className="w-full max-w-sm px-4 z-10">
+        <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
           <div className="mb-6 text-center">
             <h1 className="text-4xl font-black text-green-500 drop-shadow-md tracking-wider">Hungry Snake 🐍</h1>
             <p className="text-sm font-bold text-neutral-400 mt-1">बम बम कैफे, मोहंद्रा</p>
@@ -386,29 +396,27 @@ export default function HungrySnakePage() {
               <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
               <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-bold" />
               
-              {/* 👉 जन्मदिन वाला सेक्शन (स्पष्ट मैसेज के साथ) */}
-              {!isReturningUser && (
-                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                    🎂 अपना या अपने बच्चे का जन्मदिन चुनें <span className="text-white">(अनिवार्य)</span>:
-                  </p>
-                  <div className="flex gap-2">
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>दिन (Day) *</option>
-                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                    </select>
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>महीना (Month) *</option>
-                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                    </select>
-                  </div>
-                  <p className="text-[9px] text-neutral-400 text-left">
-                    🎁 जन्मदिन के दिन कैफे आएं और पाएं स्पेशल सरप्राइज गिफ्ट!
-                  </p>
+              {/* 👉 जन्मदिन वाला सेक्शन (सबके लिए अनिवार्य + साफ़ चेतावनी के साथ) */}
+              <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                  🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
+                </p>
+                <div className="flex gap-2">
+                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                    <option value="" disabled>जन्म की तारीख *</option>
+                    {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                  </select>
+                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                    <option value="" disabled>जन्म का महीना *</option>
+                    {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                  </select>
                 </div>
-              )}
+                <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
+                  ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
+                </p>
+              </div>
 
-              <button type="submit" disabled={isLoading} className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-2">
+              <button type="submit" disabled={isLoading} className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
                 {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
               </button>
             </form>
@@ -436,7 +444,7 @@ export default function HungrySnakePage() {
           </div>
 
           <div className="mt-8 text-neutral-500 text-[10px] uppercase font-bold tracking-widest bg-black/40 px-4 py-2 rounded-full">
-            👆 Swipe or Use Arrows 👆
+            👆 Swipe to Move 👆
           </div>
         </div>
       )}
@@ -459,7 +467,7 @@ export default function HungrySnakePage() {
               <p className="text-[11px] font-black uppercase text-green-500">डिस्काउंट कूपन जीते</p>
               <p className="text-4xl font-black text-green-400 mt-1">🎟️ {earnedPoints}</p>
               <p className="text-xs text-neutral-300 mt-3 font-bold">
-                कूपन <span className="text-yellow-400">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
+                कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
               </p>
             </div>
           ) : (
@@ -471,9 +479,28 @@ export default function HungrySnakePage() {
             </div>
           )}
 
-          <button onClick={() => setStep("login")} className="w-full py-3.5 bg-blue-600 text-white font-black text-sm uppercase rounded-xl shadow-lg">
-             मुख्य मेनू (Main Menu)
-          </button>
+          <div className="flex flex-col gap-2 pt-2">
+            <button onClick={() => {
+                setScore(0);
+                gameState.current = {
+                  snake: [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }],
+                  direction: { x: 0, y: -1 },
+                  nextDirection: { x: 0, y: -1 },
+                  food: spawnFood([{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }]),
+                  lastMoveTime: Date.now(),
+                  speed: 200
+                };
+                setGameStartTime(Date.now());
+                setStep("playing");
+              }} 
+              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-sm uppercase rounded-xl shadow-lg"
+            >
+               🔁 फिर से खेलें (Play Again)
+            </button>
+            <button onClick={() => setStep("login")} className="w-full py-2 bg-transparent text-neutral-400 font-bold text-xs hover:text-white transition-all">
+               मुख्य मेनू (Main Menu)
+            </button>
+          </div>
         </div>
       )}
     </div>
