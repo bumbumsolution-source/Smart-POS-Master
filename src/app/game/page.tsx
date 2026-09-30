@@ -10,7 +10,6 @@ export default function SmartGameRouter() {
   useEffect(() => {
     const fetchActiveGame = async () => {
       try {
-        // डेटाबेस से चेक करें कि POS से कौन सा गेम चालू किया गया है
         const docRef = doc(db, "system_settings", "game_config");
         const docSnap = await getDoc(docRef);
         
@@ -19,32 +18,30 @@ export default function SmartGameRouter() {
         if (docSnap.exists()) {
           const config = docSnap.data();
           
-          // POS से सेट की गई वैल्यू के आधार पर सही फोल्डर (URL) का नाम सेट करें
           if (config.activeGame === "CatchGame") {
             targetGame = "catch-game";
           } else if (config.activeGame === "FruitNinja") {
             targetGame = "FruitNinja"; 
           } else if (config.activeGame === "MemoryGame") {
-            targetGame = "MemoryGame"; // 👉 Memory Game (Food Match) के लिए
+            targetGame = "MemoryGame"; 
+          } else if (config.activeGame === "Cafe2048") {
+            targetGame = "Cafe2048"; // 👉 2048 पज़ल गेम के लिए
           } else if (config.activeGame === "SpinGame") {
             targetGame = "spin-game"; 
           }
         }
 
-        // टेबल नंबर को URL में सुरक्षित रखें ताकि गेम में टेबल नंबर दिखे
         const urlParams = new URLSearchParams(window.location.search);
         const table = urlParams.get('table') || '';
         const queryString = table ? `?table=${table}` : '';
 
         setLoadingText("आपको गेम में ले जाया जा रहा है... 🚀");
         
-        // आधा सेकंड के अंदर कस्टमर को सीधे सही गेम पर भेज दें
         setTimeout(() => {
           window.location.replace(`/${targetGame}${queryString}`);
         }, 500);
 
       } catch (error) {
-        // अगर नेट स्लो है या कोई दिक्कत आये, तो डिफ़ॉल्ट स्पिन गेम खोल दें
         window.location.replace("/spin-game");
       }
     };
