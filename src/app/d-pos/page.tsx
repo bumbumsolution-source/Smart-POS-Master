@@ -161,8 +161,11 @@ export default function BbCafeDesktopPos() {
     triggerBeep('tap');
     await setDoc(doc(db, "system_settings", "game_config"), { activeGame: gameType }, { merge: true });
     
-    // तीनों गेम का नाम सही से दिखाने के लिए
-    const gameName = gameType === 'SpinGame' ? 'Spin Wheel' : gameType === 'CatchGame' ? 'Catch Game' : 'Fruit Cutter';
+    let gameName = 'Spin Wheel';
+    if (gameType === 'CatchGame') gameName = 'Catch Game';
+    if (gameType === 'FruitNinja') gameName = 'Fruit Cutter';
+    if (gameType === 'MemoryGame') gameName = 'Food Match'; // नया गेम
+
     toast.success(`सफलतापूर्वक ${gameName} चालू कर दिया गया! 🎮`);
   };
   // Customer Directory & Numeric Search
