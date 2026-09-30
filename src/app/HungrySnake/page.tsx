@@ -11,7 +11,6 @@ const formatNameTitleCase = (text: string) => {
 const isValidIndianPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone);
 
 const FOOD_EMOJIS = ["🍔", "🍕", "🍟", "🍩", "🥤", "🍦"];
-
 const GRID_SIZE = 20;
 
 export default function HungrySnakePage() {
@@ -31,7 +30,7 @@ export default function HungrySnakePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [gameStartTime, setGameStartTime] = useState(0);
 
-  // Canvas & Game Logic Refs (60fps स्मूथ और बिना लैग के लिए)
+  // Canvas & Game Logic Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>();
   const touchStart = useRef<{ x: number, y: number } | null>(null);
@@ -42,7 +41,7 @@ export default function HungrySnakePage() {
     nextDirection: { x: 0, y: -1 },
     food: { x: 5, y: 5, emoji: "🍔" },
     lastMoveTime: 0,
-    speed: 200 // शुरुआत में 200ms में एक कदम
+    speed: 250 // शुरुआत में थोड़ी नॉर्मल स्पीड
   });
 
   // URL से टेबल नंबर
@@ -70,7 +69,7 @@ export default function HungrySnakePage() {
     }
   }, [phone]);
 
-  // 🐍 स्नेक गेम इंजन (TypeScript Error Fixed)
+  // 🐍 स्नेक फ़ूड स्पॉनर
   const spawnFood = (snakeBody: {x: number, y: number}[]) => {
     while (true) {
       const newFood = {
@@ -78,9 +77,8 @@ export default function HungrySnakePage() {
         y: Math.floor(Math.random() * GRID_SIZE),
         emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)]
       };
-      // Check if food spawned on snake
       const onSnake = snakeBody.some(segment => segment.x === newFood.x && segment.y === newFood.y);
-      if (!onSnake) return newFood; // 👉 Fix: लूप के अंदर ही रिटर्न कर दिया
+      if (!onSnake) return newFood;
     }
   };
 
@@ -148,8 +146,8 @@ export default function HungrySnakePage() {
         direction: { x: 0, y: -1 },
         nextDirection: { x: 0, y: -1 },
         food: spawnFood([{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }]),
-        lastMoveTime: Date.now(),
-        speed: 200
+        lastMoveTime: Date.now(), // 👉 FIX: सही समय
+        speed: 250
       };
       setGameStartTime(Date.now());
       setStep("playing");
@@ -162,36 +160,36 @@ export default function HungrySnakePage() {
     }
   };
 
+  // 🎮 गेम लूप और कंट्रोल्स
   useEffect(() => {
     if (step !== "playing" || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Responsive Canvas
     const size = Math.min(window.innerWidth * 0.95, 400);
     canvas.width = size;
     canvas.height = size;
     const TILE_SIZE = size / GRID_SIZE;
 
-    const gameLoop = (time: number) => {
+    const gameLoop = () => {
       const state = gameState.current;
-      
-      if (time - state.lastMoveTime > state.speed) {
-        // Move Snake
+      const now = Date.now(); // 👉 FIX: Time Clash को रोका गया
+
+      if (now - state.lastMoveTime > state.speed) {
         state.direction = { ...state.nextDirection };
         const newHead = {
           x: state.snake[0].x + state.direction.x,
           y: state.snake[0].y + state.direction.y
         };
 
-        // 💥 Collision with Wall
+        // 💥 दीवार से टकराना
         if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
           setStep("gameover");
           return;
         }
 
-        // 💥 Collision with Self
+        // 💥 खुद से टकराना
         if (state.snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
           setStep("gameover");
           return;
@@ -199,26 +197,23 @@ export default function HungrySnakePage() {
 
         state.snake.unshift(newHead);
 
-        // 🍔 Eat Food
+        // 🍔 खाना
         if (newHead.x === state.food.x && newHead.y === state.food.y) {
           setScore(s => {
             const newScore = s + 1;
-            // स्पीड बढ़ाएं (Maximum speed = 80ms)
-            state.speed = Math.max(80, 200 - (newScore * 2));
+            state.speed = Math.max(80, 250 - (newScore * 3)); // स्पीड बढ़ाना
             return newScore;
           });
           state.food = spawnFood(state.snake);
         } else {
-          state.snake.pop(); // Remove tail if no food eaten
+          state.snake.pop(); // अगर खाना नहीं खाया तो पूंछ हटाओ
         }
 
-        state.lastMoveTime = time;
+        state.lastMoveTime = now;
       }
 
       // 🎨 Draw Game
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw Grid (Optional subtle background)
       ctx.fillStyle = "#1e293b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -230,12 +225,12 @@ export default function HungrySnakePage() {
 
       // Draw Snake
       state.snake.forEach((segment, index) => {
-        ctx.fillStyle = index === 0 ? "#22c55e" : "#16a34a"; // Head is lighter green
+        ctx.fillStyle = index === 0 ? "#22c55e" : "#16a34a"; // सिर का रंग हल्का हरा
         ctx.beginPath();
         ctx.roundRect(segment.x * TILE_SIZE + 1, segment.y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2, 4);
         ctx.fill();
 
-        // Eyes for head
+        // सांप की आंखें (सिर्फ सिर पर)
         if (index === 0) {
           ctx.fillStyle = "white";
           const eyeOffset = TILE_SIZE * 0.25;
@@ -252,7 +247,7 @@ export default function HungrySnakePage() {
 
     requestRef.current = requestAnimationFrame(gameLoop);
 
-    // Swipe Detection Logic
+    // 👆 Swipe (Mobile) Controls
     const onTouchStart = (e: TouchEvent) => {
       touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     };
@@ -261,30 +256,39 @@ export default function HungrySnakePage() {
       if (!touchStart.current) return;
       const dx = e.changedTouches[0].clientX - touchStart.current.x;
       const dy = e.changedTouches[0].clientY - touchStart.current.y;
-      const absDx = Math.abs(dx);
-      const absDy = Math.abs(dy);
       
       const { direction, nextDirection } = gameState.current;
 
-      if (Math.max(absDx, absDy) > 20) {
-        if (absDx > absDy) {
-          if (dx > 0 && direction.x !== -1) nextDirection.x = 1, nextDirection.y = 0; // Right
-          else if (dx < 0 && direction.x !== 1) nextDirection.x = -1, nextDirection.y = 0; // Left
+      if (Math.max(Math.abs(dx), Math.abs(dy)) > 20) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 0 && direction.x !== -1) { nextDirection.x = 1; nextDirection.y = 0; }
+          else if (dx < 0 && direction.x !== 1) { nextDirection.x = -1; nextDirection.y = 0; }
         } else {
-          if (dy > 0 && direction.y !== -1) nextDirection.x = 0, nextDirection.y = 1; // Down
-          else if (dy < 0 && direction.y !== 1) nextDirection.x = 0, nextDirection.y = -1; // Up
+          if (dy > 0 && direction.y !== -1) { nextDirection.x = 0; nextDirection.y = 1; }
+          else if (dy < 0 && direction.y !== 1) { nextDirection.x = 0; nextDirection.y = -1; }
         }
       }
       touchStart.current = null;
     };
 
+    // ⌨️ Keyboard (Desktop) Controls
+    const onKeyDown = (e: KeyboardEvent) => {
+      const { direction, nextDirection } = gameState.current;
+      if (e.key === "ArrowUp" && direction.y !== 1) { nextDirection.x = 0; nextDirection.y = -1; }
+      else if (e.key === "ArrowDown" && direction.y !== -1) { nextDirection.x = 0; nextDirection.y = 1; }
+      else if (e.key === "ArrowLeft" && direction.x !== 1) { nextDirection.x = -1; nextDirection.y = 0; }
+      else if (e.key === "ArrowRight" && direction.x !== -1) { nextDirection.x = 1; nextDirection.y = 0; }
+    };
+
     window.addEventListener("touchstart", onTouchStart);
     window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("keydown", onKeyDown);
 
     return () => {
       cancelAnimationFrame(requestRef.current!);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("keydown", onKeyDown);
     };
   }, [step]);
 
@@ -293,7 +297,7 @@ export default function HungrySnakePage() {
     if (isSaving) return;
     setIsSaving(true);
     
-    // Anti-Cheat (Minimum time required to get 30 score)
+    // Anti-Cheat Check
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
     if (score > 0 && (score / playTimeSeconds > 5)) {
       setIsSaving(false);
@@ -332,7 +336,7 @@ export default function HungrySnakePage() {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
-        lastCatchGameScore: score // POS में दिखाने के लिए
+        lastCatchGameScore: score 
       }, { merge: true });
 
       setEarnedPoints(finalPointsToAdd);
@@ -379,7 +383,7 @@ export default function HungrySnakePage() {
             </p>
             
             <form onSubmit={handleStartGame} className="space-y-3 pt-2">
-              <input type="tel" maxLength={10} placeholder="10-अंकों का মোবাইল नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
+              <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
               <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-bold" />
               
               {!isReturningUser && (
@@ -406,7 +410,6 @@ export default function HungrySnakePage() {
       {/* ---------------- PLAYING SCREEN ---------------- */}
       {step === "playing" && (
         <div className="w-full flex flex-col items-center justify-center h-[100dvh]">
-          {/* Header Stats */}
           <div className="w-full max-w-sm px-4 flex justify-between items-center mb-6">
              <div>
                <h2 className="text-2xl font-black text-green-500 tracking-wider">Snake 🐍</h2>
@@ -418,14 +421,13 @@ export default function HungrySnakePage() {
              </div>
           </div>
 
-          {/* Game Canvas */}
           <div className="rounded-xl overflow-hidden border-4 border-[#334155] shadow-2xl relative bg-[#1e293b]">
              <canvas ref={canvasRef} />
              <div className="absolute inset-0 pointer-events-none border border-black/20 rounded-xl"></div>
           </div>
 
           <div className="mt-8 text-neutral-500 text-[10px] uppercase font-bold tracking-widest bg-black/40 px-4 py-2 rounded-full">
-            👆 Swipe to Move 👆
+            👆 Swipe or Use Arrows 👆
           </div>
         </div>
       )}
