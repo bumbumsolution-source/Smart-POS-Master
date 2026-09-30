@@ -165,7 +165,7 @@ export default function CatchGamePage() {
 
     const gameLoop = (time: number) => {
       // 1. स्पॉन स्पीड: आइटम्स बहुत जल्दी-जल्दी गिरेंगे (Max 150ms)
-      const dropSpeed = Math.max(150, 600 - (score * 3)); 
+      const dropSpeed = Math.max(200, 700 - (score * 2.5));
       
       if (time - lastItemTime.current > dropSpeed) {
         // 2. बमों की बारिश: बम 30% से शुरू होंगे और 60% तक जाएँगे
@@ -179,8 +179,7 @@ export default function CatchGamePage() {
           x: Math.random() * 90 + 5, 
           y: -10, 
           // 3. तूफानी स्पीड: गिरने की स्पीड (Gravity) बहुत ज्यादा बढ़ा दी गई है
-          speed: Math.random() * 1.5 + 1.8 + (score / 350) 
-        };
+          speed: Math.random() * 1.2 + 1.5 + (score / 400)
         setItems(prev => [...prev, newItem]);
         lastItemTime.current = time;
       }
