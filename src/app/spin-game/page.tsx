@@ -1,203 +1,120 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
-import confetti from "canvas-confetti"; 
 
-// नाम को टाइटल केस में बदलने के लिए
 const formatNameTitleCase = (text: string) => {
-  return text
-    .toLowerCase()
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+  return text.toLowerCase().split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 };
-
 const isValidIndianPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone);
 
+// 🎡 स्पिन व्हील के इनाम (6 हिस्से)
 const PRIZES = [
-  "Better Luck",
-  "₹10 OFF",
-  "Free Hot Coffee",
-  "₹20 OFF",
-  "Free Sandwich",
-  "Manchurian Half",
-  "Manch. Rice Half",
+  { label: "Better Luck", points: 0, color: "#ef4444" }, // Red
+  { label: "10 कूपन", points: 10, color: "#eab308" }, // Yellow
+  { label: "Better Luck", points: 0, color: "#3b82f6" }, // Blue
+  { label: "20 कूपन", points: 20, color: "#22c55e" }, // Green
+  { label: "Better Luck", points: 0, color: "#f97316" }, // Orange
+  { label: "50 कूपन", points: 50, color: "#a855f7" }  // Purple (Rare)
 ];
-const PROBABILITIES = [80, 12, 3, 2, 1, 1, 1];
 
-// साउंड इफेक्ट्स
-const playAudio = (type: "win" | "lose" | "spin") => {
-  let src = "";
-  if (type === "win") src = "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"; 
-  if (type === "lose") src = "https://assets.mixkit.co/active_storage/sfx/1436/1436-preview.mp3"; 
-  if (type === "spin") src = "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"; 
-
-  const audio = new Audio(src);
-  if (type === "spin") audio.loop = true; 
-  audio.play().catch((e) => console.log("Sound blocked by browser:", e));
-  return audio; 
-};
-
-// आतिशबाज़ी
-const triggerConfetti = () => {
-  const duration = 3 * 1000;
-  const end = Date.now() + duration;
-  const frame = () => {
-    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#22c55e', '#f1c40f', '#3b82f6', '#ef4444'] });
-    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#22c55e', '#f1c40f', '#3b82f6', '#ef4444'] });
-    if (Date.now() < end) requestAnimationFrame(frame);
-  };
-  frame();
-};
-
-export default function SurpriseArcadeGame() {
+export default function SpinGamePage() {
+  const [step, setStep] = useState<"login" | "playing" | "gameover">("login");
   const [name, setName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [birthday, setBirthday] = useState(""); 
+  const [phone, setPhone] = useState("");
+  
+  // 👉 नया बर्थडे स्टेट
+  const [birthDay, setBirthDay] = useState(""); 
+  const [birthMonth, setBirthMonth] = useState(""); 
+  
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
-  
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isReturningUser, setIsReturningUser] = useState(false); // 👉 स्मार्ट ऑटो-फिल के लिए
-  
-  // गेम स्टेट्स
-  const [lastPlayedTime, setLastPlayedTime] = useState<number | null>(null);
-  const [prizeWon, setPrizeWon] = useState<string | null>(null);
-  const [couponCode, setCouponCode] = useState<string | null>(null);
-  const [showGame, setShowGame] = useState(false); 
-  
-  // टाइमर UI स्टेट्स
-  const [activeScreen, setActiveScreen] = useState<"voucher" | "cooldown" | "none">("none");
-  const [timerText, setTimerText] = useState<string>("");
+  const [isReturningUser, setIsReturningUser] = useState(false);
 
+  // स्पिन व्हील स्टेट्स
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [wonPrize, setWonPrize] = useState<any>(null);
+  const [voucherCode, setVoucherCode] = useState("");
+
+  // URL से टेबल नंबर
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const t = params.get("table");
-      if (t && /^[0-9]{1,2}$/.test(t)) {
-         setTableNo(`टेबल नं: ${t}`);
-      } else {
-         setTableNo("सामान्य टेबल");
-      }
+      setTableNo(t && /^[0-9]{1,2}$/.test(t) ? `टेबल नं: ${t}` : "सामान्य टेबल");
     }
   }, []);
 
-  // 👉 NEW: स्मार्ट ऑटो-फिल (नंबर डालते ही नाम आ जाएगा)
+  // ऑटो-फिल
   useEffect(() => {
-    if (phoneNumber.length === 10) {
-      getDoc(doc(db, "customer_points", phoneNumber)).then(snap => {
+    if (phone.length === 10) {
+      getDoc(doc(db, "customer_points", phone)).then((snap) => {
         if (snap.exists() && snap.data().name) {
-          setName(snap.data().name);
+          setName(snap.data().name); 
           setIsReturningUser(true);
         } else {
-          setIsReturningUser(false);
+          setIsReturningUser(false); 
+          setName("");
         }
       });
     } else {
       setIsReturningUser(false);
     }
-  }, [phoneNumber]);
+  }, [phone]);
 
-  useEffect(() => {
-    if (!isLoggedIn || !lastPlayedTime) return;
-
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const elapsed = now - lastPlayedTime;
-      const ONE_HOUR = 60 * 60 * 1000;
-      const FIVE_MINS = 5 * 60 * 1000;
-
-      if (elapsed >= ONE_HOUR) {
-        setActiveScreen("none");
-        setShowGame(true);
-        setLastPlayedTime(null);
-        clearInterval(interval);
-      } else {
-        if (couponCode && elapsed < FIVE_MINS) {
-          setActiveScreen("voucher");
-          const left = Math.floor((FIVE_MINS - elapsed) / 1000);
-          const m = Math.floor(left / 60);
-          const s = left % 60;
-          setTimerText(`${m}:${s < 10 ? "0" + s : s} मिनट शेष`);
-        } else {
-          setActiveScreen("cooldown");
-          setShowGame(false);
-          const left = Math.floor((ONE_HOUR - elapsed) / 1000);
-          const m = Math.floor(left / 60);
-          const s = left % 60;
-          setTimerText(`${m} मिनट ${s < 10 ? "0" + s : s} सेकंड`);
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isLoggedIn, lastPlayedTime, couponCode]);
-
-  // 🚀 लॉगिन हैंडलर 
-  const handleLogin = async (e: React.FormEvent) => {
+  // 🚀 1. गेम शुरू करने का हैंडलर
+  const handleStartGame = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = formatNameTitleCase(name.trim());
+    const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+    
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
-    const cleanPhone = phoneNumber.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
+    
+    // 👉 अनिवार्य जन्मदिन
+    if (!birthDay || !birthMonth) {
+      return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
+    }
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
     const now = Date.now();
 
-    // 🛑 1. DEVICE LOCK CHECK
-    const deviceLastPlayed = localStorage.getItem("device_cooldown_time");
-    const lockedPhone = localStorage.getItem("device_locked_phone");
+    const deviceLastPlayed = localStorage.getItem("spin_game_cooldown");
+    const lockedPhone = localStorage.getItem("spin_game_locked_phone");
 
     if (deviceLastPlayed && lockedPhone) {
-      const elapsedDevice = now - parseInt(deviceLastPlayed, 10);
-      
-      if (elapsedDevice < ONE_HOUR && lockedPhone !== cleanPhone) {
+      if (now - parseInt(deviceLastPlayed, 10) < ONE_HOUR && lockedPhone !== cleanPhone) {
         setIsLoading(false);
-        return toast.error("🚫 इस फोन से पहले ही खेला जा चुका है! कृपया अपना वही नंबर डालें या 1 घंटे प्रतीक्षा करें।", {
-          duration: 5000,
-          style: { background: "#ef4444", color: "#fff", fontWeight: "bold" }
-        });
+        return toast.error("🚫 इस फोन से पहले ही स्पिन किया जा चुका है! कृपया 1 घंटे प्रतीक्षा करें।", { duration: 5000 });
       }
     }
 
     try {
-      // 2. DATABASE CHECK & UPDATE
       const userRef = doc(db, "customer_points", cleanPhone);
       const userSnap = await getDoc(userRef);
-      
       let existingSpecialDates: any[] = [];
 
       if (userSnap.exists()) {
         const data = userSnap.data();
         existingSpecialDates = data.specialDates || [];
-
-        if (data?.lastPlayedAt) {
-          const playedMillis = (data.lastPlayedAt as Timestamp).toMillis();
-          const elapsed = now - playedMillis;
-
-          if (elapsed < ONE_HOUR) {
-            setLastPlayedTime(playedMillis);
-            setCouponCode(data.voucherCode || null);
-            setPrizeWon(data.lastPrizeWon || null);
-            setName(data.name || cleanName);
-            setIsLoggedIn(true);
-            setShowGame(false); 
-            setIsLoading(false);
-            return;
-          }
+        const todayStr = new Date().toDateString();
+        if (data.lastGameDate === todayStr && data.todayGamePoints >= 50) {
+          toast("⚠️ आप आज की इनाम लिमिट पार कर चुके हैं, मजे के लिए स्पिन करें!", { icon: '🎡' });
         }
       }
 
-      // 👉 CRM के लिए बर्थडे सेव करें 
-      if (birthday) {
-        const hasBirthday = existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName);
-        if (!hasBirthday) {
-          existingSpecialDates.push({ type: 'Birthday', date: birthday, name: cleanName });
-        }
+      // बर्थडे सेव करें
+      const formattedDate = `2000-${birthMonth}-${birthDay}`;
+      const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
+      
+      if (bdayIndex > -1) {
+        existingSpecialDates[bdayIndex].date = formattedDate; 
+      } else {
+        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); 
       }
 
       await setDoc(userRef, { 
@@ -210,12 +127,10 @@ export default function SurpriseArcadeGame() {
       }, { merge: true });
 
       setName(cleanName);
-      setPhoneNumber(cleanPhone);
-      setLastPlayedTime(null);
-      setCouponCode(null);
-      setIsLoggedIn(true);
-      setShowGame(true); 
-      toast.success(`लकी स्पिन व्हील में आपका स्वागत है 🎡`);
+      setPhone(cleanPhone);
+      
+      setStep("playing");
+      toast.success("बेस्ट ऑफ़ लक! अपना इनाम स्पिन करें 🎡");
 
     } catch {
       toast.error("सर्वर त्रुटि! पुनः प्रयास करें।");
@@ -224,200 +139,225 @@ export default function SurpriseArcadeGame() {
     }
   };
 
-  // डेटाबेस में रिजल्ट सेव करें और डिवाइस लॉक करें
-  const generateResultAndSave = async () => {
-    const rand = Math.random() * 100;
-    let sum = 0, winIdx = 0;
-    for (let i = 0; i < PROBABILITIES.length; i++) {
-      sum += PROBABILITIES[i];
-      if (rand <= sum) { winIdx = i; break; }
+  // 🎡 2. व्हील घुमाने का लॉजिक
+  const handleSpin = () => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    
+    // 50 पॉइंट्स जीतने के चांस बहुत कम (Rare) कर दिए गए हैं
+    let prizeIndex = Math.floor(Math.random() * PRIZES.length);
+    if (PRIZES[prizeIndex].points === 50 && Math.random() > 0.1) {
+       prizeIndex = 1; // 50 आने पर 90% चांस है कि वो 10 कूपन पर चला जाएगा
     }
 
-    const prize = PRIZES[winIdx];
-    const voucher = prize !== "Better Luck" ? `BOM-${Math.floor(1000 + Math.random() * 9000)}` : null;
+    const spins = 5; // 5 बार पूरा घूमेगा
+    const degreesPerSlice = 360 / PRIZES.length;
+    // सुई (Pointer) ऊपर की तरफ है, इसलिए कैलकुलेशन
+    const targetDegree = (spins * 360) + (360 - (prizeIndex * degreesPerSlice)) - (degreesPerSlice / 2);
 
-    try {
-      await setDoc(doc(db, "customer_points", phoneNumber), {
-        lastPlayedAt: serverTimestamp(),
-        lastPrizeWon: prize,
-        voucherCode: voucher,
-        table: tableNo,
-        voucherClaimed: false,
-      }, { merge: true });
+    setRotation(targetDegree);
 
-      localStorage.setItem("device_cooldown_time", Date.now().toString());
-      localStorage.setItem("device_locked_phone", phoneNumber);
-
-    } catch (e) { console.error(e); }
-
-    return { winIdx, prize, voucher };
+    // 4 सेकंड बाद जब व्हील रुकेगा
+    setTimeout(() => {
+      savePrizeToDatabase(PRIZES[prizeIndex]);
+    }, 4000);
   };
 
-  const handleGameEndUI = (prize: string, voucher: string | null) => {
-    setPrizeWon(prize);
-    setCouponCode(voucher);
-    setLastPlayedTime(Date.now()); 
+  // 🛡️ 3. इनाम डेटाबेस में सेव करना
+  const savePrizeToDatabase = async (prize: any) => {
+    try {
+      const userRef = doc(db, "customer_points", phone);
+      const userSnap = await getDoc(userRef);
+      
+      let prevGamePoints = 0; 
+      let todayGamePoints = 0;
+      const todayStr = new Date().toDateString(); 
 
-    if (prize === "Better Luck") {
-      playAudio("lose");
-      toast("उफ़! इस बार कोई इनाम नहीं मिला।", { icon: "😔" });
-    } else {
-      playAudio("win");
-      triggerConfetti();
-      toast.success("बधाई हो! आप जीत गए हैं!");
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        prevGamePoints = Number(data.gamePoints) || 0; 
+        todayGamePoints = data.lastGameDate === todayStr ? (Number(data.todayGamePoints) || 0) : 0;
+      }
+
+      // लिमिट 50 कूपन / दिन
+      const remainingLimit = Math.max(0, 50 - todayGamePoints);
+      const finalPointsToAdd = Math.min(prize.points, remainingLimit);
+      
+      let generatedCode = "";
+      if (finalPointsToAdd > 0) {
+        generatedCode = `BOM-${Math.floor(1000 + Math.random() * 9000)}`;
+      }
+
+      await setDoc(userRef, {
+        gamePoints: prevGamePoints + finalPointsToAdd, 
+        todayGamePoints: todayGamePoints + finalPointsToAdd,
+        lastGameDate: todayStr,
+        lastPrizeWon: prize.points > 0 ? `${finalPointsToAdd} कूपन` : "Better Luck",
+        voucherCode: generatedCode || null,
+        voucherClaimed: false,
+        lastPlayedAt: serverTimestamp()
+      }, { merge: true });
+
+      setWonPrize({ ...prize, actualWon: finalPointsToAdd });
+      setVoucherCode(generatedCode);
+      
+      localStorage.setItem("spin_game_cooldown", Date.now().toString());
+      localStorage.setItem("spin_game_locked_phone", phone);
+
+      setStep("gameover");
+      setIsSpinning(false);
+
+    } catch (err) {
+      toast.error("इनाम सेव करने में समस्या आई।");
+      setIsSpinning(false);
     }
-    setShowGame(false); 
   };
 
   return (
-    <div style={{ fontFamily: "system-ui, -apple-system, sans-serif", backgroundColor: "#0b0f19", color: "#ffffff", minHeight: "100vh", textAlign: "center", padding: "25px 15px", boxSizing: "border-box" }}>
+    <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden relative select-none">
       <Toaster position="top-center" />
+      
+      {/* ---------------- LOGIN SCREEN ---------------- */}
+      {step === "login" && (
+        <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
+          <div className="mb-6 text-center">
+            <h1 className="text-4xl font-black text-purple-500 drop-shadow-md tracking-wider">Spin & Win 🎡</h1>
+            <p className="text-sm font-bold text-neutral-400 mt-1">बम बम कैफे, मोहंद्रा</p>
+          </div>
 
-      <div style={{ marginBottom: "25px" }}>
-        <div style={{ display: "inline-block", backgroundColor: "rgba(241, 196, 15, 0.15)", color: "#f1c40f", padding: "4px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: "bold", marginBottom: "8px", border: "1px solid rgba(241, 196, 15, 0.3)" }}>
-          {tableNo}
-        </div>
-        <h1 style={{ color: "#f1c40f", fontSize: "26px", margin: "0 0 6px 0", fontWeight: "900" }}>बम बम कैफे, मोहंद्रा</h1>
-      </div>
-
-      {!isLoggedIn ? (
-        <div style={{ maxWidth: "340px", margin: "0 auto", backgroundColor: "#1e293b", padding: "25px 20px", borderRadius: "20px", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}>
-          <div style={{ fontSize: "42px", marginBottom: "8px" }}>🎁</div>
-          <h2 style={{ fontSize: "18px", margin: "0 0 16px 0", color: "#38bdf8", fontWeight: "bold" }}>खेलने के लिए विवरण दर्ज करें</h2>
-          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #f1c40f", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
-            <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #3b82f6", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
+          <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
+            <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-3 rounded-xl border border-neutral-700 text-left">
+              व्हील घुमाएं और अपनी किस्मत आजमाएं!<br/>
+              <span className="text-purple-400 block mt-2 text-center text-sm">
+                10, 20 या 50 कूपन जीतने का मौका!
+              </span>
+            </p>
             
-            {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
-            {/* 👉 जन्मदिन वाला सेक्शन (स्पष्ट मैसेज के साथ) */}
-              {!isReturningUser && (
-                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                    🎂 अपना या अपने बच्चे का जन्मदिन चुनें <span className="text-white">(अनिवार्य)</span>:
-                  </p>
-                  <div className="flex gap-2">
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>दिन (Day) *</option>
-                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                    </select>
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>महीना (Month) *</option>
-                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                    </select>
-                  </div>
-                  <p className="text-[9px] text-neutral-400 text-left">
-                    🎁 जन्मदिन के दिन कैफे आएं और पाएं स्पेशल सरप्राइज गिफ्ट!
-                  </p>
+            <form onSubmit={handleStartGame} className="space-y-3 pt-2">
+              <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-purple-500 text-center py-3 rounded-xl outline-none text-white focus:border-purple-400 font-mono" />
+              <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-purple-500 text-center py-3 rounded-xl outline-none text-white focus:border-purple-400 font-bold" />
+              
+              {/* 👉 जन्मदिन वाला सेक्शन (सबके लिए अनिवार्य + साफ़ चेतावनी के साथ) */}
+              <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                  🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
+                </p>
+                <div className="flex gap-2">
+                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                    <option value="" disabled>जन्म की तारीख *</option>
+                    {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                  </select>
+                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                    <option value="" disabled>जन्म का महीना *</option>
+                    {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                  </select>
                 </div>
-              )}
+                <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
+                  ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
+                </p>
+              </div>
 
-            <button type="submit" disabled={isLoading} style={{ padding: "14px", borderRadius: "25px", border: "none", backgroundColor: "#22c55e", color: "#fff", fontSize: "16px", fontWeight: "900", cursor: isLoading ? "not-allowed" : "pointer", marginTop: "10px" }}>
-              {isLoading ? "प्रतीक्षा करें..." : "स्पिन गेम खेलें ➔"}
-            </button>
-          </form>
+              <button type="submit" disabled={isLoading} className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
+                {isLoading ? "प्रतीक्षा करें..." : "▶ व्हील के पास जाएँ"}
+              </button>
+            </form>
+          </div>
         </div>
-      ) : (
-        <div style={{ maxWidth: "420px", margin: "0 auto" }}>
-          
-          {showGame && (
-            <SpinWheelGame onFinish={generateResultAndSave} onEndUI={handleGameEndUI} />
-          )}
+      )}
 
-          {activeScreen === "voucher" && (
-            <div style={{ backgroundColor: "#1e293b", padding: "25px", borderRadius: "16px", border: "2px solid #22c55e" }}>
-              <h2 style={{ color: "#22c55e", margin: "0 0 10px 0" }}>🎉 आपका इनाम</h2>
-              <p style={{ fontSize: "24px", color: "#f1c40f", fontWeight: "900" }}>{prizeWon}</p>
-              <div style={{ backgroundColor: "#0f172a", padding: "12px 20px", borderRadius: "12px", margin: "15px 0", border: "1px dashed #22c55e" }}>
-                <span style={{ fontSize: "14px", color: "#94a3b8", display: "block" }}>कूपन कोड: </span>
-                <strong style={{ fontSize: "26px", color: "#22c55e", letterSpacing: "3px" }}>{couponCode}</strong>
-              </div>
-              <p style={{ color: "#cbd5e1", fontSize: "14px" }}>काउंटर पर यह कूपन दिखाएं!</p>
-              <div style={{ marginTop: "15px", color: "#f59e0b", fontWeight: "bold" }}>⏳ {timerText}</div>
+      {/* ---------------- PLAYING SCREEN (Wheel) ---------------- */}
+      {step === "playing" && (
+        <div className="w-full flex flex-col items-center justify-center h-[100dvh] px-4">
+          <h2 className="text-3xl font-black text-purple-400 mb-8 uppercase tracking-widest text-center">
+            Spin To Win
+          </h2>
+
+          <div className="relative w-80 h-80 flex items-center justify-center">
+            {/* Pointer (सुई) */}
+            <div className="absolute -top-4 z-20 w-8 h-10 bg-white" style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)" }}></div>
+            
+            {/* Wheel */}
+            <div 
+              className="w-full h-full rounded-full border-8 border-white shadow-[0_0_30px_rgba(168,85,247,0.5)] overflow-hidden relative transition-transform"
+              style={{ 
+                transform: `rotate(${rotation}deg)`, 
+                transitionDuration: isSpinning ? "4s" : "0s", 
+                transitionTimingFunction: "cubic-bezier(0.1, 0.7, 0.1, 1)" 
+              }}
+            >
+              {PRIZES.map((prize, idx) => {
+                const rotationAngle = idx * (360 / PRIZES.length);
+                return (
+                  <div 
+                    key={idx} 
+                    className="absolute top-0 right-0 w-[50%] h-[50%] origin-bottom-left flex items-center justify-center border-l-2 border-white/20"
+                    style={{ 
+                      backgroundColor: prize.color, 
+                      transform: `rotate(${rotationAngle}deg) skewY(${90 - (360 / PRIZES.length)}deg)` 
+                    }}
+                  >
+                    <span 
+                      className="text-white font-black text-sm uppercase tracking-wider"
+                      style={{ transform: `skewY(-${90 - (360 / PRIZES.length)}deg) rotate(${ (360 / PRIZES.length) / 2 }deg) translateY(-80px)` }}
+                    >
+                      {prize.label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          )}
+            
+            {/* Center Button */}
+            <button 
+              onClick={handleSpin}
+              disabled={isSpinning}
+              className="absolute z-30 w-20 h-20 bg-white rounded-full flex items-center justify-center text-purple-600 font-black uppercase shadow-2xl border-4 border-purple-500 disabled:opacity-80 disabled:cursor-not-allowed transform hover:scale-105 transition-transform"
+            >
+              {isSpinning ? "..." : "SPIN"}
+            </button>
+          </div>
 
-          {activeScreen === "cooldown" && (
-            <div style={{ backgroundColor: "#1e293b", padding: "30px 20px", borderRadius: "16px", border: "2px solid #334155" }}>
-              <div style={{ fontSize: "50px", marginBottom: "10px" }}>🕒</div>
-              <h2 style={{ color: "#38bdf8", margin: "0 0 10px 0" }}>आप खेल चुके हैं!</h2>
-              <p style={{ color: "#94a3b8", fontSize: "15px", marginBottom: "20px" }}>हर ग्राहक 1 घंटे में केवल एक बार खेल सकता है। कृपया थोड़ी प्रतीक्षा करें।</p>
-              <div style={{ backgroundColor: "#0f172a", padding: "15px", borderRadius: "12px" }}>
-                <span style={{ fontSize: "14px", color: "#cbd5e1", display: "block", marginBottom: "5px" }}>अगला मौका मिलेगा:</span>
-                <strong style={{ fontSize: "28px", color: "#ef4444", letterSpacing: "1px", fontVariantNumeric: "tabular-nums" }}>
-                  {timerText}
-                </strong>
+          <p className="mt-12 text-xs text-neutral-400 font-bold uppercase tracking-widest text-center px-6">
+            बीच वाले सफेद बटन (SPIN) पर क्लिक करें!
+          </p>
+        </div>
+      )}
+
+      {/* ---------------- GAME OVER SCREEN ---------------- */}
+      {step === "gameover" && wonPrize && (
+        <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
+          <div className="text-6xl">{wonPrize.points > 0 ? '🎉' : '💥'}</div>
+          <h2 className="text-3xl font-black uppercase text-purple-400 tracking-wider">Result</h2>
+          
+          <div className="bg-[#0f172a] p-5 rounded-2xl border border-[#334155] space-y-2">
+            <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">You Won</p>
+            <p className="text-4xl font-black mt-2" style={{ color: wonPrize.color }}>
+              {wonPrize.label}
+            </p>
+          </div>
+
+          {wonPrize.actualWon > 0 ? (
+            <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl space-y-3">
+              <p className="text-xs text-green-400 font-bold">
+                बिल बनवाते समय कैशियर को यह कोड दिखाएं:
+              </p>
+              <div className="bg-white text-black font-mono font-black text-2xl py-2 rounded-xl border-2 border-green-500 tracking-widest shadow-inner">
+                {voucherCode}
               </div>
+              <p className="text-[10px] text-neutral-400">
+                (यह कोड आपके मोबाइल नंबर {phone} पर भी लिंक हो गया है।)
+              </p>
+            </div>
+          ) : (
+            <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl">
+               <p className="text-sm font-black text-red-400">Better Luck Next Time! 😔</p>
+               <p className="text-xs text-neutral-400 mt-2">
+                 कोई बात नहीं, अगली बार फिर से ट्राई करें!
+               </p>
             </div>
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function SpinWheelGame({ onFinish, onEndUI }: { onFinish: () => Promise<any>; onEndUI: (p: string, v: string | null) => void }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [rotation, setRotation] = useState(0);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const colors = ["#ef4444", "#3b82f6", "#eab308", "#a855f7", "#f97316", "#14b8a6", "#22c55e"];
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = 300 * dpr;
-    canvas.height = 300 * dpr;
-    ctx.scale(dpr, dpr);
-    let startAngle = 0;
-    const arc = (2 * Math.PI) / PRIZES.length;
-    for (let i = 0; i < PRIZES.length; i++) {
-      ctx.fillStyle = colors[i];
-      ctx.beginPath();
-      ctx.moveTo(150, 150);
-      ctx.arc(150, 150, 145, startAngle, startAngle + arc);
-      ctx.fill();
-      ctx.save();
-      ctx.translate(150, 150);
-      ctx.rotate(startAngle + arc / 2);
-      ctx.fillStyle = "white";
-      ctx.font = "bold 12px Arial";
-      ctx.fillText(PRIZES[i], 38, 4);
-      ctx.restore();
-      startAngle += arc;
-    }
-  }, []);
-
-  const handleSpin = async () => {
-    if (isSpinning) return;
-    setIsSpinning(true);
-    const spinAudio = playAudio("spin");
-
-    const { winIdx, prize, voucher } = await onFinish();
-
-    const arcDegree = 360 / PRIZES.length;
-    const stopAngle = winIdx * arcDegree + arcDegree / 2;
-    const targetAngle = ((270 - stopAngle) % 360 + 360) % 360;
-    setRotation((prev) => prev + 3600 + targetAngle - (prev % 360));
-
-    setTimeout(() => {
-      setIsSpinning(false);
-      spinAudio.pause();
-      onEndUI(prize, voucher); 
-    }, 4000);
-  };
-
-  return (
-    <div>
-      <p style={{ color: "#cbd5e1", fontSize: "14px", marginBottom: "10px" }}>पहिया घुमाएं और अपना भाग्य देखें!</p>
-      <div style={{ position: "relative", width: "300px", height: "300px", margin: "10px auto 20px" }}>
-        <div style={{ position: "absolute", top: "-18px", left: "50%", transform: "translateX(-50%)", fontSize: "36px", color: "#ef4444", zIndex: 10 }}>▼</div>
-        <canvas ref={canvasRef} style={{ width: "300px", height: "300px", borderRadius: "50%", border: "5px solid #fff", boxShadow: "0 0 25px rgba(0,0,0,0.6)", transform: `rotate(${rotation}deg)`, transition: "transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)" }} />
-      </div>
-      <button onClick={handleSpin} disabled={isSpinning} style={{ padding: "12px 35px", backgroundColor: isSpinning ? "#64748b" : "#ef4444", color: "white", border: "none", borderRadius: "30px", fontWeight: "900", fontSize: "16px", cursor: isSpinning ? "not-allowed" : "pointer", boxShadow: "0 4px 15px rgba(239, 68, 68, 0.4)" }}>
-        {isSpinning ? "घूम रहा है..." : "पहिया घुमाएं (SPIN)"}
-      </button>
     </div>
   );
 }
