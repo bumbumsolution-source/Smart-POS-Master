@@ -165,7 +165,8 @@ export default function BbCafeDesktopPos() {
     if (gameType === 'CatchGame') gameName = 'Catch Game';
     if (gameType === 'FruitNinja') gameName = 'Fruit Cutter';
     if (gameType === 'MemoryGame') gameName = 'Food Match'; 
-    if (gameType === 'Cafe2048') gameName = 'Cafe 2048'; // 5वां गेम
+    if (gameType === 'Cafe2048') gameName = 'Cafe 2048'; 
+    if (gameType === 'HungrySnake') gameName = 'Hungry Snake';// 5वां गेम
 
     toast.success(`सफलतापूर्वक ${gameName} चालू कर दिया गया! 🎮`);
   };
