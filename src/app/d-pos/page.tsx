@@ -5252,14 +5252,31 @@ export default function BbCafeDesktopPos() {
                           )}
                         </div>
                         
-                        {/* Game Status */}
-                        {selectedHistoryCust.lastPrizeWon && (
-                          <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
-                             <p className="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">🎰 Spin Game Record</p>
-                             <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">Won: <span className="text-green-600">{selectedHistoryCust.lastPrizeWon}</span></p>
-                             <p className="text-[9px] text-neutral-500">Status: {selectedHistoryCust.voucherClaimed ? 'Claimed ✅' : 'Not Claimed Yet 🟡'}</p>
-                          </div>
-                        )}
+                       {/* Game Status */}
+{(selectedHistoryCust.lastPrizeWon || selectedHistoryCust.lastCatchGameScore !== undefined) && (
+  <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50 space-y-1.5">
+     <p className="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">🎰 Game Records</p>
+     
+     {/* Spin Game Record */}
+     {selectedHistoryCust.lastPrizeWon && (
+       <div className="bg-white/50 dark:bg-black/20 p-1.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
+         <p className="text-[9px] font-bold text-neutral-500">🎡 Spin Wheel:</p>
+         <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">Won: <span className="text-green-600">{selectedHistoryCust.lastPrizeWon}</span></p>
+         <p className="text-[9px] text-neutral-500">Status: {selectedHistoryCust.voucherClaimed ? 'Claimed ✅' : 'Not Claimed Yet 🟡'}</p>
+       </div>
+     )}
+
+     {/* Catch Game Record */}
+     {selectedHistoryCust.lastCatchGameScore !== undefined && (
+       <div className="bg-white/50 dark:bg-black/20 p-1.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
+         <p className="text-[9px] font-bold text-neutral-500">🍔 Catch Game:</p>
+         <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">Last Score: <span className="text-orange-600 font-mono font-black">{selectedHistoryCust.lastCatchGameScore}</span></p>
+         <p className="text-[9px] text-neutral-500">Today's Points Used: {selectedHistoryCust.todayGamePoints || 0}/20</p>
+         {selectedHistoryCust.lastGameDate && <p className="text-[8px] text-neutral-400">Played On: {selectedHistoryCust.lastGameDate}</p>}
+       </div>
+     )}
+  </div>
+)}
                       </div>
 
                       {/* Favorite Items Box */}
