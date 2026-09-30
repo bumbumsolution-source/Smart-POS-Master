@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
@@ -179,7 +179,7 @@ export default function MemoryGamePage() {
     }
   }, [timeElapsed, matches, step, gameInterval]);
 
-  // 🃏 कार्ड क्लिक हैंडलर (TypeScript Error Fixed)
+  // 🃏 कार्ड क्लिक हैंडलर (Vercel Build Error Fixed)
   const handleCardClick = (clickedId: number) => {
     if (flippedCards.length === 2) return;
     const clickedCard = cards.find(c => c.id === clickedId);
@@ -190,15 +190,17 @@ export default function MemoryGamePage() {
     setFlippedCards(newFlipped);
 
     if (newFlipped.length === 2) {
-      const card1 = cards.find(c => c.id === newFlipped[0]);
-      const card2 = cards.find(c => c.id === clickedId);
+      const firstCardId = newFlipped[0]; // गारंटीड Number
+      const secondCardId = clickedId;    // गारंटीड Number
 
-      // 👉 FIX: यहाँ चेक किया गया है कि card1 और card2 दोनों मौजूद हों
+      const card1 = cards.find(c => c.id === firstCardId);
+      const card2 = cards.find(c => c.id === secondCardId);
+
       if (card1 && card2 && card1.emoji === card2.emoji) {
         // मैच हो गया!
         setTimeout(() => {
           setCards(prev => prev.map(c => 
-            c.id === card1.id || c.id === card2.id ? { ...c, isMatched: true } : c
+            (c.id === firstCardId || c.id === secondCardId) ? { ...c, isMatched: true } : c
           ));
           setFlippedCards([]);
           setMatches(prev => prev + 1);
@@ -207,7 +209,7 @@ export default function MemoryGamePage() {
         // मैच नहीं हुआ, वापस पलटें
         setTimeout(() => {
           setCards(prev => prev.map(c => 
-            c.id === card1?.id || c.id === card2?.id ? { ...c, isFlipped: false } : c
+            (c.id === firstCardId || c.id === secondCardId) ? { ...c, isFlipped: false } : c
           ));
           setFlippedCards([]);
         }, 800); 
@@ -220,12 +222,13 @@ export default function MemoryGamePage() {
     if (isSaving) return;
     setIsSaving(true);
     
-    // Anti-Cheat
+    // Anti-Cheat (8 पेयर खोजना 8 सेकंड से कम में नामुमकिन है)
     if (matches === 8 && timeElapsed < 8) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
+    // 👉 40 सेकंड के अंदर = 10 कूपन, 25 सेकंड के अंदर = 20 कूपन
     let pointsWon = 0;
     if (matches === 8) {
       if (timeElapsed <= 25) pointsWon = 20;
