@@ -384,45 +384,27 @@ export default function CatchGamePage() {
               />
               
               {/* 👉 नया अनिवार्य बर्थडे ड्रॉपडाउन (दिन और महीना) */}
+              {/* 👉 जन्मदिन वाला सेक्शन (स्पष्ट मैसेज के साथ) */}
               {!isReturningUser && (
-                <div className="relative mt-2 flex gap-2 pt-1">
-                  <span className="absolute -top-2 left-4 bg-[#1e293b] px-2 text-[10px] text-pink-400 font-bold z-10">जन्मदिन अनिवार्य है 🎂</span>
-                  
-                  <select 
-                    value={birthDay} 
-                    onChange={(e) => setBirthDay(e.target.value)} 
-                    required 
-                    className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none text-white focus:border-pink-400 appearance-none"
-                  >
-                    <option value="" disabled>दिन (Day) *</option>
-                    {Array.from({ length: 31 }, (_, i) => (
-                      <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{i + 1}</option>
-                    ))}
-                  </select>
-
-                  <select 
-                    value={birthMonth} 
-                    onChange={(e) => setBirthMonth(e.target.value)} 
-                    required 
-                    className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none text-white focus:border-pink-400 appearance-none"
-                  >
-                    <option value="" disabled>महीना (Month) *</option>
-                    <option value="01">Jan (01)</option>
-                    <option value="02">Feb (02)</option>
-                    <option value="03">Mar (03)</option>
-                    <option value="04">Apr (04)</option>
-                    <option value="05">May (05)</option>
-                    <option value="06">Jun (06)</option>
-                    <option value="07">Jul (07)</option>
-                    <option value="08">Aug (08)</option>
-                    <option value="09">Sep (09)</option>
-                    <option value="10">Oct (10)</option>
-                    <option value="11">Nov (11)</option>
-                    <option value="12">Dec (12)</option>
-                  </select>
+                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                    🎂 अपना या अपने बच्चे का जन्मदिन चुनें <span className="text-white">(अनिवार्य)</span>:
+                  </p>
+                  <div className="flex gap-2">
+                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>दिन (Day) *</option>
+                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                    </select>
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>महीना (Month) *</option>
+                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                    </select>
+                  </div>
+                  <p className="text-[9px] text-neutral-400 text-left">
+                    🎁 जन्मदिन के दिन कैफे आएं और पाएं स्पेशल सरप्राइज गिफ्ट!
+                  </p>
                 </div>
               )}
-
               <button 
                 type="submit" 
                 disabled={isLoading}
