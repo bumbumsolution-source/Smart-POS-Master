@@ -160,7 +160,10 @@ export default function BbCafeDesktopPos() {
   const handleToggleGame = async (gameType: string) => {
     triggerBeep('tap');
     await setDoc(doc(db, "system_settings", "game_config"), { activeGame: gameType }, { merge: true });
-    toast.success(`सफलतापूर्वक ${gameType === 'SpinGame' ? 'Spin Wheel' : 'Catch Game'} चालू कर दिया गया! 🎮`);
+    
+    // तीनों गेम का नाम सही से दिखाने के लिए
+    const gameName = gameType === 'SpinGame' ? 'Spin Wheel' : gameType === 'CatchGame' ? 'Catch Game' : 'Fruit Cutter';
+    toast.success(`सफलतापूर्वक ${gameName} चालू कर दिया गया! 🎮`);
   };
   // Customer Directory & Numeric Search
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
