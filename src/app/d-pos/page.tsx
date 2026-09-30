@@ -4617,11 +4617,11 @@ export default function BbCafeDesktopPos() {
                                       return tag ? <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm border ${tagClass}`}>{tag}</span> : null;
                                     })()}
 
-                                    {cust.importSource === 'SpinGame' && (
-                                      <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/30 text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm">
-                                        🎰 Game
-                                      </span>
-                                    )}
+                                    {(cust.importSource === 'SpinGame' || cust.importSource === 'CatchGame') && (
+  <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/30 text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase shadow-sm">
+    🎰 {cust.importSource === 'CatchGame' ? 'Catch Game' : 'Spin Game'}
+  </span>
+)}
                                   </div>
                                   <p className="text-xs font-mono text-neutral-500 mt-0.5">📞 {cust.phone || cust.id}</p>
                                </div>
