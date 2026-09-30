@@ -5,7 +5,6 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
-// नाम को सही फॉर्मेट में करने के लिए
 const formatNameTitleCase = (text: string) => {
   return text.toLowerCase().split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 };
@@ -31,6 +30,7 @@ export default function Cafe2048Page() {
   const [step, setStep] = useState<"login" | "playing" | "gameover">("login");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  
   const [birthDay, setBirthDay] = useState(""); 
   const [birthMonth, setBirthMonth] = useState(""); 
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
@@ -68,6 +68,7 @@ export default function Cafe2048Page() {
           setIsReturningUser(true);
         } else {
           setIsReturningUser(false); 
+          setName("");
         }
       });
     } else {
@@ -83,7 +84,11 @@ export default function Cafe2048Page() {
     
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    if (!isReturningUser && (!birthDay || !birthMonth)) return toast.error("कृपया अपना जन्मदिन चुनें!");
+    
+    // 👉 अब सबके लिए (नए और पुराने) जन्मदिन अनिवार्य है
+    if (!birthDay || !birthMonth) {
+      return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
+    }
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -113,11 +118,14 @@ export default function Cafe2048Page() {
         }
       }
 
-      if (!isReturningUser && birthDay && birthMonth) {
-        const formattedDate = `2000-${birthMonth}-${birthDay}`;
-        if (!existingSpecialDates.some((d: any) => d.type === 'Birthday' && d.name === cleanName)) {
-          existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName });
-        }
+      // 👉 सबके लिए बर्थडे सेव / अपडेट करें
+      const formattedDate = `2000-${birthMonth}-${birthDay}`;
+      const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
+      
+      if (bdayIndex > -1) {
+        existingSpecialDates[bdayIndex].date = formattedDate; 
+      } else {
+        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); 
       }
 
       await setDoc(userRef, { 
@@ -219,7 +227,6 @@ export default function Cafe2048Page() {
     else if (direction === 'UP') { newBoard = rotateLeft(newBoard); newBoard = moveLeft(newBoard); newBoard = rotateRight(newBoard); }
     else if (direction === 'DOWN') { newBoard = rotateRight(newBoard); newBoard = moveLeft(newBoard); newBoard = rotateLeft(newBoard); }
 
-    // Check if board changed
     if (JSON.stringify(oldBoard) !== JSON.stringify(newBoard)) {
       newBoard = addRandomTile(newBoard);
       setBoard(newBoard);
@@ -227,15 +234,12 @@ export default function Cafe2048Page() {
       setScore(currentScore.val);
       setMaxTile(Math.max(highestTile.val, maxTile));
       
-      // Check Game Over
       checkGameOver(newBoard);
     }
   };
 
   const checkGameOver = (b: number[][]) => {
-    // Check for empty space
     for(let r=0; r<4; r++) for(let c=0; c<4; c++) if (b[r][c] === 0) return;
-    // Check for possible merges
     for(let r=0; r<4; r++) {
       for(let c=0; c<4; c++) {
         if (c < 3 && b[r][c] === b[r][c+1]) return;
@@ -249,10 +253,10 @@ export default function Cafe2048Page() {
   useEffect(() => {
     if (step !== "playing") return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") move('UP');
-      if (e.key === "ArrowDown") move('DOWN');
-      if (e.key === "ArrowLeft") move('LEFT');
-      if (e.key === "ArrowRight") move('RIGHT');
+      if (e.key === "ArrowUp") { e.preventDefault(); move('UP'); }
+      if (e.key === "ArrowDown") { e.preventDefault(); move('DOWN'); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); move('LEFT'); }
+      if (e.key === "ArrowRight") { e.preventDefault(); move('RIGHT'); }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -271,7 +275,7 @@ export default function Cafe2048Page() {
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
 
-    if (Math.max(absDx, absDy) > 30) { // Minimum swipe distance
+    if (Math.max(absDx, absDy) > 30) { 
       if (absDx > absDy) {
         if (dx > 0) move('RIGHT');
         else move('LEFT');
@@ -327,7 +331,7 @@ export default function Cafe2048Page() {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
-        lastCatchGameScore: score // POS में दिखाने के लिए
+        lastCatchGameScore: score 
       }, { merge: true });
 
       setEarnedPoints(finalPointsToAdd);
@@ -358,7 +362,7 @@ export default function Cafe2048Page() {
       
       {/* ---------------- LOGIN SCREEN ---------------- */}
       {step === "login" && (
-        <div className="w-full max-w-sm px-4 z-10">
+        <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
           <div className="mb-6 text-center">
             <h1 className="text-4xl font-black text-amber-500 drop-shadow-md tracking-wider">Cafe 2048 🧩</h1>
             <p className="text-sm font-bold text-neutral-400 mt-1">बम बम कैफे, मोहंद्रा</p>
@@ -377,29 +381,27 @@ export default function Cafe2048Page() {
               <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-amber-500 text-center py-3 rounded-xl outline-none text-white focus:border-amber-400 font-mono" />
               <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-orange-500 text-center py-3 rounded-xl outline-none text-white focus:border-orange-400 font-bold" />
               
-              {/* 👉 जन्मदिन वाला सेक्शन (स्पष्ट मैसेज के साथ) */}
-              {!isReturningUser && (
-                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                    🎂 अपना या अपने बच्चे का जन्मदिन चुनें <span className="text-white">(अनिवार्य)</span>:
-                  </p>
-                  <div className="flex gap-2">
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>दिन (Day) *</option>
-                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                    </select>
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>महीना (Month) *</option>
-                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                    </select>
-                  </div>
-                  <p className="text-[9px] text-neutral-400 text-left">
-                    🎁 जन्मदिन के दिन कैफे आएं और पाएं स्पेशल सरप्राइज गिफ्ट!
-                  </p>
+              {/* 👉 जन्मदिन वाला सेक्शन (सबके लिए अनिवार्य + साफ़ चेतावनी के साथ) */}
+              <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                  🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
+                </p>
+                <div className="flex gap-2">
+                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                    <option value="" disabled>जन्म की तारीख *</option>
+                    {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                  </select>
+                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                    <option value="" disabled>जन्म का महीना *</option>
+                    {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                  </select>
                 </div>
-              )}
+                <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
+                  ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
+                </p>
+              </div>
 
-              <button type="submit" disabled={isLoading} className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-2">
+              <button type="submit" disabled={isLoading} className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
                 {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
               </button>
             </form>
@@ -410,7 +412,6 @@ export default function Cafe2048Page() {
       {/* ---------------- PLAYING SCREEN ---------------- */}
       {step === "playing" && (
         <div className="w-full max-w-sm px-4 flex flex-col items-center justify-center h-[100dvh]" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          {/* Header Stats */}
           <div className="w-full flex justify-between items-center mb-6">
              <div>
                <h2 className="text-2xl font-black text-amber-500">Cafe 2048</h2>
@@ -422,7 +423,6 @@ export default function Cafe2048Page() {
              </div>
           </div>
           
-          {/* Top Target Indicator */}
           <div className="w-full bg-[#1e293b] p-3 rounded-xl border border-neutral-700 mb-4 flex justify-between items-center text-xl">
              <div className={`opacity-50 ${maxTile >= 512 ? 'opacity-100 scale-125 transition-transform' : ''}`}>🍔</div>
              <div className="h-1 flex-1 bg-neutral-700 mx-3 rounded">
@@ -431,7 +431,6 @@ export default function Cafe2048Page() {
              <div className={`opacity-50 ${maxTile >= 2048 ? 'opacity-100 scale-125 transition-transform' : ''}`}>🍕</div>
           </div>
 
-          {/* 4x4 Grid Board */}
           <div className="bg-[#a67c52] p-2 rounded-2xl shadow-[inset_0_4px_15px_rgba(0,0,0,0.5)] touch-none">
             <div className="grid grid-cols-4 gap-2">
               {board.map((row, r) => 
@@ -478,7 +477,7 @@ export default function Cafe2048Page() {
               <p className="text-[11px] font-black uppercase text-green-500">डिस्काउंट कूपन जीते</p>
               <p className="text-4xl font-black text-green-400 mt-1">🎟️ {earnedPoints}</p>
               <p className="text-xs text-neutral-300 mt-3 font-bold">
-                कूपन <span className="text-yellow-400">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
+                कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
               </p>
             </div>
           ) : (
@@ -490,9 +489,20 @@ export default function Cafe2048Page() {
             </div>
           )}
 
-          <button onClick={() => setStep("login")} className="w-full py-3.5 bg-blue-600 text-white font-black text-sm uppercase rounded-xl shadow-lg">
-             मुख्य मेनू (Main Menu)
-          </button>
+          <div className="flex flex-col gap-2 pt-2">
+            <button onClick={() => {
+                initializeGame();
+                setGameStartTime(Date.now());
+                setStep("playing");
+              }} 
+              className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-sm uppercase rounded-xl shadow-lg"
+            >
+               🔁 फिर से खेलें (Play Again)
+            </button>
+            <button onClick={() => setStep("login")} className="w-full py-2 bg-transparent text-neutral-400 font-bold text-xs hover:text-white transition-all">
+               मुख्य मेनू (Main Menu)
+            </button>
+          </div>
         </div>
       )}
     </div>
