@@ -20,6 +20,8 @@ export default function SmartGameRouter() {
           const config = docSnap.data();
           if (config.activeGame === "CatchGame") {
             targetGame = "catch-game";
+          } else if (config.activeGame === "FruitNinja") {
+            targetGame = "fruit-ninja"; // 👉 Fruit Cutter के लिए नया रास्ता
           }
         }
 
