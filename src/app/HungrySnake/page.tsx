@@ -70,6 +70,20 @@ export default function HungrySnakePage() {
     }
   }, [phone]);
 
+  // 🐍 स्नेक गेम इंजन (TypeScript Error Fixed)
+  const spawnFood = (snakeBody: {x: number, y: number}[]) => {
+    while (true) {
+      const newFood = {
+        x: Math.floor(Math.random() * GRID_SIZE),
+        y: Math.floor(Math.random() * GRID_SIZE),
+        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)]
+      };
+      // Check if food spawned on snake
+      const onSnake = snakeBody.some(segment => segment.x === newFood.x && segment.y === newFood.y);
+      if (!onSnake) return newFood; // 👉 Fix: लूप के अंदर ही रिटर्न कर दिया
+    }
+  };
+
   // 🚀 1. गेम शुरू करने का हैंडलर
   const handleStartGame = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,22 +160,6 @@ export default function HungrySnakePage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // 🐍 स्नेक गेम इंजन
-  const spawnFood = (snakeBody: {x: number, y: number}[]) => {
-    let newFood;
-    while (true) {
-      newFood = {
-        x: Math.floor(Math.random() * GRID_SIZE),
-        y: Math.floor(Math.random() * GRID_SIZE),
-        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)]
-      };
-      // Check if food spawned on snake
-      const onSnake = snakeBody.some(segment => segment.x === newFood.x && segment.y === newFood.y);
-      if (!onSnake) break;
-    }
-    return newFood;
   };
 
   useEffect(() => {
@@ -381,7 +379,7 @@ export default function HungrySnakePage() {
             </p>
             
             <form onSubmit={handleStartGame} className="space-y-3 pt-2">
-              <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
+              <input type="tel" maxLength={10} placeholder="10-अंकों का মোবাইল नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
               <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-bold" />
               
               {!isReturningUser && (
