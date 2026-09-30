@@ -14,31 +14,35 @@ export default function SmartGameRouter() {
         const docRef = doc(db, "system_settings", "game_config");
         const docSnap = await getDoc(docRef);
         
-        let targetGame = "spin-game"; // डिफ़ॉल्ट गेम
+        let targetGame = "spin-game"; // डिफ़ॉल्ट गेम (Spin Wheel)
         
         if (docSnap.exists()) {
           const config = docSnap.data();
+          
+          // POS से सेट की गई वैल्यू के आधार पर सही फोल्डर (URL) का नाम सेट करें
           if (config.activeGame === "CatchGame") {
             targetGame = "catch-game";
           } else if (config.activeGame === "FruitNinja") {
-            targetGame = "fruit-ninja"; // 👉 Fruit Cutter के लिए नया रास्ता
+            targetGame = "FruitNinja"; // 👉 यहाँ Capital F और N होना चाहिए (आपके फोल्डर के नाम के अनुसार)
+          } else if (config.activeGame === "SpinGame") {
+            targetGame = "spin-game"; 
           }
         }
 
-        // टेबल नंबर को URL में सुरक्षित रखें
+        // टेबल नंबर को URL में सुरक्षित रखें ताकि गेम में टेबल नंबर दिखे
         const urlParams = new URLSearchParams(window.location.search);
         const table = urlParams.get('table') || '';
         const queryString = table ? `?table=${table}` : '';
 
         setLoadingText("आपको गेम में ले जाया जा रहा है... 🚀");
         
-        // आधा सेकंड में सही गेम पर भेज दें
+        // आधा सेकंड के अंदर कस्टमर को सीधे सही गेम पर भेज दें
         setTimeout(() => {
           window.location.replace(`/${targetGame}${queryString}`);
         }, 500);
 
       } catch (error) {
-        // अगर कोई दिक्कत आये, तो डिफ़ॉल्ट स्पिन गेम खोल दें
+        // अगर नेट स्लो है या कोई दिक्कत आये, तो डिफ़ॉल्ट स्पिन गेम खोल दें
         window.location.replace("/spin-game");
       }
     };
