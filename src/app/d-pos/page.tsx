@@ -4853,6 +4853,12 @@ export default function BbCafeDesktopPos() {
                       >
                         🃏 Food Match
                       </button>
+                       <button 
+                        onClick={() => handleToggleGame('Cafe2048')} 
+                        className={`flex-1 py-2.5 px-2 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${activeGameType === 'Cafe2048' ? 'bg-white dark:bg-neutral-900 text-amber-500 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🧩 2048 Puzzle
+                      </button>
                     </div>
                   </div>
                   {/* THEME SETTING */}
