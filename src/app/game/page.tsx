@@ -14,7 +14,7 @@ export default function SmartGameRouter() {
         const docRef = doc(db, "system_settings", "game_config");
         const docSnap = await getDoc(docRef);
         
-        let targetGame = "spin-game"; // डिफ़ॉल्ट गेम (Spin Wheel)
+        let targetGame = "spin-game"; // डिफ़ॉल्ट गेम
         
         if (docSnap.exists()) {
           const config = docSnap.data();
@@ -23,7 +23,9 @@ export default function SmartGameRouter() {
           if (config.activeGame === "CatchGame") {
             targetGame = "catch-game";
           } else if (config.activeGame === "FruitNinja") {
-            targetGame = "FruitNinja"; // 👉 यहाँ Capital F और N होना चाहिए (आपके फोल्डर के नाम के अनुसार)
+            targetGame = "FruitNinja"; 
+          } else if (config.activeGame === "MemoryGame") {
+            targetGame = "MemoryGame"; // 👉 Memory Game (Food Match) के लिए
           } else if (config.activeGame === "SpinGame") {
             targetGame = "spin-game"; 
           }
