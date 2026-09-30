@@ -289,12 +289,27 @@ export default function SurpriseArcadeGame() {
             <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required style={{ padding: "14px", borderRadius: "10px", border: "2px solid #3b82f6", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none" }} />
             
             {/* 👉 NEW: Birthday Input (सिर्फ नए ग्राहकों को दिखेगा) */}
-            {!isReturningUser && (
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", top: "-8px", left: "15px", backgroundColor: "#1e293b", padding: "0 5px", fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>जन्मदिन (Optional) 🎂</span>
-                <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "2px solid #ec4899", backgroundColor: "#0f172a", color: "#fff", fontSize: "16px", textAlign: "center", outline: "none", boxSizing: "border-box" }} />
-              </div>
-            )}
+            {/* 👉 जन्मदिन वाला सेक्शन (स्पष्ट मैसेज के साथ) */}
+              {!isReturningUser && (
+                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                    🎂 अपना या अपने बच्चे का जन्मदिन चुनें <span className="text-white">(अनिवार्य)</span>:
+                  </p>
+                  <div className="flex gap-2">
+                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>दिन (Day) *</option>
+                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                    </select>
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>महीना (Month) *</option>
+                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                    </select>
+                  </div>
+                  <p className="text-[9px] text-neutral-400 text-left">
+                    🎁 जन्मदिन के दिन कैफे आएं और पाएं स्पेशल सरप्राइज गिफ्ट!
+                  </p>
+                </div>
+              )}
 
             <button type="submit" disabled={isLoading} style={{ padding: "14px", borderRadius: "25px", border: "none", backgroundColor: "#22c55e", color: "#fff", fontSize: "16px", fontWeight: "900", cursor: isLoading ? "not-allowed" : "pointer", marginTop: "10px" }}>
               {isLoading ? "प्रतीक्षा करें..." : "स्पिन गेम खेलें ➔"}
