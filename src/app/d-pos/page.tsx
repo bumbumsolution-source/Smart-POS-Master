@@ -5545,22 +5545,41 @@ export default function BbCafeDesktopPos() {
                     )}
                   </div>
 
-                  {/* जीता हुआ इनाम */}
-                  <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
-                    <span className="text-xs font-bold text-neutral-500">जीता हुआ इनाम:</span>
-                    <span className={`text-sm font-black ${
-                      gameVerifyResult.lastPrizeWon === 'Better Luck' ? 'text-neutral-500' : 'text-green-600 dark:text-green-400'
-                    }`}>
-                      {gameVerifyResult.lastPrizeWon || 'कोई इनाम नहीं'}
-                    </span>
+                 {/* गेम का विवरण (Spin Game या Catch Game) */}
+                  <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                    {gameVerifyResult.lastCatchGameScore !== undefined ? (
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-neutral-500">Catch Game Score:</span>
+                          <span className="text-sm font-black text-orange-600">{gameVerifyResult.lastCatchGameScore}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-neutral-500">Today's Limit Used:</span>
+                          <span className="text-sm font-black text-green-600">{gameVerifyResult.todayGamePoints || 0} / 20 Pts</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-neutral-500">Total Game Balance:</span>
+                          <span className="text-sm font-black text-purple-600">🎰 {gameVerifyResult.gamePoints || 0} Pts</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-neutral-500">जीता हुआ इनाम (Spin):</span>
+                        <span className={`text-sm font-black ${
+                          gameVerifyResult.lastPrizeWon === 'Better Luck' ? 'text-neutral-500' : 'text-green-600 dark:text-green-400'
+                        }`}>
+                          {gameVerifyResult.lastPrizeWon || 'कोई इनाम नहीं'}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <p className="text-[10px] text-neutral-400 italic">
+                  <p className="text-[10px] text-neutral-400 italic mt-2">
                     खेला गया: {gameVerifyResult.minutesAgo === 0 ? 'अभी-अभी' : `${gameVerifyResult.minutesAgo} मिनट पहले`}
                   </p>
 
-                  {/* एक्शन बटन */}
-                  {gameVerifyResult.lastPrizeWon !== 'Better Luck' && (
+                  {/* एक्शन बटन (सिर्फ Spin Game के लिए क्योंकि Catch Game के पॉइंट्स सीधे कार्ट में रिडीम होते हैं) */}
+                  {gameVerifyResult.lastPrizeWon && gameVerifyResult.lastPrizeWon !== 'Better Luck' && (
                     <div className="pt-2">
                       {gameVerifyResult.voucherClaimed ? (
                         <div className="w-full py-2 bg-red-500/10 text-red-600 border border-red-500/20 text-center rounded-xl text-xs font-black uppercase">
@@ -5577,7 +5596,6 @@ export default function BbCafeDesktopPos() {
                         </button>
                       )}
                       
-                      {/* नया बटन: 0 Bill & KOT (सिंगल सर्च के लिए) */}
                       <button 
                         type="button"
                         onClick={() => handlePrintGameWinner(gameVerifyResult)}
