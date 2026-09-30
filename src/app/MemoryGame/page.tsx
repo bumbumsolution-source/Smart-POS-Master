@@ -177,26 +177,24 @@ export default function MemoryGamePage() {
         setStep("gameover");
       }
     }
-  }, [timeElapsed, matches, step]);
+  }, [timeElapsed, matches, step, gameInterval]);
 
-  // 🃏 कार्ड क्लिक हैंडलर
+  // 🃏 कार्ड क्लिक हैंडलर (TypeScript Error Fixed)
   const handleCardClick = (clickedId: number) => {
-    // अगर 2 कार्ड पहले से पलटे हैं, या यह कार्ड पहले से मैच है, तो क्लिक इग्नोर करें
     if (flippedCards.length === 2) return;
     const clickedCard = cards.find(c => c.id === clickedId);
     if (clickedCard?.isFlipped || clickedCard?.isMatched) return;
 
-    // कार्ड पलटें
     setCards(prev => prev.map(c => c.id === clickedId ? { ...c, isFlipped: true } : c));
     const newFlipped = [...flippedCards, clickedId];
     setFlippedCards(newFlipped);
 
-    // अगर 2 कार्ड पलट गए, तो मैच चेक करें
     if (newFlipped.length === 2) {
       const card1 = cards.find(c => c.id === newFlipped[0]);
       const card2 = cards.find(c => c.id === clickedId);
 
-      if (card1?.emoji === card2?.emoji) {
+      // 👉 FIX: यहाँ चेक किया गया है कि card1 और card2 दोनों मौजूद हों
+      if (card1 && card2 && card1.emoji === card2.emoji) {
         // मैच हो गया!
         setTimeout(() => {
           setCards(prev => prev.map(c => 
@@ -204,7 +202,7 @@ export default function MemoryGamePage() {
           ));
           setFlippedCards([]);
           setMatches(prev => prev + 1);
-        }, 500); // आधा सेकंड मैचिंग एनीमेशन के लिए
+        }, 500); 
       } else {
         // मैच नहीं हुआ, वापस पलटें
         setTimeout(() => {
@@ -212,7 +210,7 @@ export default function MemoryGamePage() {
             c.id === card1?.id || c.id === card2?.id ? { ...c, isFlipped: false } : c
           ));
           setFlippedCards([]);
-        }, 800); // 0.8 सेकंड बाद वापस पलटेंगे ताकि कस्टमर देख सके
+        }, 800); 
       }
     }
   };
@@ -222,13 +220,12 @@ export default function MemoryGamePage() {
     if (isSaving) return;
     setIsSaving(true);
     
-    // Anti-Cheat (8 पेयर खोजना 8 सेकंड से कम में नामुमकिन है)
+    // Anti-Cheat
     if (matches === 8 && timeElapsed < 8) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    // 👉 40 सेकंड के अंदर = 10 कूपन, 25 सेकंड के अंदर = 20 कूपन
     let pointsWon = 0;
     if (matches === 8) {
       if (timeElapsed <= 25) pointsWon = 20;
