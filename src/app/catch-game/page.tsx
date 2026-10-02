@@ -25,7 +25,6 @@ export default function CatchGamePage() {
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   const [isLoading, setIsLoading] = useState(false);
   
-  // सिर्फ नाम ऑटो-फिल करने के लिए
   const [isReturningUser, setIsReturningUser] = useState(false); 
 
   const [score, setScore] = useState(0);
@@ -54,16 +53,32 @@ export default function CatchGamePage() {
     }
   }, []);
 
-  // ऑटो-फिल (नाम)
+  // ऑटो-फिल (नाम और जन्मदिन)
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
-        if (snap.exists() && snap.data().name) {
-          setName(snap.data().name); 
-          setIsReturningUser(true);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.name) {
+            setName(data.name); 
+            setIsReturningUser(true);
+          }
+          // जन्मदिन ऑटो-फिल लॉजिक
+          if (data.specialDates && Array.isArray(data.specialDates)) {
+            const bdayEntry = data.specialDates.find((d: any) => d.type === 'Birthday');
+            if (bdayEntry && bdayEntry.date) {
+              const parts = bdayEntry.date.split("-"); // "2000-MM-DD"
+              if (parts.length === 3) {
+                setBirthMonth(parts[1]);
+                setBirthDay(parts[2]);
+              }
+            }
+          }
         } else {
           setIsReturningUser(false); 
           setName("");
+          setBirthMonth("");
+          setBirthDay("");
         }
       });
     } else {
@@ -159,19 +174,22 @@ export default function CatchGamePage() {
     basketXRef.current = newX; 
   };
 
-  // 🔥 GAME LOOP 🔥
+  // 🔥 GAME LOOP (With Level/Speed System) 🔥
   useEffect(() => {
     if (step !== "playing") return;
 
     const gameLoop = (time: number) => {
       const currentScore = scoreRef.current; 
+      
+      // 👉 हर 1000 स्कोर पर लेवल 1 बढ़ेगा (उदा: 3000 पर Level 3)
+      const level = Math.floor(currentScore / 1000);
 
-      // स्पॉन स्पीड (Drop Interval)
-      const dropSpeed = Math.max(300, 800 - (currentScore * 0.01)); 
+      // 👉 लेवल के हिसाब से आइटम तेज़ी से गिरेंगे (Drop Speed)
+      const dropSpeed = Math.max(250, 800 - (level * 15)); 
       
       if (time - lastItemTime.current > dropSpeed) {
-        // बम के चांस (Max 45%)
-        const bombChance = 0.25 + Math.min(0.20, currentScore / 100000);
+        // बम के चांस भी लेवल के साथ बढ़ेंगे (Max 50%)
+        const bombChance = Math.min(0.50, 0.20 + (level * 0.01));
         const isBomb = Math.random() < bombChance; 
         
         const newItem = {
@@ -180,8 +198,8 @@ export default function CatchGamePage() {
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
           x: Math.random() * 90 + 5, 
           y: -10, 
-          // गिरने की स्पीड (Fall Speed)
-          speed: Math.random() * 1.0 + 1.2 + (currentScore / 25000) 
+          // 👉 गिरने की स्पीड (Fall Speed) हर लेवल के साथ बढ़ती जाएगी
+          speed: Math.random() * 1.0 + 1.2 + (level * 0.1) 
         };
         setItems(prev => [...prev, newItem]);
         lastItemTime.current = time;
@@ -233,17 +251,15 @@ export default function CatchGamePage() {
     if (isSaving) return;
     setIsSaving(true);
     
-    // Anti-Cheat System (Updated for target 30,000 and 60,000)
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
     if (score > 0 && ((score / playTimeSeconds > 600) || score > 200000)) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई! (Speed/Score Hack Detected)", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    // 👉 नया 50% बढ़ा हुआ स्कोर रूल
     let pointsWon = 0;
-    if (score >= 60000) pointsWon = 20;      // 40k से 60k कर दिया
-    else if (score >= 30000) pointsWon = 10; // 20k से 30k कर दिया
+    if (score >= 60000) pointsWon = 20;     
+    else if (score >= 30000) pointsWon = 10; 
     else pointsWon = 0;
 
     try {
@@ -357,11 +373,11 @@ export default function CatchGamePage() {
                   🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
                 </p>
                 <div className="flex gap-2">
-                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthDay ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
                     <option value="" disabled>तारीख *</option>
                     {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
                   </select>
-                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthMonth ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
                     <option value="" disabled>महीना *</option>
                     {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
                   </select>
@@ -397,6 +413,11 @@ export default function CatchGamePage() {
                 <span key={i} className={i < lives ? "opacity-100" : "opacity-20 grayscale"}>❤️</span>
               ))}
             </div>
+          </div>
+          
+          {/* Level Indicator (Optional Visual Queue) */}
+          <div className="absolute top-20 left-0 right-0 flex justify-center pointer-events-none z-10 opacity-30">
+              <span className="text-white font-black text-xl tracking-widest uppercase blur-[1px]">Level {Math.floor(score / 1000)}</span>
           </div>
 
           {items.map(item => (
