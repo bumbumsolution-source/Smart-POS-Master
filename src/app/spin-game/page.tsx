@@ -10,14 +10,15 @@ const formatNameTitleCase = (text: string) => {
 };
 const isValidIndianPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone);
 
-// 🎡 स्पिन व्हील के इनाम (6 हिस्से)
+// 🎡 स्पिन व्हील के इनाम (6 हिस्से) 
+// type: "none" (कुछ नहीं), "points" (कूपन), "food" (खाने की चीज़)
 const PRIZES = [
-  { label: "Better Luck", points: 0, color: "#ef4444" }, // Red
-  { label: "10 कूपन", points: 10, color: "#eab308" }, // Yellow
-  { label: "Better Luck", points: 0, color: "#3b82f6" }, // Blue
-  { label: "20 कूपन", points: 20, color: "#22c55e" }, // Green
-  { label: "Better Luck", points: 0, color: "#f97316" }, // Orange
-  { label: "50 कूपन", points: 50, color: "#a855f7" }  // Purple (Rare)
+  { label: "Better Luck", points: 0, type: "none", color: "#ef4444" }, // 0: Red (70%)
+  { label: "10 कूपन", points: 10, type: "points", color: "#eab308" }, // 1: Yellow (20%)
+  { label: "Manchurian Half", points: 0, type: "food", color: "#3b82f6" }, // 2: Blue (3%)
+  { label: "20 कूपन", points: 20, type: "points", color: "#22c55e" }, // 3: Green (3%)
+  { label: "Manchurian Rice", points: 0, type: "food", color: "#f97316" }, // 4: Orange (3%)
+  { label: "Sandwich", points: 0, type: "food", color: "#a855f7" }  // 5: Purple (1%)
 ];
 
 export default function SpinGamePage() {
@@ -25,7 +26,6 @@ export default function SpinGamePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   
-  // 👉 नया बर्थडे स्टेट
   const [birthDay, setBirthDay] = useState(""); 
   const [birthMonth, setBirthMonth] = useState(""); 
   
@@ -48,16 +48,32 @@ export default function SpinGamePage() {
     }
   }, []);
 
-  // ऑटो-फिल
+  // ऑटो-फिल (नाम और जन्मदिन दोनों)
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
-        if (snap.exists() && snap.data().name) {
-          setName(snap.data().name); 
-          setIsReturningUser(true);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.name) {
+            setName(data.name); 
+            setIsReturningUser(true);
+          }
+          // जन्मदिन ऑटो-फिल लॉजिक
+          if (data.specialDates && Array.isArray(data.specialDates)) {
+            const bdayEntry = data.specialDates.find((d: any) => d.type === 'Birthday');
+            if (bdayEntry && bdayEntry.date) {
+              const parts = bdayEntry.date.split("-"); // "2000-MM-DD"
+              if (parts.length === 3) {
+                setBirthMonth(parts[1]);
+                setBirthDay(parts[2]);
+              }
+            }
+          }
         } else {
           setIsReturningUser(false); 
           setName("");
+          setBirthMonth("");
+          setBirthDay("");
         }
       });
     } else {
@@ -102,8 +118,9 @@ export default function SpinGamePage() {
         const data = userSnap.data();
         existingSpecialDates = data.specialDates || [];
         const todayStr = new Date().toDateString();
+        // पॉइंट लिमिट वार्निंग 
         if (data.lastGameDate === todayStr && data.todayGamePoints >= 50) {
-          toast("⚠️ आप आज की इनाम लिमिट पार कर चुके हैं, मजे के लिए स्पिन करें!", { icon: '🎡' });
+          toast("⚠️ आप आज के कूपन की लिमिट पार कर चुके हैं, लेकिन खाने के इनाम जीत सकते हैं!", { icon: '🎡' });
         }
       }
 
@@ -139,15 +156,27 @@ export default function SpinGamePage() {
     }
   };
 
-  // 🎡 2. व्हील घुमाने का लॉजिक
+  // 🎡 2. व्हील घुमाने का लॉजिक (Ratio / Probability System)
   const handleSpin = () => {
     if (isSpinning) return;
     setIsSpinning(true);
     
-    // 50 पॉइंट्स जीतने के चांस बहुत कम (Rare) कर दिए गए हैं
-    let prizeIndex = Math.floor(Math.random() * PRIZES.length);
-    if (PRIZES[prizeIndex].points === 50 && Math.random() > 0.1) {
-       prizeIndex = 1; // 50 आने पर 90% चांस है कि वो 10 कूपन पर चला जाएगा
+    // 👉 जीतने का चांस कैलकुलेट करना (0 से 100 के बीच रैंडम नंबर)
+    const randomChance = Math.random() * 100;
+    let prizeIndex = 0;
+
+    if (randomChance < 70) {
+      prizeIndex = 0; // 70% चांस -> Better Luck
+    } else if (randomChance < 90) {
+      prizeIndex = 1; // 20% चांस -> 10 कूपन
+    } else if (randomChance < 93) {
+      prizeIndex = 2; // 3% चांस -> Manchurian Half
+    } else if (randomChance < 96) {
+      prizeIndex = 3; // 3% चांस -> 20 कूपन
+    } else if (randomChance < 99) {
+      prizeIndex = 4; // 3% चांस -> Manchurian Rice
+    } else {
+      prizeIndex = 5; // 1% चांस -> Sandwich (जैकपॉट)
     }
 
     const spins = 5; // 5 बार पूरा घूमेगा
@@ -179,26 +208,42 @@ export default function SpinGamePage() {
         todayGamePoints = data.lastGameDate === todayStr ? (Number(data.todayGamePoints) || 0) : 0;
       }
 
-      // लिमिट 50 कूपन / दिन
-      const remainingLimit = Math.max(0, 50 - todayGamePoints);
-      const finalPointsToAdd = Math.min(prize.points, remainingLimit);
-      
+      let finalPointsToAdd = 0;
       let generatedCode = "";
-      if (finalPointsToAdd > 0) {
-        generatedCode = `BOM-${Math.floor(1000 + Math.random() * 9000)}`;
+      let finalPrizeLabel = "Better Luck";
+      let isWinner = false;
+
+      // अगर पॉइंट/कूपन जीता है
+      if (prize.type === "points") {
+        const remainingLimit = Math.max(0, 50 - todayGamePoints);
+        finalPointsToAdd = Math.min(prize.points, remainingLimit);
+        
+        if (finalPointsToAdd > 0) {
+          generatedCode = `BOM-${Math.floor(1000 + Math.random() * 9000)}`;
+          finalPrizeLabel = `${finalPointsToAdd} कूपन`;
+          isWinner = true;
+        } else {
+          finalPrizeLabel = "लिमिट ख़त्म (0 कूपन)";
+        }
+      } 
+      // अगर खाने की कोई चीज़ (फ़ूड) जीती है
+      else if (prize.type === "food") {
+        generatedCode = `FOOD-${Math.floor(100 + Math.random() * 900)}`;
+        finalPrizeLabel = prize.label;
+        isWinner = true;
       }
 
       await setDoc(userRef, {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
-        lastPrizeWon: prize.points > 0 ? `${finalPointsToAdd} कूपन` : "Better Luck",
+        lastPrizeWon: finalPrizeLabel,
         voucherCode: generatedCode || null,
         voucherClaimed: false,
         lastPlayedAt: serverTimestamp()
       }, { merge: true });
 
-      setWonPrize({ ...prize, actualWon: finalPointsToAdd });
+      setWonPrize({ ...prize, actualLabel: finalPrizeLabel, isWinner: isWinner });
       setVoucherCode(generatedCode);
       
       localStorage.setItem("spin_game_cooldown", Date.now().toString());
@@ -228,8 +273,8 @@ export default function SpinGamePage() {
           <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
             <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-3 rounded-xl border border-neutral-700 text-left">
               व्हील घुमाएं और अपनी किस्मत आजमाएं!<br/>
-              <span className="text-purple-400 block mt-2 text-center text-sm">
-                10, 20 या 50 कूपन जीतने का मौका!
+              <span className="text-purple-400 block mt-2 text-center text-sm font-black">
+                कूपन और टेस्टी फूड जीतने का मौका! 🍕🥪
               </span>
             </p>
             
@@ -237,18 +282,18 @@ export default function SpinGamePage() {
               <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-purple-500 text-center py-3 rounded-xl outline-none text-white focus:border-purple-400 font-mono" />
               <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-purple-500 text-center py-3 rounded-xl outline-none text-white focus:border-purple-400 font-bold" />
               
-              {/* 👉 जन्मदिन वाला सेक्शन (सबके लिए अनिवार्य + साफ़ चेतावनी के साथ) */}
+              {/* जन्मदिन ऑटो-फिल वाला सेक्शन */}
               <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
                 <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
                   🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
                 </p>
                 <div className="flex gap-2">
-                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                    <option value="" disabled>जन्म की तारीख *</option>
+                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthDay ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
+                    <option value="" disabled>तारीख *</option>
                     {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
                   </select>
-                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                    <option value="" disabled>जन्म का महीना *</option>
+                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthMonth ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
+                    <option value="" disabled>महीना *</option>
                     {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
                   </select>
                 </div>
@@ -297,8 +342,8 @@ export default function SpinGamePage() {
                     }}
                   >
                     <span 
-                      className="text-white font-black text-sm uppercase tracking-wider"
-                      style={{ transform: `skewY(-${90 - (360 / PRIZES.length)}deg) rotate(${ (360 / PRIZES.length) / 2 }deg) translateY(-80px)` }}
+                      className="text-white font-black text-xs text-center px-1 uppercase tracking-wider leading-tight"
+                      style={{ transform: `skewY(-${90 - (360 / PRIZES.length)}deg) rotate(${ (360 / PRIZES.length) / 2 }deg) translateY(-75px)` }}
                     >
                       {prize.label}
                     </span>
@@ -326,17 +371,17 @@ export default function SpinGamePage() {
       {/* ---------------- GAME OVER SCREEN ---------------- */}
       {step === "gameover" && wonPrize && (
         <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
-          <div className="text-6xl">{wonPrize.points > 0 ? '🎉' : '💥'}</div>
+          <div className="text-6xl">{wonPrize.isWinner ? (wonPrize.type === "food" ? '🍔' : '🎉') : '💥'}</div>
           <h2 className="text-3xl font-black uppercase text-purple-400 tracking-wider">Result</h2>
           
           <div className="bg-[#0f172a] p-5 rounded-2xl border border-[#334155] space-y-2">
             <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">You Won</p>
-            <p className="text-4xl font-black mt-2" style={{ color: wonPrize.color }}>
-              {wonPrize.label}
+            <p className="text-3xl font-black mt-2 leading-tight" style={{ color: wonPrize.color }}>
+              {wonPrize.actualLabel}
             </p>
           </div>
 
-          {wonPrize.actualWon > 0 ? (
+          {wonPrize.isWinner ? (
             <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl space-y-3">
               <p className="text-xs text-green-400 font-bold">
                 बिल बनवाते समय कैशियर को यह कोड दिखाएं:
