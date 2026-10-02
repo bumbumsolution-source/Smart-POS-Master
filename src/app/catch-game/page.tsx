@@ -173,21 +173,16 @@ export default function CatchGamePage() {
     basketXRef.current = newX; 
   };
 
-  // 🔥 GAME LOOP (15-Minute Marathon System) 🔥
   useEffect(() => {
     if (step !== "playing") return;
 
     const gameLoop = (time: number) => {
       const currentScore = scoreRef.current; 
       
-      // लेवल अब हर 1500 स्कोर पर धीरे-धीरे बढ़ेगा
       const level = Math.floor(currentScore / 1500);
-
-      // गिरने की स्पीड बहुत ज़्यादा तेज़ नहीं होगी (मिनिमम 400ms)
       const dropSpeed = Math.max(400, 800 - (level * 20)); 
       
       if (time - lastItemTime.current > dropSpeed) {
-        // बम 15% से शुरू होकर अधिकतम 35% तक ही जाएंगे, ताकि बंदा 15 मिनट टिक सके
         const bombChance = Math.min(0.35, 0.15 + (level * 0.02));
         const isBomb = Math.random() < bombChance; 
         
@@ -197,7 +192,6 @@ export default function CatchGamePage() {
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
           x: Math.random() * 90 + 5, 
           y: -10, 
-          // धीरे-धीरे नीचे गिरेगा
           speed: Math.random() * 0.8 + 1.0 + (level * 0.05) 
         };
         setItems(prev => [...prev, newItem]);
@@ -216,7 +210,7 @@ export default function CatchGamePage() {
             if (item.type === "bomb") {
               lostLife = true;
             } else {
-              frameScore += 20; // 🍔 20 पॉइंट प्रति आइटम
+              frameScore += 20; 
             }
             return false; 
           }
@@ -250,34 +244,28 @@ export default function CatchGamePage() {
     if (isSaving) return;
     setIsSaving(true);
     
-    // खेलने का कुल समय (सेकंड में)
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
     
-    // एंटी-चीट: अगर कोई 1 सेकंड में 50 से ज़्यादा पॉइंट बनाता है (जो 20 पॉइंट के हिसाब से नामुमकिन है), तो चीटिंग है!
     if (score > 0 && ((score / playTimeSeconds > 50) || score > 60000)) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई! बिना मेहनत कूपन नहीं मिलेंगे!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    let pointsWon = 0;
+    let eligibleTotalToday = 0;
     
-    // 🏆 20 कूपन के लिए: 25,000 स्कोर + कम से कम 15 मिनट (लगभग 850 सेकंड) खेला होना चाहिए
     if (score >= 25000) {
         if (playTimeSeconds < 850) { 
-           toast.error("हैक डिटेक्टेड! 15 मिनट से पहले 25,000 संभव नहीं है।");
+           toast.error("हैक डिटेक्टेड! इतने कम समय में 25,000 संभव नहीं है।");
            setIsSaving(false); return; 
         }
-        pointsWon = 20;
+        eligibleTotalToday = 20;
     } 
-    // 🏆 10 कूपन के लिए: 12,000 स्कोर + कम से कम 8 मिनट (लगभग 450 सेकंड) खेला होना चाहिए
     else if (score >= 12000) {
         if (playTimeSeconds < 450) {
-           toast.error("हैक डिटेक्टेड! 8 मिनट से पहले 12,000 संभव नहीं है।");
+           toast.error("हैक डिटेक्टेड! इतने कम समय में 12,000 संभव नहीं है।");
            setIsSaving(false); return;
         }
-        pointsWon = 10;
-    } else {
-        pointsWon = 0;
+        eligibleTotalToday = 10;
     }
 
     try {
@@ -297,35 +285,42 @@ export default function CatchGamePage() {
       }
 
       if (lastGameDate !== todayStr) {
-        if (new Date(lastGameDate) > new Date(todayStr)) todayGamePoints = 20; 
-        else todayGamePoints = 0; 
+        todayGamePoints = 0; 
       }
 
-      const remainingLimit = Math.max(0, 20 - todayGamePoints);
-      const finalPointsToAdd = Math.min(pointsWon, remainingLimit);
+      // नया नियम: जीत का कैलकुलेशन
+      const finalPointsToAdd = Math.max(0, eligibleTotalToday - todayGamePoints);
 
-      if (pointsWon > 0 && finalPointsToAdd === 0) {
-        toast("आप आज की लिमिट (20 कूपन) पार कर चुके हैं।", { icon: "⚠️" });
+      if (eligibleTotalToday > 0 && finalPointsToAdd === 0) {
+        if (todayGamePoints >= 20) {
+           toast("आप आज की लिमिट (20 कूपन) पार कर चुके हैं।", { icon: "⚠️" });
+        } else if (todayGamePoints >= 10 && eligibleTotalToday === 10) {
+           toast("आप 10 कूपन पहले ही ले चुके हैं! अब 25,000 का स्कोर बनाएं।", { icon: "⚠️" });
+        }
+        setEarnedPoints(0);
         setIsSaving(false);
         return;
       }
 
-      await setDoc(userRef, {
-        gamePoints: prevGamePoints + finalPointsToAdd, 
-        todayGamePoints: todayGamePoints + finalPointsToAdd,
-        lastGameDate: todayStr,
-        lastCatchGameScore: score 
-      }, { merge: true });
-
-      setEarnedPoints(finalPointsToAdd);
-      
-      localStorage.setItem("catch_game_cooldown", Date.now().toString());
-      localStorage.setItem("catch_game_locked_phone", phone);
-
       if (finalPointsToAdd > 0) {
-        toast.success(`बधाई हो! आपकी मेहनत के बाद आपको ${finalPointsToAdd} कूपन मिले! 🎉`, { duration: 5000 });
-      } else if (score < 12000) {
-        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 12,000 स्कोर चाहिए)!");
+          await setDoc(userRef, {
+            gamePoints: prevGamePoints + finalPointsToAdd, 
+            todayGamePoints: todayGamePoints + finalPointsToAdd,
+            lastGameDate: todayStr,
+            lastCatchGameScore: score 
+          }, { merge: true });
+
+          setEarnedPoints(finalPointsToAdd);
+          
+          localStorage.setItem("catch_game_cooldown", Date.now().toString());
+          localStorage.setItem("catch_game_locked_phone", phone);
+
+          toast.success(`बधाई हो! आपको ${finalPointsToAdd} कूपन मिले! 🎉`, { duration: 5000 });
+      } else {
+          setEarnedPoints(0);
+          if (score < 12000) {
+              toast.error("टारगेट पूरा नहीं हुआ (कम से कम 12,000 स्कोर चाहिए)!");
+          }
       }
 
     } catch (err) {
@@ -362,8 +357,7 @@ export default function CatchGamePage() {
               बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
               <span className="text-green-400 inline-block mt-1 bg-green-900/30 px-2 py-1.5 rounded-lg border border-green-500/20">
                 12,000 Score = 10 कूपन (₹10)<br/>
-                25,000 Score = 20 कूपन (₹20)<br/>
-                <span className="text-[10px] text-green-300">(चेतावनी: कम से कम 10-15 मिनट खेलना अनिवार्य है)</span>
+                25,000 Score = 20 कूपन (₹20)
               </span>
             </p>
             
@@ -482,7 +476,14 @@ export default function CatchGamePage() {
           ) : (
             <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
                <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
-               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 12,000 स्कोर बनाना ज़रूरी है!</p>
+               
+               {score >= 25000 ? (
+                 <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">आप आज के अधिकतम 20 कूपन पहले ही जीत चुके हैं!</p>
+               ) : score >= 12000 ? (
+                 <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">आप 10 कूपन वाला इनाम पहले ही जीत चुके हैं। और कूपन पाने के लिए 25,000 स्कोर बनाएं!</p>
+               ) : (
+                 <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 12,000 स्कोर बनाना ज़रूरी है!</p>
+               )}
             </div>
           )}
 
