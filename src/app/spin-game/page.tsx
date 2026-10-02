@@ -38,7 +38,6 @@ export default function SpinGamePage() {
   const [wonPrize, setWonPrize] = useState<any>(null);
   const [voucherCode, setVoucherCode] = useState("");
 
-  // URL से टेबल नंबर
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -47,7 +46,7 @@ export default function SpinGamePage() {
     }
   }, []);
 
-  // ऑटो-फिल (नाम और जन्मदिन दोनों)
+  // ऑटो-फिल
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
@@ -89,16 +88,19 @@ export default function SpinGamePage() {
     if (!birthDay || !birthMonth) return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
 
     setIsLoading(true);
-    const ONE_HOUR = 60 * 60 * 1000;
+    
+    // 👉 40 मिनट की लिमिट
+    const FORTY_MINUTES = 40 * 60 * 1000;
     const now = Date.now();
 
+    // 1. डिवाइस लेवल चेक (लोकल स्टोरेज)
     const deviceLastPlayed = localStorage.getItem("spin_game_cooldown");
-    const lockedPhone = localStorage.getItem("spin_game_locked_phone");
-
-    if (deviceLastPlayed && lockedPhone) {
-      if (now - parseInt(deviceLastPlayed, 10) < ONE_HOUR && lockedPhone !== cleanPhone) {
+    if (deviceLastPlayed) {
+      const elapsed = now - parseInt(deviceLastPlayed, 10);
+      if (elapsed < FORTY_MINUTES) {
         setIsLoading(false);
-        return toast.error("🚫 इस फोन से पहले ही स्पिन किया जा चुका है! कृपया 1 घंटे प्रतीक्षा करें।", { duration: 5000 });
+        const minsLeft = Math.ceil((FORTY_MINUTES - elapsed) / 60000);
+        return toast.error(`🚫 आप पहले ही खेल चुके हैं! कृपया ${minsLeft} मिनट प्रतीक्षा करें।`, { duration: 5000 });
       }
     }
 
@@ -109,6 +111,18 @@ export default function SpinGamePage() {
 
       if (userSnap.exists()) {
         const data = userSnap.data();
+        
+        // 2. डेटाबेस लेवल चेक (अगर यूज़र चालाकी से ब्राउज़र डेटा क्लियर कर दे)
+        if (data.lastPlayedAt && typeof data.lastPlayedAt.toDate === 'function') {
+          const lastPlayedTime = data.lastPlayedAt.toDate().getTime();
+          const elapsedDb = now - lastPlayedTime;
+          if (elapsedDb < FORTY_MINUTES) {
+            setIsLoading(false);
+            const minsLeft = Math.ceil((FORTY_MINUTES - elapsedDb) / 60000);
+            return toast.error(`🚫 इस नंबर से पहले ही खेला जा चुका है! कृपया ${minsLeft} मिनट प्रतीक्षा करें।`, { duration: 5000 });
+          }
+        }
+
         existingSpecialDates = data.specialDates || [];
         const todayStr = new Date().toDateString();
         if (data.lastGameDate === todayStr && data.todayGamePoints >= 50) {
@@ -140,7 +154,7 @@ export default function SpinGamePage() {
       setStep("playing");
       toast.success("बेस्ट ऑफ़ लक! अपना इनाम स्पिन करें 🎡");
 
-    } catch {
+    } catch (err) {
       toast.error("सर्वर त्रुटि! पुनः प्रयास करें।");
     } finally {
       setIsLoading(false);
@@ -151,28 +165,25 @@ export default function SpinGamePage() {
     if (isSpinning) return;
     setIsSpinning(true);
     
-    // Weighted Probability (Ratio System)
     const randomChance = Math.random() * 100;
     let prizeIndex = 0;
 
-    if (randomChance < 70) prizeIndex = 0; // 70% Better Luck
-    else if (randomChance < 90) prizeIndex = 1; // 20% 10 कूपन
-    else if (randomChance < 93) prizeIndex = 2; // 3% Manchurian Half
-    else if (randomChance < 96) prizeIndex = 3; // 3% 20 कूपन
-    else if (randomChance < 99) prizeIndex = 4; // 3% Manchurian Rice
-    else prizeIndex = 5; // 1% Sandwich
+    if (randomChance < 70) prizeIndex = 0; 
+    else if (randomChance < 90) prizeIndex = 1; 
+    else if (randomChance < 93) prizeIndex = 2; 
+    else if (randomChance < 96) prizeIndex = 3; 
+    else if (randomChance < 99) prizeIndex = 4; 
+    else prizeIndex = 5; 
 
     const spins = 5; 
     const degreesPerSlice = 360 / PRIZES.length;
     
-    // स्पिन व्हील को सटीक बीचो-बीच रोकने का गणित
     const targetDegree = (spins * 360) + 360 - (prizeIndex * degreesPerSlice + (degreesPerSlice / 2));
-
     setRotation(targetDegree);
 
     setTimeout(() => {
       savePrizeToDatabase(PRIZES[prizeIndex]);
-    }, 4500); // Animation Time (4.5s)
+    }, 4500); 
   };
 
   const savePrizeToDatabase = async (prize: any) => {
@@ -220,14 +231,14 @@ export default function SpinGamePage() {
         lastPrizeWon: finalPrizeLabel,
         voucherCode: generatedCode || null,
         voucherClaimed: false,
-        lastPlayedAt: serverTimestamp()
+        lastPlayedAt: serverTimestamp() // यहाँ टाइम सेव हो रहा है 40 मिनट की लिमिट के लिए
       }, { merge: true });
 
       setWonPrize({ ...prize, actualLabel: finalPrizeLabel, isWinner: isWinner });
       setVoucherCode(generatedCode);
       
+      // लोकल स्टोरेज में भी सेव कर रहे हैं
       localStorage.setItem("spin_game_cooldown", Date.now().toString());
-      localStorage.setItem("spin_game_locked_phone", phone);
 
       setStep("gameover");
       setIsSpinning(false);
@@ -238,7 +249,6 @@ export default function SpinGamePage() {
     }
   };
 
-  // 🎨 व्हील के कलर्स को गोल पिज़्ज़ा शेप में सेट करना
   const degreesPerSlice = 360 / PRIZES.length;
   const conicGradientString = PRIZES.map((prize, idx) => {
     return `${prize.color} ${idx * degreesPerSlice}deg ${(idx + 1) * degreesPerSlice}deg`;
@@ -304,13 +314,11 @@ export default function SpinGamePage() {
 
           <div className="relative w-[320px] h-[320px] flex items-center justify-center">
             
-            {/* 📍 Pointer (सुई) - नया और बेहतर डिज़ाइन */}
             <div 
               className="absolute -top-5 z-40 w-10 h-12 bg-yellow-400 shadow-2xl border-b border-black" 
               style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)" }}
             ></div>
             
-            {/* 🎡 Wheel Container */}
             <div 
               className="w-full h-full rounded-full border-[10px] border-[#334155] shadow-[0_0_40px_rgba(168,85,247,0.4)] relative"
               style={{ 
@@ -319,13 +327,10 @@ export default function SpinGamePage() {
                 transitionTimingFunction: "cubic-bezier(0.1, 0.7, 0.1, 1)" 
               }}
             >
-              {/* 🎨 Conic Gradient Background (Perfect Slices) */}
               <div 
                 className="w-full h-full rounded-full overflow-hidden absolute inset-0"
                 style={{ background: `conic-gradient(${conicGradientString})` }}
               >
-                
-                {/* ✍️ टेक्स्ट (Text) अलाइनमेंट */}
                 {PRIZES.map((prize, idx) => {
                   const sliceCenterAngle = (idx * degreesPerSlice) + (degreesPerSlice / 2);
                   return (
@@ -341,7 +346,6 @@ export default function SpinGamePage() {
                   );
                 })}
 
-                {/* 〰️ हिस्से बाँटने वाली सफ़ेद लाइनें (Separators) */}
                 {PRIZES.map((_, idx) => (
                   <div 
                     key={`line-${idx}`}
@@ -352,7 +356,6 @@ export default function SpinGamePage() {
               </div>
             </div>
             
-            {/* 🎯 Center Button (बीच का स्पिन बटन) */}
             <button 
               onClick={handleSpin}
               disabled={isSpinning}
@@ -360,7 +363,6 @@ export default function SpinGamePage() {
             >
               <span className="text-xl">SPIN</span>
             </button>
-
           </div>
 
           <p className="mt-14 text-xs text-neutral-400 font-bold uppercase tracking-widest text-center px-6 animate-pulse">
@@ -398,7 +400,7 @@ export default function SpinGamePage() {
             <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl">
                <p className="text-sm font-black text-red-400">Better Luck Next Time! 😔</p>
                <p className="text-xs text-neutral-400 mt-2">
-                 कोई बात नहीं, अगली बार फिर से ट्राई करें!
+                 कोई बात नहीं, 40 मिनट बाद फिर से ट्राई करें!
                </p>
             </div>
           )}
