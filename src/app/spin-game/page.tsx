@@ -11,7 +11,6 @@ const formatNameTitleCase = (text: string) => {
 const isValidIndianPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone);
 
 // 🎡 स्पिन व्हील के इनाम (6 हिस्से) 
-// type: "none" (कुछ नहीं), "points" (कूपन), "food" (खाने की चीज़)
 const PRIZES = [
   { label: "Better Luck", points: 0, type: "none", color: "#ef4444" }, // 0: Red (70%)
   { label: "10 कूपन", points: 10, type: "points", color: "#eab308" }, // 1: Yellow (20%)
@@ -58,11 +57,10 @@ export default function SpinGamePage() {
             setName(data.name); 
             setIsReturningUser(true);
           }
-          // जन्मदिन ऑटो-फिल लॉजिक
           if (data.specialDates && Array.isArray(data.specialDates)) {
             const bdayEntry = data.specialDates.find((d: any) => d.type === 'Birthday');
             if (bdayEntry && bdayEntry.date) {
-              const parts = bdayEntry.date.split("-"); // "2000-MM-DD"
+              const parts = bdayEntry.date.split("-"); 
               if (parts.length === 3) {
                 setBirthMonth(parts[1]);
                 setBirthDay(parts[2]);
@@ -81,7 +79,6 @@ export default function SpinGamePage() {
     }
   }, [phone]);
 
-  // 🚀 1. गेम शुरू करने का हैंडलर
   const handleStartGame = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = formatNameTitleCase(name.trim());
@@ -89,11 +86,7 @@ export default function SpinGamePage() {
     
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    
-    // 👉 अनिवार्य जन्मदिन
-    if (!birthDay || !birthMonth) {
-      return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
-    }
+    if (!birthDay || !birthMonth) return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -118,13 +111,11 @@ export default function SpinGamePage() {
         const data = userSnap.data();
         existingSpecialDates = data.specialDates || [];
         const todayStr = new Date().toDateString();
-        // पॉइंट लिमिट वार्निंग 
         if (data.lastGameDate === todayStr && data.todayGamePoints >= 50) {
           toast("⚠️ आप आज के कूपन की लिमिट पार कर चुके हैं, लेकिन खाने के इनाम जीत सकते हैं!", { icon: '🎡' });
         }
       }
 
-      // बर्थडे सेव करें
       const formattedDate = `2000-${birthMonth}-${birthDay}`;
       const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
       
@@ -156,43 +147,34 @@ export default function SpinGamePage() {
     }
   };
 
-  // 🎡 2. व्हील घुमाने का लॉजिक (Ratio / Probability System)
   const handleSpin = () => {
     if (isSpinning) return;
     setIsSpinning(true);
     
-    // 👉 जीतने का चांस कैलकुलेट करना (0 से 100 के बीच रैंडम नंबर)
+    // Weighted Probability (Ratio System)
     const randomChance = Math.random() * 100;
     let prizeIndex = 0;
 
-    if (randomChance < 70) {
-      prizeIndex = 0; // 70% चांस -> Better Luck
-    } else if (randomChance < 90) {
-      prizeIndex = 1; // 20% चांस -> 10 कूपन
-    } else if (randomChance < 93) {
-      prizeIndex = 2; // 3% चांस -> Manchurian Half
-    } else if (randomChance < 96) {
-      prizeIndex = 3; // 3% चांस -> 20 कूपन
-    } else if (randomChance < 99) {
-      prizeIndex = 4; // 3% चांस -> Manchurian Rice
-    } else {
-      prizeIndex = 5; // 1% चांस -> Sandwich (जैकपॉट)
-    }
+    if (randomChance < 70) prizeIndex = 0; // 70% Better Luck
+    else if (randomChance < 90) prizeIndex = 1; // 20% 10 कूपन
+    else if (randomChance < 93) prizeIndex = 2; // 3% Manchurian Half
+    else if (randomChance < 96) prizeIndex = 3; // 3% 20 कूपन
+    else if (randomChance < 99) prizeIndex = 4; // 3% Manchurian Rice
+    else prizeIndex = 5; // 1% Sandwich
 
-    const spins = 5; // 5 बार पूरा घूमेगा
+    const spins = 5; 
     const degreesPerSlice = 360 / PRIZES.length;
-    // सुई (Pointer) ऊपर की तरफ है, इसलिए कैलकुलेशन
-    const targetDegree = (spins * 360) + (360 - (prizeIndex * degreesPerSlice)) - (degreesPerSlice / 2);
+    
+    // स्पिन व्हील को सटीक बीचो-बीच रोकने का गणित
+    const targetDegree = (spins * 360) + 360 - (prizeIndex * degreesPerSlice + (degreesPerSlice / 2));
 
     setRotation(targetDegree);
 
-    // 4 सेकंड बाद जब व्हील रुकेगा
     setTimeout(() => {
       savePrizeToDatabase(PRIZES[prizeIndex]);
-    }, 4000);
+    }, 4500); // Animation Time (4.5s)
   };
 
-  // 🛡️ 3. इनाम डेटाबेस में सेव करना
   const savePrizeToDatabase = async (prize: any) => {
     try {
       const userRef = doc(db, "customer_points", phone);
@@ -213,7 +195,6 @@ export default function SpinGamePage() {
       let finalPrizeLabel = "Better Luck";
       let isWinner = false;
 
-      // अगर पॉइंट/कूपन जीता है
       if (prize.type === "points") {
         const remainingLimit = Math.max(0, 50 - todayGamePoints);
         finalPointsToAdd = Math.min(prize.points, remainingLimit);
@@ -226,7 +207,6 @@ export default function SpinGamePage() {
           finalPrizeLabel = "लिमिट ख़त्म (0 कूपन)";
         }
       } 
-      // अगर खाने की कोई चीज़ (फ़ूड) जीती है
       else if (prize.type === "food") {
         generatedCode = `FOOD-${Math.floor(100 + Math.random() * 900)}`;
         finalPrizeLabel = prize.label;
@@ -258,6 +238,12 @@ export default function SpinGamePage() {
     }
   };
 
+  // 🎨 व्हील के कलर्स को गोल पिज़्ज़ा शेप में सेट करना
+  const degreesPerSlice = 360 / PRIZES.length;
+  const conicGradientString = PRIZES.map((prize, idx) => {
+    return `${prize.color} ${idx * degreesPerSlice}deg ${(idx + 1) * degreesPerSlice}deg`;
+  }).join(", ");
+
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden relative select-none">
       <Toaster position="top-center" />
@@ -282,7 +268,6 @@ export default function SpinGamePage() {
               <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-purple-500 text-center py-3 rounded-xl outline-none text-white focus:border-purple-400 font-mono" />
               <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-purple-500 text-center py-3 rounded-xl outline-none text-white focus:border-purple-400 font-bold" />
               
-              {/* जन्मदिन ऑटो-फिल वाला सेक्शन */}
               <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
                 <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
                   🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
@@ -317,53 +302,69 @@ export default function SpinGamePage() {
             Spin To Win
           </h2>
 
-          <div className="relative w-80 h-80 flex items-center justify-center">
-            {/* Pointer (सुई) */}
-            <div className="absolute -top-4 z-20 w-8 h-10 bg-white" style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)" }}></div>
+          <div className="relative w-[320px] h-[320px] flex items-center justify-center">
             
-            {/* Wheel */}
+            {/* 📍 Pointer (सुई) - नया और बेहतर डिज़ाइन */}
             <div 
-              className="w-full h-full rounded-full border-8 border-white shadow-[0_0_30px_rgba(168,85,247,0.5)] overflow-hidden relative transition-transform"
+              className="absolute -top-5 z-40 w-10 h-12 bg-yellow-400 shadow-2xl border-b border-black" 
+              style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)" }}
+            ></div>
+            
+            {/* 🎡 Wheel Container */}
+            <div 
+              className="w-full h-full rounded-full border-[10px] border-[#334155] shadow-[0_0_40px_rgba(168,85,247,0.4)] relative"
               style={{ 
                 transform: `rotate(${rotation}deg)`, 
-                transitionDuration: isSpinning ? "4s" : "0s", 
+                transitionDuration: isSpinning ? "4.5s" : "0s", 
                 transitionTimingFunction: "cubic-bezier(0.1, 0.7, 0.1, 1)" 
               }}
             >
-              {PRIZES.map((prize, idx) => {
-                const rotationAngle = idx * (360 / PRIZES.length);
-                return (
-                  <div 
-                    key={idx} 
-                    className="absolute top-0 right-0 w-[50%] h-[50%] origin-bottom-left flex items-center justify-center border-l-2 border-white/20"
-                    style={{ 
-                      backgroundColor: prize.color, 
-                      transform: `rotate(${rotationAngle}deg) skewY(${90 - (360 / PRIZES.length)}deg)` 
-                    }}
-                  >
-                    <span 
-                      className="text-white font-black text-xs text-center px-1 uppercase tracking-wider leading-tight"
-                      style={{ transform: `skewY(-${90 - (360 / PRIZES.length)}deg) rotate(${ (360 / PRIZES.length) / 2 }deg) translateY(-75px)` }}
+              {/* 🎨 Conic Gradient Background (Perfect Slices) */}
+              <div 
+                className="w-full h-full rounded-full overflow-hidden absolute inset-0"
+                style={{ background: `conic-gradient(${conicGradientString})` }}
+              >
+                
+                {/* ✍️ टेक्स्ट (Text) अलाइनमेंट */}
+                {PRIZES.map((prize, idx) => {
+                  const sliceCenterAngle = (idx * degreesPerSlice) + (degreesPerSlice / 2);
+                  return (
+                    <div 
+                      key={`text-${idx}`} 
+                      className="absolute top-0 left-0 w-full h-full flex justify-center pointer-events-none"
+                      style={{ transform: `rotate(${sliceCenterAngle}deg)` }}
                     >
-                      {prize.label}
-                    </span>
-                  </div>
-                );
-              })}
+                      <span className="text-white font-black text-[12px] uppercase mt-[15px] px-2 text-center drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] w-24 leading-snug break-words">
+                        {prize.label}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* 〰️ हिस्से बाँटने वाली सफ़ेद लाइनें (Separators) */}
+                {PRIZES.map((_, idx) => (
+                  <div 
+                    key={`line-${idx}`}
+                    className="absolute top-0 left-1/2 w-[3px] h-[50%] bg-white/50 origin-bottom -translate-x-1/2"
+                    style={{ transform: `rotate(${idx * degreesPerSlice}deg)` }}
+                  ></div>
+                ))}
+              </div>
             </div>
             
-            {/* Center Button */}
+            {/* 🎯 Center Button (बीच का स्पिन बटन) */}
             <button 
               onClick={handleSpin}
               disabled={isSpinning}
-              className="absolute z-30 w-20 h-20 bg-white rounded-full flex items-center justify-center text-purple-600 font-black uppercase shadow-2xl border-4 border-purple-500 disabled:opacity-80 disabled:cursor-not-allowed transform hover:scale-105 transition-transform"
+              className="absolute z-30 w-20 h-20 bg-white rounded-full flex flex-col items-center justify-center text-purple-700 font-black uppercase shadow-2xl border-[6px] border-[#1e293b] disabled:opacity-90 transform hover:scale-105 transition-all"
             >
-              {isSpinning ? "..." : "SPIN"}
+              <span className="text-xl">SPIN</span>
             </button>
+
           </div>
 
-          <p className="mt-12 text-xs text-neutral-400 font-bold uppercase tracking-widest text-center px-6">
-            बीच वाले सफेद बटन (SPIN) पर क्लिक करें!
+          <p className="mt-14 text-xs text-neutral-400 font-bold uppercase tracking-widest text-center px-6 animate-pulse">
+            बीच वाले सफेद बटन पर क्लिक करें!
           </p>
         </div>
       )}
