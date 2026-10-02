@@ -166,7 +166,7 @@ export default function CatchGamePage() {
     const gameLoop = (time: number) => {
       const currentScore = scoreRef.current; 
 
-      // 1. स्पॉन स्पीड धीमी की गई है (Drop Interval)
+      // स्पॉन स्पीड (Drop Interval)
       const dropSpeed = Math.max(300, 800 - (currentScore * 0.01)); 
       
       if (time - lastItemTime.current > dropSpeed) {
@@ -180,7 +180,7 @@ export default function CatchGamePage() {
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
           x: Math.random() * 90 + 5, 
           y: -10, 
-          // 2. गिरने की स्पीड (Fall Speed) धीमी की गई है
+          // गिरने की स्पीड (Fall Speed)
           speed: Math.random() * 1.0 + 1.2 + (currentScore / 25000) 
         };
         setItems(prev => [...prev, newItem]);
@@ -199,8 +199,7 @@ export default function CatchGamePage() {
             if (item.type === "bomb") {
               lostLife = true;
             } else {
-              // 3. एक आइटम पकड़ने का स्कोर 100 कर दिया गया है
-              frameScore += 100; 
+              frameScore += 100; // 100 पॉइंट प्रति आइटम
             }
             return false; 
           }
@@ -234,17 +233,17 @@ export default function CatchGamePage() {
     if (isSaving) return;
     setIsSaving(true);
     
-    // Anti-Cheat System (Updated for new high scores)
+    // Anti-Cheat System (Updated for target 30,000 and 60,000)
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
-    if (score > 0 && ((score / playTimeSeconds > 500) || score > 150000)) {
+    if (score > 0 && ((score / playTimeSeconds > 600) || score > 200000)) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई! (Speed/Score Hack Detected)", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    // 👉 4. नया स्कोर रूल (Harder Target)
+    // 👉 नया 50% बढ़ा हुआ स्कोर रूल
     let pointsWon = 0;
-    if (score >= 40000) pointsWon = 20;
-    else if (score >= 20000) pointsWon = 10;
+    if (score >= 60000) pointsWon = 20;      // 40k से 60k कर दिया
+    else if (score >= 30000) pointsWon = 10; // 20k से 30k कर दिया
     else pointsWon = 0;
 
     try {
@@ -291,8 +290,8 @@ export default function CatchGamePage() {
 
       if (finalPointsToAdd > 0) {
         toast.success(`बधाई हो! आपको ${finalPointsToAdd} कूपन मिले! 🎉`);
-      } else if (score < 20000) {
-        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 20,000 स्कोर चाहिए)!");
+      } else if (score < 30000) {
+        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 30,000 स्कोर चाहिए)!");
       }
 
     } catch (err) {
@@ -328,8 +327,8 @@ export default function CatchGamePage() {
             <p className="text-xs text-neutral-400 font-bold leading-relaxed">
               बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
               <span className="text-green-400 inline-block mt-1 bg-green-900/30 px-2 py-1.5 rounded-lg border border-green-500/20">
-                20,000 Score = 10 कूपन (₹10)<br/>
-                40,000 Score = 20 कूपन (₹20)<br/>
+                30,000 Score = 10 कूपन (₹10)<br/>
+                60,000 Score = 20 कूपन (₹20)<br/>
                 <span className="text-[10px] text-green-300">(अधिकतम 20 कूपन / दिन)</span>
               </span>
             </p>
@@ -359,11 +358,11 @@ export default function CatchGamePage() {
                 </p>
                 <div className="flex gap-2">
                   <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                    <option value="" disabled>जन्म की तारीख *</option>
+                    <option value="" disabled>तारीख *</option>
                     {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
                   </select>
                   <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                    <option value="" disabled>जन्म का महीना *</option>
+                    <option value="" disabled>महीना *</option>
                     {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
                   </select>
                 </div>
@@ -445,7 +444,7 @@ export default function CatchGamePage() {
           ) : (
             <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
                <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
-               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 20,000 स्कोर बनाना ज़रूरी है!</p>
+               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 30,000 स्कोर बनाना ज़रूरी है!</p>
             </div>
           )}
 
