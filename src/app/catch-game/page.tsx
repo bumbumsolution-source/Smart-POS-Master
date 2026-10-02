@@ -63,11 +63,10 @@ export default function CatchGamePage() {
             setName(data.name); 
             setIsReturningUser(true);
           }
-          // जन्मदिन ऑटो-फिल लॉजिक
           if (data.specialDates && Array.isArray(data.specialDates)) {
             const bdayEntry = data.specialDates.find((d: any) => d.type === 'Birthday');
             if (bdayEntry && bdayEntry.date) {
-              const parts = bdayEntry.date.split("-"); // "2000-MM-DD"
+              const parts = bdayEntry.date.split("-");
               if (parts.length === 3) {
                 setBirthMonth(parts[1]);
                 setBirthDay(parts[2]);
@@ -174,22 +173,22 @@ export default function CatchGamePage() {
     basketXRef.current = newX; 
   };
 
-  // 🔥 GAME LOOP (With Level/Speed System) 🔥
+  // 🔥 GAME LOOP (15-Minute Marathon System) 🔥
   useEffect(() => {
     if (step !== "playing") return;
 
     const gameLoop = (time: number) => {
       const currentScore = scoreRef.current; 
       
-      // 👉 हर 1000 स्कोर पर लेवल 1 बढ़ेगा (उदा: 3000 पर Level 3)
-      const level = Math.floor(currentScore / 1000);
+      // लेवल अब हर 1500 स्कोर पर धीरे-धीरे बढ़ेगा
+      const level = Math.floor(currentScore / 1500);
 
-      // 👉 लेवल के हिसाब से आइटम तेज़ी से गिरेंगे (Drop Speed)
-      const dropSpeed = Math.max(250, 800 - (level * 15)); 
+      // गिरने की स्पीड बहुत ज़्यादा तेज़ नहीं होगी (मिनिमम 400ms)
+      const dropSpeed = Math.max(400, 800 - (level * 20)); 
       
       if (time - lastItemTime.current > dropSpeed) {
-        // बम के चांस भी लेवल के साथ बढ़ेंगे (Max 50%)
-        const bombChance = Math.min(0.50, 0.20 + (level * 0.01));
+        // बम 15% से शुरू होकर अधिकतम 35% तक ही जाएंगे, ताकि बंदा 15 मिनट टिक सके
+        const bombChance = Math.min(0.35, 0.15 + (level * 0.02));
         const isBomb = Math.random() < bombChance; 
         
         const newItem = {
@@ -198,8 +197,8 @@ export default function CatchGamePage() {
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
           x: Math.random() * 90 + 5, 
           y: -10, 
-          // 👉 गिरने की स्पीड (Fall Speed) हर लेवल के साथ बढ़ती जाएगी
-          speed: Math.random() * 1.0 + 1.2 + (level * 0.1) 
+          // धीरे-धीरे नीचे गिरेगा
+          speed: Math.random() * 0.8 + 1.0 + (level * 0.05) 
         };
         setItems(prev => [...prev, newItem]);
         lastItemTime.current = time;
@@ -217,7 +216,7 @@ export default function CatchGamePage() {
             if (item.type === "bomb") {
               lostLife = true;
             } else {
-              frameScore += 100; // 100 पॉइंट प्रति आइटम
+              frameScore += 20; // 🍔 20 पॉइंट प्रति आइटम
             }
             return false; 
           }
@@ -251,16 +250,35 @@ export default function CatchGamePage() {
     if (isSaving) return;
     setIsSaving(true);
     
+    // खेलने का कुल समय (सेकंड में)
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
-    if (score > 0 && ((score / playTimeSeconds > 600) || score > 200000)) {
+    
+    // एंटी-चीट: अगर कोई 1 सेकंड में 50 से ज़्यादा पॉइंट बनाता है (जो 20 पॉइंट के हिसाब से नामुमकिन है), तो चीटिंग है!
+    if (score > 0 && ((score / playTimeSeconds > 50) || score > 60000)) {
       setIsSaving(false);
-      return toast.error("⚠️ चीटिंग पकड़ी गई! (Speed/Score Hack Detected)", { style: { background: "#ef4444", color: "#fff" } });
+      return toast.error("⚠️ चीटिंग पकड़ी गई! बिना मेहनत कूपन नहीं मिलेंगे!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
     let pointsWon = 0;
-    if (score >= 60000) pointsWon = 20;     
-    else if (score >= 30000) pointsWon = 10; 
-    else pointsWon = 0;
+    
+    // 🏆 20 कूपन के लिए: 25,000 स्कोर + कम से कम 15 मिनट (लगभग 850 सेकंड) खेला होना चाहिए
+    if (score >= 25000) {
+        if (playTimeSeconds < 850) { 
+           toast.error("हैक डिटेक्टेड! 15 मिनट से पहले 25,000 संभव नहीं है।");
+           setIsSaving(false); return; 
+        }
+        pointsWon = 20;
+    } 
+    // 🏆 10 कूपन के लिए: 12,000 स्कोर + कम से कम 8 मिनट (लगभग 450 सेकंड) खेला होना चाहिए
+    else if (score >= 12000) {
+        if (playTimeSeconds < 450) {
+           toast.error("हैक डिटेक्टेड! 8 मिनट से पहले 12,000 संभव नहीं है।");
+           setIsSaving(false); return;
+        }
+        pointsWon = 10;
+    } else {
+        pointsWon = 0;
+    }
 
     try {
       const userRef = doc(db, "customer_points", phone);
@@ -305,9 +323,9 @@ export default function CatchGamePage() {
       localStorage.setItem("catch_game_locked_phone", phone);
 
       if (finalPointsToAdd > 0) {
-        toast.success(`बधाई हो! आपको ${finalPointsToAdd} कूपन मिले! 🎉`);
-      } else if (score < 30000) {
-        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 30,000 स्कोर चाहिए)!");
+        toast.success(`बधाई हो! आपकी मेहनत के बाद आपको ${finalPointsToAdd} कूपन मिले! 🎉`, { duration: 5000 });
+      } else if (score < 12000) {
+        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 12,000 स्कोर चाहिए)!");
       }
 
     } catch (err) {
@@ -343,9 +361,9 @@ export default function CatchGamePage() {
             <p className="text-xs text-neutral-400 font-bold leading-relaxed">
               बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
               <span className="text-green-400 inline-block mt-1 bg-green-900/30 px-2 py-1.5 rounded-lg border border-green-500/20">
-                30,000 Score = 10 कूपन (₹10)<br/>
-                60,000 Score = 20 कूपन (₹20)<br/>
-                <span className="text-[10px] text-green-300">(अधिकतम 20 कूपन / दिन)</span>
+                12,000 Score = 10 कूपन (₹10)<br/>
+                25,000 Score = 20 कूपन (₹20)<br/>
+                <span className="text-[10px] text-green-300">(चेतावनी: कम से कम 10-15 मिनट खेलना अनिवार्य है)</span>
               </span>
             </p>
             
@@ -415,9 +433,8 @@ export default function CatchGamePage() {
             </div>
           </div>
           
-          {/* Level Indicator (Optional Visual Queue) */}
           <div className="absolute top-20 left-0 right-0 flex justify-center pointer-events-none z-10 opacity-30">
-              <span className="text-white font-black text-xl tracking-widest uppercase blur-[1px]">Level {Math.floor(score / 1000)}</span>
+              <span className="text-white font-black text-xl tracking-widest uppercase blur-[1px]">Level {Math.floor(score / 1500)}</span>
           </div>
 
           {items.map(item => (
@@ -465,7 +482,7 @@ export default function CatchGamePage() {
           ) : (
             <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
                <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
-               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 30,000 स्कोर बनाना ज़रूरी है!</p>
+               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 12,000 स्कोर बनाना ज़रूरी है!</p>
             </div>
           )}
 
