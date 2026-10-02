@@ -78,7 +78,6 @@ export default function CatchGamePage() {
     const cleanPhone = phone.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
 
-    // 👉 अब सबके लिए (नए और पुराने) जन्मदिन अनिवार्य है
     if (!birthDay || !birthMonth) {
       return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
     }
@@ -113,14 +112,13 @@ export default function CatchGamePage() {
         }
       }
 
-      // 👉 सबके लिए बर्थडे सेव / अपडेट करें
       const formattedDate = `2000-${birthMonth}-${birthDay}`;
       const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
       
       if (bdayIndex > -1) {
-        existingSpecialDates[bdayIndex].date = formattedDate; // अगर पहले से है तो अपडेट करें
+        existingSpecialDates[bdayIndex].date = formattedDate; 
       } else {
-        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); // नया डालें
+        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); 
       }
 
       await setDoc(userRef, { 
@@ -161,19 +159,19 @@ export default function CatchGamePage() {
     basketXRef.current = newX; 
   };
 
-  // 🔥 EXTREME HARD MODE 🔥
+  // 🔥 GAME LOOP 🔥
   useEffect(() => {
     if (step !== "playing") return;
 
     const gameLoop = (time: number) => {
       const currentScore = scoreRef.current; 
 
-      // स्पॉन स्पीड बहुत तेज़ (Max 120ms)
-      const dropSpeed = Math.max(120, 600 - (currentScore * 4)); 
+      // 1. स्पॉन स्पीड धीमी की गई है (Drop Interval)
+      const dropSpeed = Math.max(300, 800 - (currentScore * 0.01)); 
       
       if (time - lastItemTime.current > dropSpeed) {
-        // बम के चांस 50% तक जाएँगे
-        const bombChance = 0.30 + Math.min(0.20, currentScore / 5000);
+        // बम के चांस (Max 45%)
+        const bombChance = 0.25 + Math.min(0.20, currentScore / 100000);
         const isBomb = Math.random() < bombChance; 
         
         const newItem = {
@@ -182,8 +180,8 @@ export default function CatchGamePage() {
           emoji: isBomb ? BOMB_ITEM : FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)],
           x: Math.random() * 90 + 5, 
           y: -10, 
-          // गिरने की स्पीड बहुत तेज़
-          speed: Math.random() * 1.8 + 2.5 + (currentScore / 250) 
+          // 2. गिरने की स्पीड (Fall Speed) धीमी की गई है
+          speed: Math.random() * 1.0 + 1.2 + (currentScore / 25000) 
         };
         setItems(prev => [...prev, newItem]);
         lastItemTime.current = time;
@@ -201,7 +199,8 @@ export default function CatchGamePage() {
             if (item.type === "bomb") {
               lostLife = true;
             } else {
-              frameScore += 10; 
+              // 3. एक आइटम पकड़ने का स्कोर 100 कर दिया गया है
+              frameScore += 100; 
             }
             return false; 
           }
@@ -235,17 +234,17 @@ export default function CatchGamePage() {
     if (isSaving) return;
     setIsSaving(true);
     
-    // Anti-Cheat System (Updated for new extreme scores)
+    // Anti-Cheat System (Updated for new high scores)
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
-    if (score > 0 && ((score / playTimeSeconds > 80) || score > 15000)) {
+    if (score > 0 && ((score / playTimeSeconds > 500) || score > 150000)) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई! (Speed/Score Hack Detected)", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    // 👉 नया स्कोर रूल (Hard)
+    // 👉 4. नया स्कोर रूल (Harder Target)
     let pointsWon = 0;
-    if (score >= 6000) pointsWon = 20;
-    else if (score >= 3000) pointsWon = 10;
+    if (score >= 40000) pointsWon = 20;
+    else if (score >= 20000) pointsWon = 10;
     else pointsWon = 0;
 
     try {
@@ -292,8 +291,8 @@ export default function CatchGamePage() {
 
       if (finalPointsToAdd > 0) {
         toast.success(`बधाई हो! आपको ${finalPointsToAdd} कूपन मिले! 🎉`);
-      } else if (score < 3000) {
-        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 3000 स्कोर चाहिए)!");
+      } else if (score < 20000) {
+        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 20,000 स्कोर चाहिए)!");
       }
 
     } catch (err) {
@@ -329,8 +328,8 @@ export default function CatchGamePage() {
             <p className="text-xs text-neutral-400 font-bold leading-relaxed">
               बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
               <span className="text-green-400 inline-block mt-1 bg-green-900/30 px-2 py-1.5 rounded-lg border border-green-500/20">
-                3000 Score = 10 कूपन (₹10)<br/>
-                6000 Score = 20 कूपन (₹20)<br/>
+                20,000 Score = 10 कूपन (₹10)<br/>
+                40,000 Score = 20 कूपन (₹20)<br/>
                 <span className="text-[10px] text-green-300">(अधिकतम 20 कूपन / दिन)</span>
               </span>
             </p>
@@ -354,7 +353,6 @@ export default function CatchGamePage() {
                 className="w-full bg-[#0f172a] border-2 border-blue-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-blue-400 font-bold" 
               />
               
-              {/* 👉 जन्मदिन वाला सेक्शन (सबके लिए अनिवार्य + साफ़ चेतावनी के साथ) */}
               <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
                 <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
                   🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
@@ -447,7 +445,7 @@ export default function CatchGamePage() {
           ) : (
             <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
                <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
-               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 3000 स्कोर बनाना ज़रूरी है!</p>
+               <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 20,000 स्कोर बनाना ज़रूरी है!</p>
             </div>
           )}
 
