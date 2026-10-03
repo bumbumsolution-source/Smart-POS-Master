@@ -5,6 +5,9 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
+// 🛡️ 1. Security Guard को Import किया है
+import GameGuard from "@/components/GameGuard";
+
 const formatNameTitleCase = (text: string) => {
   return text.toLowerCase().split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 };
@@ -336,177 +339,180 @@ export default function CatchGamePage() {
     }
   }, [step]);
 
+  // 🛡️ 2. यहाँ हमने GameGuard का इस्तेमाल किया है (allowedGameName="CatchGame")
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden touch-none relative select-none">
-      <Toaster position="top-center" />
-      
-      {step === "login" && (
-        <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
-          <div className="mb-6 text-center">
-            <div className="inline-block bg-yellow-500/15 text-yellow-500 px-4 py-1 rounded-full text-xs font-bold mb-2 border border-yellow-500/30">
-              {tableNo}
+    <GameGuard allowedGameName="CatchGame">
+      <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden touch-none relative select-none">
+        <Toaster position="top-center" />
+        
+        {step === "login" && (
+          <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
+            <div className="mb-6 text-center">
+              <div className="inline-block bg-yellow-500/15 text-yellow-500 px-4 py-1 rounded-full text-xs font-bold mb-2 border border-yellow-500/30">
+                {tableNo}
+              </div>
+              <h1 className="text-2xl font-black text-yellow-400">बम बम कैफे, मोहंद्रा</h1>
             </div>
-            <h1 className="text-2xl font-black text-yellow-400">बम बम कैफे, मोहंद्रा</h1>
-          </div>
 
-          <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
-            <div className="text-5xl animate-bounce">🍔☕</div>
-            <h2 className="text-xl font-black uppercase text-blue-400 tracking-wider">Catch & Win Game</h2>
-            
-            <p className="text-xs text-neutral-400 font-bold leading-relaxed">
-              बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
-              <span className="text-green-400 inline-block mt-1 bg-green-900/30 px-2 py-1.5 rounded-lg border border-green-500/20">
-                12,000 Score = 10 कूपन (₹10)<br/>
-                25,000 Score = 20 कूपन (₹20)
-              </span>
-            </p>
-            
-            <form onSubmit={handleStartGame} className="space-y-3 pt-2">
-              <input 
-                type="tel" 
-                maxLength={10}
-                placeholder="10-अंकों का मोबाइल नंबर" 
-                value={phone} 
-                onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
-                required
-                className="w-full bg-[#0f172a] border-2 border-yellow-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-yellow-400 font-mono" 
-              />
-              <input 
-                type="text" 
-                placeholder="आपका नाम" 
-                value={name} 
-                onChange={(e) => setName(formatNameTitleCase(e.target.value))} 
-                required 
-                className="w-full bg-[#0f172a] border-2 border-blue-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-blue-400 font-bold" 
-              />
+            <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
+              <div className="text-5xl animate-bounce">🍔☕</div>
+              <h2 className="text-xl font-black uppercase text-blue-400 tracking-wider">Catch & Win Game</h2>
               
-              <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                  🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
-                </p>
-                <div className="flex gap-2">
-                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthDay ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
-                    <option value="" disabled>तारीख *</option>
-                    {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                  </select>
-                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthMonth ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
-                    <option value="" disabled>महीना *</option>
-                    {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                  </select>
+              <p className="text-xs text-neutral-400 font-bold leading-relaxed">
+                बर्गर और कॉफ़ी पकडें, बम (💣) से बचें।<br/>
+                <span className="text-green-400 inline-block mt-1 bg-green-900/30 px-2 py-1.5 rounded-lg border border-green-500/20">
+                  12,000 Score = 10 कूपन (₹10)<br/>
+                  25,000 Score = 20 कूपन (₹20)
+                </span>
+              </p>
+              
+              <form onSubmit={handleStartGame} className="space-y-3 pt-2">
+                <input 
+                  type="tel" 
+                  maxLength={10}
+                  placeholder="10-अंकों का मोबाइल नंबर" 
+                  value={phone} 
+                  onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
+                  required
+                  className="w-full bg-[#0f172a] border-2 border-yellow-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-yellow-400 font-mono" 
+                />
+                <input 
+                  type="text" 
+                  placeholder="आपका नाम" 
+                  value={name} 
+                  onChange={(e) => setName(formatNameTitleCase(e.target.value))} 
+                  required 
+                  className="w-full bg-[#0f172a] border-2 border-blue-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-blue-400 font-bold" 
+                />
+                
+                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                    🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
+                  </p>
+                  <div className="flex gap-2">
+                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthDay ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
+                      <option value="" disabled>तारीख *</option>
+                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                    </select>
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthMonth ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
+                      <option value="" disabled>महीना *</option>
+                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                    </select>
+                  </div>
+                  <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
+                    ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
+                  </p>
                 </div>
-                <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
-                  ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
+
+                <button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full py-3.5 bg-green-500 hover:bg-green-400 text-white font-black text-base rounded-xl tracking-wider transition-all shadow-lg shadow-green-500/20 mt-4 disabled:opacity-50"
+                >
+                  {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {step === "playing" && (
+          <div 
+            ref={gameContainerRef}
+            className="relative w-full max-w-md h-[100dvh] bg-[#1a1a1a] overflow-hidden"
+            onMouseMove={e => handleMove(e.clientX)}
+            onTouchMove={e => handleMove(e.touches[0].clientX)}
+          >
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10 bg-black/50 px-5 py-3 rounded-2xl backdrop-blur-md border border-neutral-700">
+              <div className="text-yellow-400 font-black font-mono text-2xl drop-shadow-md">Score: {score}</div>
+              <div className="flex gap-1 text-2xl drop-shadow-md">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <span key={i} className={i < lives ? "opacity-100" : "opacity-20 grayscale"}>❤️</span>
+                ))}
+              </div>
+            </div>
+            
+            <div className="absolute top-20 left-0 right-0 flex justify-center pointer-events-none z-10 opacity-30">
+                <span className="text-white font-black text-xl tracking-widest uppercase blur-[1px]">Level {Math.floor(score / 1500)}</span>
+            </div>
+
+            {items.map(item => (
+              <div 
+                key={item.id} 
+                className="absolute text-5xl transform -translate-x-1/2 -translate-y-1/2 transition-none drop-shadow-lg"
+                style={{ left: `${item.x}%`, top: `${item.y}%` }}
+              >
+                {item.emoji}
+              </div>
+            ))}
+
+            <div 
+              className="absolute bottom-[8%] text-7xl transform -translate-x-1/2 drop-shadow-[0_0_20px_rgba(249,115,22,0.6)] z-20"
+              style={{ left: `${basketX}%` }}
+            >
+              🧺
+            </div>
+            <div className="absolute bottom-[2%] w-full text-center text-neutral-500 text-[10px] uppercase font-bold tracking-widest pointer-events-none">
+              Slide Finger to Move Basket
+            </div>
+          </div>
+        )}
+
+        {step === "gameover" && (
+          <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
+            <div className="text-6xl animate-pulse">💥</div>
+            <h2 className="text-3xl font-black uppercase text-red-500 tracking-wider">Game Over</h2>
+            
+            <div className="bg-[#0f172a] p-5 rounded-2xl border border-[#334155] space-y-2">
+              <p className="text-sm font-bold text-neutral-400 uppercase tracking-widest">Your Final Score</p>
+              <p className="text-6xl font-mono font-black text-yellow-400 drop-shadow-md">{score}</p>
+            </div>
+
+            {isSaving ? (
+               <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर चेक हो रहा है...</p>
+            ) : earnedPoints > 0 ? (
+              <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl space-y-2">
+                <p className="text-[11px] font-black uppercase text-green-500 tracking-wider">डिस्काउंट कूपन जीते</p>
+                <p className="text-4xl font-black text-green-400 drop-shadow-md">⭐ {earnedPoints}</p>
+                <p className="text-xs text-neutral-300 mt-3 font-bold leading-snug">
+                  यह कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
                 </p>
               </div>
+            ) : (
+              <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
+                 <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
+                 
+                 {score >= 25000 ? (
+                   <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">आप आज के अधिकतम 20 कूपन पहले ही जीत चुके हैं!</p>
+                 ) : score >= 12000 ? (
+                   <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">आप 10 कूपन वाला इनाम पहले ही जीत चुके हैं। और कूपन पाने के लिए 25,000 स्कोर बनाएं!</p>
+                 ) : (
+                   <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 12,000 स्कोर बनाना ज़रूरी है!</p>
+                 )}
+              </div>
+            )}
 
-              <button 
-                type="submit" 
-                disabled={isLoading}
-                className="w-full py-3.5 bg-green-500 hover:bg-green-400 text-white font-black text-base rounded-xl tracking-wider transition-all shadow-lg shadow-green-500/20 mt-4 disabled:opacity-50"
+            <div className="pt-4 flex flex-col gap-2">
+              <button onClick={() => { 
+                  setScore(0); scoreRef.current = 0; setLives(3); setItems([]); setBasketX(50); basketXRef.current = 50; setGameStartTime(Date.now()); setStep("playing"); 
+                }} 
+                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm uppercase rounded-xl tracking-wider transition-all shadow-lg"
               >
-                {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
+                 🔁 फिर से खेलें (Play Again)
               </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {step === "playing" && (
-        <div 
-          ref={gameContainerRef}
-          className="relative w-full max-w-md h-[100dvh] bg-[#1a1a1a] overflow-hidden"
-          onMouseMove={e => handleMove(e.clientX)}
-          onTouchMove={e => handleMove(e.touches[0].clientX)}
-        >
-          <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10 bg-black/50 px-5 py-3 rounded-2xl backdrop-blur-md border border-neutral-700">
-            <div className="text-yellow-400 font-black font-mono text-2xl drop-shadow-md">Score: {score}</div>
-            <div className="flex gap-1 text-2xl drop-shadow-md">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <span key={i} className={i < lives ? "opacity-100" : "opacity-20 grayscale"}>❤️</span>
-              ))}
+              <button onClick={() => setStep("login")} className="w-full py-2 bg-transparent text-neutral-400 font-bold text-xs hover:text-white transition-all">
+                 मुख्य मेनू (Main Menu)
+              </button>
             </div>
           </div>
-          
-          <div className="absolute top-20 left-0 right-0 flex justify-center pointer-events-none z-10 opacity-30">
-              <span className="text-white font-black text-xl tracking-widest uppercase blur-[1px]">Level {Math.floor(score / 1500)}</span>
+        )}
+        
+        {step !== "playing" && (
+          <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center opacity-10">
+             <div className="w-[600px] h-[600px] bg-blue-500 rounded-full blur-[150px]"></div>
           </div>
-
-          {items.map(item => (
-            <div 
-              key={item.id} 
-              className="absolute text-5xl transform -translate-x-1/2 -translate-y-1/2 transition-none drop-shadow-lg"
-              style={{ left: `${item.x}%`, top: `${item.y}%` }}
-            >
-              {item.emoji}
-            </div>
-          ))}
-
-          <div 
-            className="absolute bottom-[8%] text-7xl transform -translate-x-1/2 drop-shadow-[0_0_20px_rgba(249,115,22,0.6)] z-20"
-            style={{ left: `${basketX}%` }}
-          >
-            🧺
-          </div>
-          <div className="absolute bottom-[2%] w-full text-center text-neutral-500 text-[10px] uppercase font-bold tracking-widest pointer-events-none">
-            Slide Finger to Move Basket
-          </div>
-        </div>
-      )}
-
-      {step === "gameover" && (
-        <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
-          <div className="text-6xl animate-pulse">💥</div>
-          <h2 className="text-3xl font-black uppercase text-red-500 tracking-wider">Game Over</h2>
-          
-          <div className="bg-[#0f172a] p-5 rounded-2xl border border-[#334155] space-y-2">
-            <p className="text-sm font-bold text-neutral-400 uppercase tracking-widest">Your Final Score</p>
-            <p className="text-6xl font-mono font-black text-yellow-400 drop-shadow-md">{score}</p>
-          </div>
-
-          {isSaving ? (
-             <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर चेक हो रहा है...</p>
-          ) : earnedPoints > 0 ? (
-            <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl space-y-2">
-              <p className="text-[11px] font-black uppercase text-green-500 tracking-wider">डिस्काउंट कूपन जीते</p>
-              <p className="text-4xl font-black text-green-400 drop-shadow-md">⭐ {earnedPoints}</p>
-              <p className="text-xs text-neutral-300 mt-3 font-bold leading-snug">
-                यह कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
-              </p>
-            </div>
-          ) : (
-            <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl space-y-2">
-               <p className="text-lg font-black uppercase text-red-500 drop-shadow-md">Better Luck Next Time! 😔</p>
-               
-               {score >= 25000 ? (
-                 <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">आप आज के अधिकतम 20 कूपन पहले ही जीत चुके हैं!</p>
-               ) : score >= 12000 ? (
-                 <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">आप 10 कूपन वाला इनाम पहले ही जीत चुके हैं। और कूपन पाने के लिए 25,000 स्कोर बनाएं!</p>
-               ) : (
-                 <p className="text-xs text-neutral-300 mt-2 font-bold leading-snug">कम से कम 10 रुपये (10 कूपन) जीतने के लिए 12,000 स्कोर बनाना ज़रूरी है!</p>
-               )}
-            </div>
-          )}
-
-          <div className="pt-4 flex flex-col gap-2">
-            <button onClick={() => { 
-                setScore(0); scoreRef.current = 0; setLives(3); setItems([]); setBasketX(50); basketXRef.current = 50; setGameStartTime(Date.now()); setStep("playing"); 
-              }} 
-              className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm uppercase rounded-xl tracking-wider transition-all shadow-lg"
-            >
-               🔁 फिर से खेलें (Play Again)
-            </button>
-            <button onClick={() => setStep("login")} className="w-full py-2 bg-transparent text-neutral-400 font-bold text-xs hover:text-white transition-all">
-               मुख्य मेनू (Main Menu)
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {step !== "playing" && (
-        <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center opacity-10">
-           <div className="w-[600px] h-[600px] bg-blue-500 rounded-full blur-[150px]"></div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </GameGuard>
   );
 }
