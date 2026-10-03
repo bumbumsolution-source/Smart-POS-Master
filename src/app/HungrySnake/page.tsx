@@ -28,7 +28,7 @@ export default function RetroSnakePage() {
   const [isLoading, setIsLoading] = useState(false);
   
   // 🏆 Leaderboard States
-  const [globalHighScore, setGlobalHighScore] = useState(30); // डिफ़ॉल्ट टारगेट 30
+  const [globalHighScore, setGlobalHighScore] = useState(30); 
   const [globalHighScorer, setGlobalHighScorer] = useState("बम बम कैफे");
 
   // गेम UI स्टेट्स
@@ -73,7 +73,7 @@ export default function RetroSnakePage() {
     }
   }, []);
 
-  // 📡 Real-time Leaderboard Fetch (सभी मोबाइल्स पर लाइव दिखेगा)
+  // 📡 Real-time Leaderboard Fetch 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "leaderboards", "HungrySnake"), (docSnap) => {
       if (docSnap.exists()) {
@@ -97,7 +97,7 @@ export default function RetroSnakePage() {
     }
   }, [phone]);
 
-  // 🚀 1. गेम शुरू करने का हैंडलर
+  // 🚀 गेम शुरू करने का हैंडलर
   const handleStartGame = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = formatNameTitleCase(name.trim());
@@ -155,7 +155,6 @@ export default function RetroSnakePage() {
       setName(cleanName);
       setPhone(cleanPhone);
       
-      // Reset Game 
       setScore(0);
       gameState.current = {
         snake: [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }],
@@ -183,7 +182,8 @@ export default function RetroSnakePage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const size = 260; 
+    // 🚀 बड़ा कैनवास (मोबाइल स्क्रीन के हिसाब से)
+    const size = Math.min(window.innerWidth * 0.9, 400); 
     canvas.width = size;
     canvas.height = size;
     const TILE_SIZE = size / GRID_SIZE;
@@ -206,7 +206,7 @@ export default function RetroSnakePage() {
 
         const newHead = { x: newX, y: newY };
 
-        // 💥 खुद से टकराना (Game Over)
+        // खुद से टकराना
         if (state.snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
           setStep("gameover");
           return;
@@ -214,7 +214,7 @@ export default function RetroSnakePage() {
 
         state.snake.unshift(newHead);
 
-        // 🍔 खाना
+        // खाना खाना
         if (newHead.x === state.food.x && newHead.y === state.food.y) {
           setScore(s => {
             const newScore = s + 1;
@@ -229,7 +229,7 @@ export default function RetroSnakePage() {
         state.lastMoveTime = now;
       }
 
-      // 🎨 Draw Nokia Retro Screen
+      // 🎨 Draw Retro Screen Background
       ctx.fillStyle = "#8CC084";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -240,28 +240,31 @@ export default function RetroSnakePage() {
         ctx.beginPath(); ctx.moveTo(0, i * TILE_SIZE); ctx.lineTo(canvas.width, i * TILE_SIZE); ctx.stroke();
       }
 
-      ctx.font = `${TILE_SIZE * 0.8}px Arial`;
+      // Draw Food (अब साइज बड़ा दिखेगा)
+      ctx.font = `${TILE_SIZE * 0.9}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(state.food.emoji, state.food.x * TILE_SIZE + TILE_SIZE/2, state.food.y * TILE_SIZE + TILE_SIZE/2);
 
+      // Draw Snake (बड़े पिक्सल्स)
       ctx.fillStyle = "#202B19"; 
       state.snake.forEach((segment) => {
         ctx.fillRect(segment.x * TILE_SIZE + 1, segment.y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2);
       });
 
-      // Score Text inside Screen
+      // Score Text (कैनवास के अंदर)
       ctx.fillStyle = "#202B19";
-      ctx.font = "bold 14px monospace";
+      ctx.font = "bold 16px monospace";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillText(`Score: ${score}`, 6, 6);
+      ctx.fillText(`Score: ${score}`, 10, 10);
 
       requestRef.current = requestAnimationFrame(gameLoop);
     };
 
     requestRef.current = requestAnimationFrame(gameLoop);
 
+    // 👆 Swipe Controls
     const onTouchStart = (e: TouchEvent) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
     const onTouchEnd = (e: TouchEvent) => {
       if (!touchStart.current) return;
@@ -281,6 +284,7 @@ export default function RetroSnakePage() {
       touchStart.current = null;
     };
 
+    // Keyboard (for PC)
     const onKeyDown = (e: KeyboardEvent) => {
       const { direction, nextDirection } = gameState.current;
       if (e.key === "ArrowUp" && direction.y !== 1) { nextDirection.x = 0; nextDirection.y = -1; }
@@ -301,13 +305,7 @@ export default function RetroSnakePage() {
     };
   }, [step, score]);
 
-  const handleDirectionButton = (dx: number, dy: number) => {
-    const { direction, nextDirection } = gameState.current;
-    if (dx !== 0 && direction.x !== -dx) { nextDirection.x = dx; nextDirection.y = 0; }
-    if (dy !== 0 && direction.y !== -dy) { nextDirection.x = 0; nextDirection.y = dy; }
-  };
-
-  // 🛡️ 3. गेम ओवर और नया लीडरबोर्ड सेविंग लॉजिक
+  // 🛡️ गेम ओवर 
   const savePointsToDatabase = async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -318,7 +316,6 @@ export default function RetroSnakePage() {
       return toast.error("⚠️ चीटिंग पकड़ी गई!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    // 🏆 नया नियम: अगर पिछले चैंपियन का रिकॉर्ड तोड़ा, तो जीतेंगे 20 कूपन
     let pointsWon = 0;
     let isNewRecord = false;
     
@@ -348,7 +345,6 @@ export default function RetroSnakePage() {
         toast("आप आज की लिमिट (20 कूपन) पार कर चुके हैं।", { icon: "⚠️" });
       }
 
-      // यूजर का डेटा अपडेट करें
       await setDoc(userRef, {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
@@ -356,7 +352,6 @@ export default function RetroSnakePage() {
         lastCatchGameScore: score 
       }, { merge: true });
 
-      // 🏆 ग्लोबल लीडरबोर्ड अपडेट करें (अगर रिकॉर्ड टूटा है)
       if (isNewRecord) {
         const cleanName = formatNameTitleCase(name.trim());
         await setDoc(doc(db, "leaderboards", "HungrySnake"), {
@@ -398,7 +393,6 @@ export default function RetroSnakePage() {
         {step === "login" && (
           <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
             
-            {/* 🏆 LIVE LEADERBOARD BANNER */}
             <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-2xl p-4 mb-6 text-center shadow-[0_0_15px_rgba(234,179,8,0.2)] animate-pulse-slow">
               <p className="text-yellow-500 text-[10px] font-black uppercase tracking-widest mb-1">👑 Current Champion 👑</p>
               <h2 className="text-2xl font-black text-white drop-shadow-md">{globalHighScorer}</h2>
@@ -444,47 +438,34 @@ export default function RetroSnakePage() {
           </div>
         )}
 
-        {/* ---------------- PLAYING SCREEN (NOKIA 3310 UI) ---------------- */}
+        {/* ---------------- PLAYING SCREEN (FULL SCREEN CANVAS) ---------------- */}
         {step === "playing" && (
-          <div className="w-full flex flex-col items-center justify-center h-[100dvh]">
+          <div className="w-full flex flex-col items-center justify-center h-[100dvh] px-4">
             
-            <div className="relative bg-[#1c2938] w-[340px] h-[650px] rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_-10px_20px_rgba(255,255,255,0.1)] border-[6px] border-[#0f172a] flex flex-col items-center pt-8 pb-10">
-              
-              <div className="text-neutral-400/60 text-lg font-black tracking-widest mb-4 font-mono">
-                BAM BAM 3310
-              </div>
-              
-              <div className="bg-[#111] p-3 rounded-2xl shadow-inner mb-6 relative">
-                {/* Score Target Overlay (छोटे अक्षरों में ऊपर दिखेगा) */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full z-10 shadow-md">
-                  Target: {globalHighScore + 1}
-                </div>
-                
-                <div className="rounded-xl overflow-hidden shadow-[inset_0_0_15px_rgba(0,0,0,0.5)] bg-[#8CC084] border-4 border-[#333]">
-                   <canvas ref={canvasRef} className="block" />
-                </div>
-              </div>
-
-              <div className="text-center mb-6">
-                <p className="text-neutral-500 text-[10px] uppercase font-bold tracking-widest">
-                  👆 Swipe or Use Buttons 👇
-                </p>
-                <p className="text-yellow-600/80 text-[10px] font-bold mt-1">Break {globalHighScorer}'s Record!</p>
-              </div>
-
-              {/* Classic Physical-looking D-PAD */}
-              <div className="grid grid-cols-3 gap-2 mt-auto w-full px-12">
-                <div />
-                <button onClick={() => handleDirectionButton(0, -1)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-t-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mx-auto flex items-center justify-center text-xl font-black">▲</button>
-                <div />
-                <button onClick={() => handleDirectionButton(-1, 0)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-l-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] ml-auto flex items-center justify-center text-xl font-black">◀</button>
-                <button className="bg-[#3b4c6b] text-neutral-400 w-16 h-12 rounded-xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mx-auto flex items-center justify-center text-xs font-black">OK</button>
-                <button onClick={() => handleDirectionButton(1, 0)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-r-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mr-auto flex items-center justify-center text-xl font-black">▶</button>
-                <div />
-                <button onClick={() => handleDirectionButton(0, 1)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-b-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mx-auto flex items-center justify-center text-xl font-black">▼</button>
-                <div />
-              </div>
+            {/* Header / Info */}
+            <div className="w-full max-w-[400px] flex justify-between items-center mb-6">
+               <div>
+                 <h2 className="text-2xl font-black text-green-500 font-mono tracking-widest">3310</h2>
+               </div>
+               <div className="bg-yellow-500 text-black px-4 py-1.5 rounded-full text-xs font-black shadow-lg">
+                 Target: {globalHighScore + 1}
+               </div>
             </div>
+
+            {/* Big Retro Canvas Screen */}
+            <div className="bg-[#111] p-3 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.8),inset_0_2px_10px_rgba(255,255,255,0.1)] border-4 border-[#1e293b]">
+               <div className="rounded-xl overflow-hidden shadow-[inset_0_0_15px_rgba(0,0,0,0.5)] bg-[#8CC084] border-4 border-[#333]">
+                  <canvas ref={canvasRef} className="block" />
+               </div>
+            </div>
+
+            {/* Swipe Instruction */}
+            <div className="mt-8 animate-bounce">
+              <p className="text-neutral-400 text-xs uppercase font-black tracking-widest bg-black/50 px-6 py-3 rounded-full border border-neutral-700 shadow-xl flex gap-3 items-center">
+                <span>👆</span> Swipe On Screen to Play <span>👇</span>
+              </p>
+            </div>
+
           </div>
         )}
 
