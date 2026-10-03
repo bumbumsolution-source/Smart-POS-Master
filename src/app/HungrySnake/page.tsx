@@ -84,16 +84,36 @@ export default function RetroSnakePage() {
     return () => unsub();
   }, []);
 
-  // ऑटो-फिल
+  // 🚀 ऑटो-फिल लॉजिक (अब जन्मतिथि भी ऑटो-फिल होगी)
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
-        if (snap.exists() && snap.data().name) {
-          setName(snap.data().name); 
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.name) setName(data.name);
+          
+          // चेक करें कि क्या जन्मदिन सेव है
+          if (data.specialDates && Array.isArray(data.specialDates)) {
+            const bdayObj = data.specialDates.find((d: any) => d.type === "Birthday");
+            if (bdayObj && bdayObj.date) {
+              const parts = bdayObj.date.split('-'); // Format is 'YYYY-MM-DD'
+              if (parts.length === 3) {
+                setBirthMonth(parts[1]); // MM
+                setBirthDay(parts[2]);   // DD
+              }
+            }
+          }
         } else {
           setName("");
+          setBirthDay("");
+          setBirthMonth("");
         }
       });
+    } else {
+      // अगर नंबर 10 अंकों से कम है तो नाम और डेट खाली कर सकते हैं
+      setName("");
+      setBirthDay("");
+      setBirthMonth("");
     }
   }, [phone]);
 
@@ -182,8 +202,8 @@ export default function RetroSnakePage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // 🚀 बड़ा कैनवास (मोबाइल स्क्रीन के हिसाब से)
-    const size = Math.min(window.innerWidth * 0.9, 400); 
+    // 🚀 स्क्रीन के हिसाब से परफेक्ट चौड़ाई
+    const size = Math.min(window.innerWidth * 0.92, 420); 
     canvas.width = size;
     canvas.height = size;
     const TILE_SIZE = size / GRID_SIZE;
@@ -229,35 +249,30 @@ export default function RetroSnakePage() {
         state.lastMoveTime = now;
       }
 
-      // 🎨 Draw Retro Screen Background
-      ctx.fillStyle = "#8CC084";
+      // 🎨 Draw Canvas Background (Brighter & Clearer Green)
+      ctx.fillStyle = "#A8D08D"; // साफ और चमकदार रेट्रो हरा
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = "#82b47a";
+      // Subtle Grid Lines
+      ctx.strokeStyle = "#9BBE83"; 
       ctx.lineWidth = 1;
       for (let i = 0; i <= GRID_SIZE; i++) {
         ctx.beginPath(); ctx.moveTo(i * TILE_SIZE, 0); ctx.lineTo(i * TILE_SIZE, canvas.height); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0, i * TILE_SIZE); ctx.lineTo(canvas.width, i * TILE_SIZE); ctx.stroke();
       }
 
-      // Draw Food (अब साइज बड़ा दिखेगा)
+      // Draw Food (बड़ा और साफ इमोजी)
       ctx.font = `${TILE_SIZE * 0.9}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(state.food.emoji, state.food.x * TILE_SIZE + TILE_SIZE/2, state.food.y * TILE_SIZE + TILE_SIZE/2);
 
-      // Draw Snake (बड़े पिक्सल्स)
-      ctx.fillStyle = "#202B19"; 
+      // Draw Snake (गहरा रंग ताकि एकदम साफ दिखे)
+      ctx.fillStyle = "#1A2315"; // Very dark green, almost black
       state.snake.forEach((segment) => {
-        ctx.fillRect(segment.x * TILE_SIZE + 1, segment.y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+        // हल्का सा राउंडेड और बड़ा पिक्सल
+        ctx.fillRect(segment.x * TILE_SIZE + 0.5, segment.y * TILE_SIZE + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
       });
-
-      // Score Text (कैनवास के अंदर)
-      ctx.fillStyle = "#202B19";
-      ctx.font = "bold 16px monospace";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      ctx.fillText(`Score: ${score}`, 10, 10);
 
       requestRef.current = requestAnimationFrame(gameLoop);
     };
@@ -393,44 +408,44 @@ export default function RetroSnakePage() {
         {step === "login" && (
           <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
             
-            <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-2xl p-4 mb-6 text-center shadow-[0_0_15px_rgba(234,179,8,0.2)] animate-pulse-slow">
-              <p className="text-yellow-500 text-[10px] font-black uppercase tracking-widest mb-1">👑 Current Champion 👑</p>
-              <h2 className="text-2xl font-black text-white drop-shadow-md">{globalHighScorer}</h2>
-              <div className="inline-block bg-yellow-500 text-black px-4 py-1 rounded-full text-sm font-black mt-2 shadow-lg">
+            <div className="bg-gradient-to-br from-yellow-900/60 to-yellow-700/20 border border-yellow-500/50 rounded-2xl p-5 mb-6 text-center shadow-[0_0_20px_rgba(234,179,8,0.25)] animate-pulse-slow">
+              <p className="text-yellow-400 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center justify-center gap-2"><span>🏆</span> Current Champion <span>🏆</span></p>
+              <h2 className="text-3xl font-black text-white drop-shadow-lg mt-1">{globalHighScorer}</h2>
+              <div className="inline-block bg-yellow-500 text-black px-5 py-1.5 rounded-full text-sm font-black mt-3 shadow-lg border border-yellow-300">
                 High Score: {globalHighScore}
               </div>
             </div>
 
             <div className="mb-6 text-center">
-              <h1 className="text-3xl font-black text-green-500 drop-shadow-md tracking-wider font-mono">RETRO SNAKE 🐍</h1>
+              <h1 className="text-4xl font-black text-green-500 drop-shadow-md tracking-wider">SNAKE 🐍</h1>
             </div>
 
             <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
-              <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-3 rounded-xl border border-neutral-700 text-left">
+              <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-4 rounded-xl border border-neutral-700 text-left">
                 बचपन की यादें! कूपन जीतने के लिए आपको <strong className="text-yellow-400">{globalHighScorer}</strong> का रिकॉर्ड <strong className="text-yellow-400">({globalHighScore} Score)</strong> तोड़ना होगा!<br/>
-                <span className="text-green-400 block mt-2 text-center text-[11px]">
+                <span className="text-green-400 block mt-2 text-center text-xs bg-green-900/20 py-2 rounded-lg border border-green-500/20">
                   रिकॉर्ड तोड़ने पर मिलेंगे = 20 कूपन (₹20) 🎟️
                 </span>
               </p>
               
               <form onSubmit={handleStartGame} className="space-y-3 pt-2">
-                <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
-                <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-bold" />
+                <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3.5 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
+                <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3.5 rounded-xl outline-none text-white focus:border-green-400 font-bold" />
                 
                 <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
                   <div className="flex gap-2">
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3.5 rounded-xl outline-none appearance-none text-white">
                       <option value="" disabled>जन्म तारीख *</option>
                       {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
                     </select>
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>जन्म महीना *</option>
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3.5 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>महीना *</option>
                       {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
                     </select>
                   </div>
                 </div>
 
-                <button type="submit" disabled={isLoading} className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
+                <button type="submit" disabled={isLoading} className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4 transition-all">
                   {isLoading ? "प्रतीक्षा करें..." : `▶ रिकॉर्ड तोड़ें (Target: ${globalHighScore + 1})`}
                 </button>
               </form>
@@ -440,28 +455,33 @@ export default function RetroSnakePage() {
 
         {/* ---------------- PLAYING SCREEN (FULL SCREEN CANVAS) ---------------- */}
         {step === "playing" && (
-          <div className="w-full flex flex-col items-center justify-center h-[100dvh] px-4">
+          <div className="w-full flex flex-col items-center justify-center h-[100dvh] px-4 relative">
             
-            {/* Header / Info */}
-            <div className="w-full max-w-[400px] flex justify-between items-center mb-6">
+            {/* 🏆 Header - Bum Bum Cafe Branding */}
+            <div className="w-full max-w-[420px] flex justify-between items-end mb-6">
                <div>
-                 <h2 className="text-2xl font-black text-green-500 font-mono tracking-widest">3310</h2>
+                 <h2 className="text-3xl font-black text-green-400 tracking-wider drop-shadow-[0_2px_10px_rgba(74,222,128,0.5)] leading-none">BUM BUM CAFE</h2>
+                 <p className="text-[13px] text-green-600 font-black uppercase tracking-[0.2em] mt-1 ml-1">Mohandra</p>
                </div>
-               <div className="bg-yellow-500 text-black px-4 py-1.5 rounded-full text-xs font-black shadow-lg">
-                 Target: {globalHighScore + 1}
-               </div>
-            </div>
-
-            {/* Big Retro Canvas Screen */}
-            <div className="bg-[#111] p-3 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.8),inset_0_2px_10px_rgba(255,255,255,0.1)] border-4 border-[#1e293b]">
-               <div className="rounded-xl overflow-hidden shadow-[inset_0_0_15px_rgba(0,0,0,0.5)] bg-[#8CC084] border-4 border-[#333]">
-                  <canvas ref={canvasRef} className="block" />
+               
+               <div className="flex flex-col items-end">
+                 <p className="text-[10px] text-neutral-400 font-bold uppercase mb-1 mr-1">Your Score: {score}</p>
+                 <div className="bg-yellow-500 text-black px-4 py-1.5 rounded-full text-xs font-black shadow-[0_0_15px_rgba(234,179,8,0.4)] border border-yellow-300">
+                   Target: {globalHighScore + 1}
+                 </div>
                </div>
             </div>
 
-            {/* Swipe Instruction */}
-            <div className="mt-8 animate-bounce">
-              <p className="text-neutral-400 text-xs uppercase font-black tracking-widest bg-black/50 px-6 py-3 rounded-full border border-neutral-700 shadow-xl flex gap-3 items-center">
+            {/* 🟩 Beautiful Glowing Canvas Frame */}
+            <div className="p-2 rounded-2xl shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700/50">
+               <div className="rounded-xl overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] border-4 border-[#1A2315]">
+                  <canvas ref={canvasRef} className="block bg-[#A8D08D]" />
+               </div>
+            </div>
+
+            {/* 👆 Swipe Instruction */}
+            <div className="mt-10 animate-bounce">
+              <p className="text-neutral-300 text-[11px] uppercase font-black tracking-widest bg-[#1e293b]/80 px-6 py-3 rounded-full border border-neutral-600 shadow-[0_5px_20px_rgba(0,0,0,0.5)] flex gap-3 items-center backdrop-blur-sm">
                 <span>👆</span> Swipe On Screen to Play <span>👇</span>
               </p>
             </div>
