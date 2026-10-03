@@ -14,8 +14,8 @@ const formatNameTitleCase = (text: string) => {
 
 const isValidIndianPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone);
 
-// गेम के 8 आइटम्स (इन्हें डबल करके 16 कार्ड बनाए जाएंगे)
-const FOOD_EMOJIS = ["🍔", "🍕", "🍟", "🍩", "☕", "🍦", "🌭", "🥤"];
+// 🚀 हार्ड मोड: 8 की जगह 10 आइटम्स (कुल 20 कार्ड्स)
+const FOOD_EMOJIS = ["🍔", "🍕", "🍟", "🍩", "☕", "🍦", "🌭", "🥤", "🌮", "🍉"];
 
 interface CardData {
   id: number;
@@ -97,7 +97,6 @@ export default function MemoryGamePage() {
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
     
-    // 👉 अब सबके लिए (नए और पुराने) जन्मदिन अनिवार्य है
     if (!birthDay || !birthMonth) {
       return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
     }
@@ -130,7 +129,6 @@ export default function MemoryGamePage() {
         }
       }
 
-      // 👉 सबके लिए बर्थडे सेव / अपडेट करें
       const formattedDate = `2000-${birthMonth}-${birthDay}`;
       const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
       
@@ -159,7 +157,7 @@ export default function MemoryGamePage() {
       setTimeElapsed(0);
       
       setStep("playing");
-      toast.success("सभी जोड़ियों (Pairs) को जल्दी से खोजें! 🃏");
+      toast.success("सभी 10 जोड़ियों (Pairs) को जल्दी से खोजें! 🃏");
 
       // Start Timer
       const interval = setInterval(() => {
@@ -174,23 +172,23 @@ export default function MemoryGamePage() {
     }
   };
 
-  // ⏱️ टाइमर और गेम ओवर चेक
+  // ⏱️ टाइमर और गेम ओवर चेक (हार्ड मोड)
   useEffect(() => {
     if (step === "playing") {
-      // 60 सेकंड में गेम ओवर (Time Up)
-      if (timeElapsed >= 60 && matches < 8) {
+      // 50 सेकंड में गेम ओवर (Time Up)
+      if (timeElapsed >= 50 && matches < 10) {
         if (gameInterval) clearInterval(gameInterval);
         setStep("gameover");
       }
-      // अगर सारे 8 मैच मिल गए (Win)
-      if (matches === 8) {
+      // अगर सारे 10 मैच मिल गए (Win)
+      if (matches === 10) {
         if (gameInterval) clearInterval(gameInterval);
         setStep("gameover");
       }
     }
   }, [timeElapsed, matches, step, gameInterval]);
 
-  // 🃏 कार्ड क्लिक हैंडलर (Vercel Build Error Fixed)
+  // 🃏 कार्ड क्लिक हैंडलर 
   const handleCardClick = (clickedId: number) => {
     if (flippedCards.length === 2) return;
     const clickedCard = cards.find(c => c.id === clickedId);
@@ -216,12 +214,13 @@ export default function MemoryGamePage() {
           setMatches(prev => prev + 1);
         }, 500); 
       } else {
+        // 🚀 हार्ड मोड: 800ms से घटाकर 400ms कर दिया ताकि गलत कार्ड बहुत जल्दी पलट जाए
         setTimeout(() => {
           setCards(prev => prev.map(c => 
             (c.id === firstCardId || c.id === secondCardId) ? { ...c, isFlipped: false } : c
           ));
           setFlippedCards([]);
-        }, 800); 
+        }, 400); 
       }
     }
   };
@@ -232,16 +231,16 @@ export default function MemoryGamePage() {
     setIsSaving(true);
     
     // Anti-Cheat
-    if (matches === 8 && timeElapsed < 8) {
+    if (matches === 10 && timeElapsed < 10) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    // 👉 नया स्कोर रूल (Hard Mode): 35s = 10 कूपन, 20s = 20 कूपन
+    // 🚀 नया हार्ड स्कोर रूल: 40s = 10 कूपन, 25s = 20 कूपन
     let pointsWon = 0;
-    if (matches === 8) {
-      if (timeElapsed <= 20) pointsWon = 20;
-      else if (timeElapsed <= 35) pointsWon = 10;
+    if (matches === 10) {
+      if (timeElapsed <= 25) pointsWon = 20;
+      else if (timeElapsed <= 40) pointsWon = 10;
     }
 
     try {
@@ -281,8 +280,8 @@ export default function MemoryGamePage() {
 
       if (finalPointsToAdd > 0) {
         toast.success(`बधाई हो! आपको ${finalPointsToAdd} कूपन मिले! 🎉`);
-      } else if (matches === 8) {
-        toast.error("आप जीत गए, लेकिन समय ज्यादा लगा (35 सेकंड से ज्यादा)!");
+      } else if (matches === 10) {
+        toast.error("आप जीत गए, लेकिन समय ज्यादा लगा (40 सेकंड से ज्यादा)!");
       } else {
         toast.error("Time Up! आप सारे कार्ड्स नहीं खोज पाए।");
       }
@@ -299,7 +298,6 @@ export default function MemoryGamePage() {
     return () => { if (gameInterval) clearInterval(gameInterval); };
   }, [step]);
 
-  // 🛡️ 2. यहाँ हमने GameGuard का इस्तेमाल किया है (allowedGameName="MemoryGame")
   return (
     <GameGuard allowedGameName="MemoryGame">
       <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden touch-none relative select-none">
@@ -317,10 +315,10 @@ export default function MemoryGamePage() {
 
             <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
               <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-3 rounded-xl border border-neutral-700 text-left">
-                दिमाग लगाएँ और 2 एक जैसे कार्ड खोजें! (समय: 60s)<br/><br/>
+                दिमाग लगाएँ और 2 एक जैसे कार्ड खोजें! (कुल 20 कार्ड, समय: 50s)<br/><br/>
                 <span className="text-green-400 text-[11px] block text-center">
-                  35 सेकंड के अंदर खोजा = 10 कूपन<br/>
-                  20 सेकंड के अंदर खोजा = 20 कूपन
+                  40 सेकंड के अंदर खोजा = 10 कूपन<br/>
+                  25 सेकंड के अंदर खोजा = 20 कूपन
                 </span>
               </p>
               
@@ -328,24 +326,20 @@ export default function MemoryGamePage() {
                 <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-cyan-500 text-center py-3 rounded-xl outline-none text-white focus:border-cyan-400 font-mono" />
                 <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-blue-500 text-center py-3 rounded-xl outline-none text-white focus:border-blue-400 font-bold" />
                 
-                {/* 👉 जन्मदिन वाला सेक्शन */}
                 <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
                   <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
                     🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
                   </p>
                   <div className="flex gap-2">
                     <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>जन्म की तारीख *</option>
+                      <option value="" disabled>तारीख *</option>
                       {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
                     </select>
                     <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>जन्म का महीना *</option>
+                      <option value="" disabled>महीना *</option>
                       {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
                     </select>
                   </div>
-                  <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
-                    ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
-                  </p>
                 </div>
 
                 <button type="submit" disabled={isLoading} className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
@@ -359,22 +353,23 @@ export default function MemoryGamePage() {
         {/* ---------------- PLAYING SCREEN ---------------- */}
         {step === "playing" && (
           <div className="w-full max-w-md px-4 flex flex-col items-center justify-center h-[100dvh]">
-            <div className="w-full flex justify-between items-center bg-[#1e293b] border border-[#334155] p-4 rounded-2xl shadow-lg mb-8">
+            <div className="w-full flex justify-between items-center bg-[#1e293b] border border-[#334155] p-3 rounded-2xl shadow-lg mb-6">
               <div className="text-center">
                  <p className="text-[10px] font-black uppercase text-neutral-400">समय (Time)</p>
-                 <p className={`text-2xl font-mono font-black ${timeElapsed > 45 ? 'text-red-500 animate-pulse' : 'text-cyan-400'}`}>
-                   {timeElapsed}s <span className="text-sm text-neutral-500">/60s</span>
+                 <p className={`text-2xl font-mono font-black ${timeElapsed > 35 ? 'text-red-500 animate-pulse' : 'text-cyan-400'}`}>
+                   {timeElapsed}s <span className="text-sm text-neutral-500">/50s</span>
                  </p>
               </div>
               <div className="text-center">
                  <p className="text-[10px] font-black uppercase text-neutral-400">जोड़ियां (Pairs)</p>
                  <p className="text-2xl font-mono font-black text-green-400">
-                   {matches} <span className="text-sm text-neutral-500">/8</span>
+                   {matches} <span className="text-sm text-neutral-500">/10</span>
                  </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 w-full">
+            {/* 🚀 20 कार्ड्स के लिए grid-cols-4 और gap-2 ताकि स्क्रीन में अच्छे से फिट हो */}
+            <div className="grid grid-cols-4 gap-2 w-full max-w-[340px] mx-auto">
               {cards.map(card => (
                 <div 
                   key={card.id}
@@ -387,9 +382,10 @@ export default function MemoryGamePage() {
                     style={{ transformStyle: "preserve-3d", transform: card.isFlipped || card.isMatched ? "rotateY(180deg)" : "rotateY(0deg)" }}
                   >
                     <div className="absolute w-full h-full bg-gradient-to-br from-cyan-600 to-blue-700 rounded-xl border-2 border-cyan-400/50 flex items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]" style={{ backfaceVisibility: "hidden" }}>
-                      <div className="text-3xl opacity-30 text-white">❓</div>
+                      <div className="text-2xl opacity-30 text-white">❓</div>
                     </div>
-                    <div className={`absolute w-full h-full bg-white rounded-xl border-2 flex items-center justify-center text-4xl shadow-inner ${card.isMatched ? 'border-green-500 bg-green-50' : 'border-neutral-200'}`} style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+                    {/* Emoji size slightly reduced for 20 cards layout */}
+                    <div className={`absolute w-full h-full bg-white rounded-xl border-2 flex items-center justify-center text-3xl shadow-inner ${card.isMatched ? 'border-green-500 bg-green-50' : 'border-neutral-200'}`} style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
                       {card.emoji}
                     </div>
                   </div>
@@ -402,9 +398,9 @@ export default function MemoryGamePage() {
         {/* ---------------- GAME OVER SCREEN ---------------- */}
         {step === "gameover" && (
           <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
-            <div className="text-6xl">{matches === 8 ? '🎉' : '⏳'}</div>
-            <h2 className={`text-3xl font-black uppercase tracking-wider ${matches === 8 ? 'text-green-500' : 'text-red-500'}`}>
-              {matches === 8 ? 'You Won!' : 'Time Up!'}
+            <div className="text-6xl">{matches === 10 ? '🎉' : '⏳'}</div>
+            <h2 className={`text-3xl font-black uppercase tracking-wider ${matches === 10 ? 'text-green-500' : 'text-red-500'}`}>
+              {matches === 10 ? 'You Won!' : 'Time Up!'}
             </h2>
             
             <div className="bg-[#0f172a] p-4 rounded-2xl border border-[#334155]">
@@ -426,7 +422,7 @@ export default function MemoryGamePage() {
               <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl">
                  <p className="text-sm font-black text-red-400">Better Luck Next Time! 😔</p>
                  <p className="text-xs text-neutral-400 mt-2">
-                   {matches === 8 ? "आपने गेम जीत लिया, लेकिन 35 सेकंड से ज्यादा समय लग गया।" : "आप 60 सेकंड के अंदर सारे कार्ड्स नहीं खोज पाए।"}
+                   {matches === 10 ? "आपने गेम जीत लिया, लेकिन 40 सेकंड से ज्यादा समय लग गया।" : "आप 50 सेकंड के अंदर सारे 20 कार्ड्स नहीं खोज पाए।"}
                  </p>
               </div>
             )}
