@@ -4,6 +4,16 @@ import React, { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
+// Firebase में जो नाम है, उसे सही URL से जोड़ने के लिए लिस्ट
+const gameRoutes: Record<string, string> = {
+  CatchGame: "catch-game",
+  FruitNinja: "FruitNinja",
+  MemoryGame: "MemoryGame",
+  Cafe2048: "Cafe2048",
+  HungrySnake: "HungrySnake",
+  SpinGame: "spin-game",
+};
+
 export default function GameGuard({ 
   children, 
   allowedGameName 
@@ -22,19 +32,25 @@ export default function GameGuard({
         
         if (docSnap.exists()) {
           const config = docSnap.data();
+          const activeGame = config.activeGame; // POS में चालू गेम
           
-          // चेक करें कि जो गेम खोला गया है, क्या वही Firebase में एक्टिव है?
-          if (config.activeGame === allowedGameName) {
+          if (activeGame === allowedGameName) {
             setIsAllowed(true); // हाँ, खेलने दो
           } else {
-            // अगर गलत गेम है, तो वापस Router वाले पेज पर भेज दो (मान लीजिये वो "/" है)
-            window.location.replace("/"); 
+            // अगर गलत गेम खुला है, तो सीधा उस गेम पर भेजो जो POS में चालू है!
+            const targetRoute = gameRoutes[activeGame] || "spin-game"; // डिफ़ॉल्ट गेम
+            
+            // अगर URL में टेबल नंबर है (?table=4), तो उसे भी साथ ले जाओ
+            const urlParams = window.location.search;
+            
+            // सीधा सही गेम वाले पेज पर भेज दो (बिना Home Page पर जाए)
+            window.location.replace(`/${targetRoute}${urlParams}`); 
           }
         } else {
           window.location.replace("/");
         }
       } catch (error) {
-        console.error("Error verifying game:", error);
+        console.error("Error:", error);
         window.location.replace("/");
       } finally {
         setLoading(false);
@@ -44,19 +60,20 @@ export default function GameGuard({
     verifyGameAccess();
   }, [allowedGameName]);
 
-  // जब तक चेक हो रहा है, तब तक लोडिंग दिखाएं (ताकि गेम दिखे नहीं)
+  // जब तक चेक हो रहा है, तब तक छोटी सी लोडिंग दिखाएं
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center font-sans">
         <div className="text-5xl animate-spin mb-6">🌀</div>
-        <p className="text-sm font-bold text-neutral-400">Verifying Game Access...</p>
+        <p className="text-sm font-bold text-orange-500 uppercase animate-pulse">
+          Loading Game...
+        </p>
       </div>
     );
   }
 
-  // अगर allowed नहीं है तो कुछ मत दिखाओ (redirect हो जाएगा)
   if (!isAllowed) return null;
 
-  // अगर allowed है, तो असली गेम रेंडर करो
+  // अगर सही गेम है, तो गेम दिखाओ
   return <>{children}</>;
 }
