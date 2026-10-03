@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
-// 🛡️ 1. Security Guard को Import किया है
+// 🛡️ Security Guard 
 import GameGuard from "@/components/GameGuard";
 
 const formatNameTitleCase = (text: string) => {
@@ -16,7 +16,7 @@ const isValidIndianPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone);
 const FOOD_EMOJIS = ["🍔", "🍕", "🍟", "🍩", "🥤", "🍦"];
 const GRID_SIZE = 20;
 
-export default function HungrySnakePage() {
+export default function RetroSnakePage() {
   const [step, setStep] = useState<"login" | "playing" | "gameover">("login");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -26,7 +26,10 @@ export default function HungrySnakePage() {
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   
   const [isLoading, setIsLoading] = useState(false);
-  const [isReturningUser, setIsReturningUser] = useState(false);
+  
+  // 🏆 Leaderboard States
+  const [globalHighScore, setGlobalHighScore] = useState(30); // डिफ़ॉल्ट टारगेट 30
+  const [globalHighScorer, setGlobalHighScorer] = useState("बम बम कैफे");
 
   // गेम UI स्टेट्स
   const [score, setScore] = useState(0);
@@ -39,7 +42,7 @@ export default function HungrySnakePage() {
   const requestRef = useRef<number>();
   const touchStart = useRef<{ x: number, y: number } | null>(null);
 
-  // 🐍 स्नेक फ़ूड स्पॉनर (TypeScript Error Fixed)
+  // 🐍 स्नेक फ़ूड स्पॉनर 
   const spawnFood = (snakeBody: {x: number, y: number}[]) => {
     while (true) {
       const newFood = {
@@ -58,7 +61,7 @@ export default function HungrySnakePage() {
     nextDirection: { x: 0, y: -1 },
     food: { x: 5, y: 5, emoji: "🍔" },
     lastMoveTime: 0,
-    speed: 200 // हार्ड मोड (शुरुआत में ही तेज़)
+    speed: 180 
   });
 
   // URL से टेबल नंबर
@@ -70,20 +73,27 @@ export default function HungrySnakePage() {
     }
   }, []);
 
+  // 📡 Real-time Leaderboard Fetch (सभी मोबाइल्स पर लाइव दिखेगा)
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "leaderboards", "HungrySnake"), (docSnap) => {
+      if (docSnap.exists()) {
+        setGlobalHighScore(docSnap.data().topScore || 30);
+        setGlobalHighScorer(docSnap.data().topName || "बम बम कैफे");
+      }
+    });
+    return () => unsub();
+  }, []);
+
   // ऑटो-फिल
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
         if (snap.exists() && snap.data().name) {
           setName(snap.data().name); 
-          setIsReturningUser(true);
         } else {
-          setIsReturningUser(false); 
           setName("");
         }
       });
-    } else {
-      setIsReturningUser(false);
     }
   }, [phone]);
 
@@ -95,16 +105,11 @@ export default function HungrySnakePage() {
     
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    
-    // 👉 अब सबके लिए (नए और पुराने) जन्मदिन अनिवार्य है
-    if (!birthDay || !birthMonth) {
-      return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
-    }
+    if (!birthDay || !birthMonth) return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
     const now = Date.now();
-
     const deviceLastPlayed = localStorage.getItem("snake_cooldown");
     const lockedPhone = localStorage.getItem("snake_locked_phone");
 
@@ -129,7 +134,6 @@ export default function HungrySnakePage() {
         }
       }
 
-      // 👉 सबके लिए बर्थडे सेव / अपडेट करें
       const formattedDate = `2000-${birthMonth}-${birthDay}`;
       const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
       
@@ -145,7 +149,7 @@ export default function HungrySnakePage() {
         table: tableNo,
         specialDates: existingSpecialDates, 
         lastActive: serverTimestamp(),
-        importSource: 'HungrySnake'
+        importSource: 'ClassicSnake'
       }, { merge: true });
 
       setName(cleanName);
@@ -159,11 +163,11 @@ export default function HungrySnakePage() {
         nextDirection: { x: 0, y: -1 },
         food: spawnFood([{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }]),
         lastMoveTime: Date.now(), 
-        speed: 200
+        speed: 180
       };
       setGameStartTime(Date.now());
       setStep("playing");
-      toast.success("स्वाइप करके सांप को घुमाएं 🐍");
+      toast.success(`टारगेट: ${globalHighScore + 1} स्कोर बनाएं और जीतें! 🏆`);
 
     } catch {
       toast.error("सर्वर त्रुटि! पुनः प्रयास करें।");
@@ -179,7 +183,7 @@ export default function HungrySnakePage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const size = Math.min(window.innerWidth * 0.95, 400);
+    const size = 260; 
     canvas.width = size;
     canvas.height = size;
     const TILE_SIZE = size / GRID_SIZE;
@@ -190,18 +194,19 @@ export default function HungrySnakePage() {
 
       if (now - state.lastMoveTime > state.speed) {
         state.direction = { ...state.nextDirection };
-        const newHead = {
-          x: state.snake[0].x + state.direction.x,
-          y: state.snake[0].y + state.direction.y
-        };
+        
+        let newX = state.snake[0].x + state.direction.x;
+        let newY = state.snake[0].y + state.direction.y;
 
-        // 💥 दीवार से टकराना
-        if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
-          setStep("gameover");
-          return;
-        }
+        // Wrap Around Logic (दीवार के आर-पार)
+        if (newX < 0) newX = GRID_SIZE - 1;
+        else if (newX >= GRID_SIZE) newX = 0;
+        if (newY < 0) newY = GRID_SIZE - 1;
+        else if (newY >= GRID_SIZE) newY = 0;
 
-        // 💥 खुद से टकराना
+        const newHead = { x: newX, y: newY };
+
+        // 💥 खुद से टकराना (Game Over)
         if (state.snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
           setStep("gameover");
           return;
@@ -213,63 +218,55 @@ export default function HungrySnakePage() {
         if (newHead.x === state.food.x && newHead.y === state.food.y) {
           setScore(s => {
             const newScore = s + 1;
-            // स्पीड बढ़ाना (Hard mode)
-            state.speed = Math.max(60, 200 - (newScore * 3)); 
+            state.speed = Math.max(50, 180 - (newScore * 2)); 
             return newScore;
           });
           state.food = spawnFood(state.snake);
         } else {
-          state.snake.pop(); // अगर खाना नहीं खाया तो पूंछ हटाओ
+          state.snake.pop(); 
         }
 
         state.lastMoveTime = now;
       }
 
-      // 🎨 Draw Game
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#1e293b";
+      // 🎨 Draw Nokia Retro Screen
+      ctx.fillStyle = "#8CC084";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw Food
+      ctx.strokeStyle = "#82b47a";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= GRID_SIZE; i++) {
+        ctx.beginPath(); ctx.moveTo(i * TILE_SIZE, 0); ctx.lineTo(i * TILE_SIZE, canvas.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * TILE_SIZE); ctx.lineTo(canvas.width, i * TILE_SIZE); ctx.stroke();
+      }
+
       ctx.font = `${TILE_SIZE * 0.8}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(state.food.emoji, state.food.x * TILE_SIZE + TILE_SIZE/2, state.food.y * TILE_SIZE + TILE_SIZE/2);
 
-      // Draw Snake
-      state.snake.forEach((segment, index) => {
-        ctx.fillStyle = index === 0 ? "#22c55e" : "#16a34a"; // सिर का रंग हल्का हरा
-        ctx.beginPath();
-        ctx.roundRect(segment.x * TILE_SIZE + 1, segment.y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2, 4);
-        ctx.fill();
-
-        // सांप की आंखें (सिर्फ सिर पर)
-        if (index === 0) {
-          ctx.fillStyle = "white";
-          const eyeOffset = TILE_SIZE * 0.25;
-          const eyeSize = TILE_SIZE * 0.15;
-          ctx.beginPath();
-          ctx.arc(segment.x * TILE_SIZE + TILE_SIZE/2 - eyeOffset, segment.y * TILE_SIZE + TILE_SIZE/2 - eyeOffset, eyeSize, 0, Math.PI * 2);
-          ctx.arc(segment.x * TILE_SIZE + TILE_SIZE/2 + eyeOffset, segment.y * TILE_SIZE + TILE_SIZE/2 - eyeOffset, eyeSize, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      ctx.fillStyle = "#202B19"; 
+      state.snake.forEach((segment) => {
+        ctx.fillRect(segment.x * TILE_SIZE + 1, segment.y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2);
       });
+
+      // Score Text inside Screen
+      ctx.fillStyle = "#202B19";
+      ctx.font = "bold 14px monospace";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText(`Score: ${score}`, 6, 6);
 
       requestRef.current = requestAnimationFrame(gameLoop);
     };
 
     requestRef.current = requestAnimationFrame(gameLoop);
 
-    // 👆 Swipe (Mobile) Controls
-    const onTouchStart = (e: TouchEvent) => {
-      touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    };
-
+    const onTouchStart = (e: TouchEvent) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
     const onTouchEnd = (e: TouchEvent) => {
       if (!touchStart.current) return;
       const dx = e.changedTouches[0].clientX - touchStart.current.x;
       const dy = e.changedTouches[0].clientY - touchStart.current.y;
-      
       const { direction, nextDirection } = gameState.current;
 
       if (Math.max(Math.abs(dx), Math.abs(dy)) > 20) {
@@ -284,7 +281,6 @@ export default function HungrySnakePage() {
       touchStart.current = null;
     };
 
-    // ⌨️ Keyboard (Desktop) Controls
     const onKeyDown = (e: KeyboardEvent) => {
       const { direction, nextDirection } = gameState.current;
       if (e.key === "ArrowUp" && direction.y !== 1) { nextDirection.x = 0; nextDirection.y = -1; }
@@ -293,7 +289,7 @@ export default function HungrySnakePage() {
       else if (e.key === "ArrowRight" && direction.x !== -1) { nextDirection.x = 1; nextDirection.y = 0; }
     };
 
-    window.addEventListener("touchstart", onTouchStart);
+    window.addEventListener("touchstart", onTouchStart, { passive: false });
     window.addEventListener("touchend", onTouchEnd);
     window.addEventListener("keydown", onKeyDown);
 
@@ -303,24 +299,33 @@ export default function HungrySnakePage() {
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [step]);
+  }, [step, score]);
 
-  // 🛡️ 3. गेम ओवर और डेटा सेविंग
+  const handleDirectionButton = (dx: number, dy: number) => {
+    const { direction, nextDirection } = gameState.current;
+    if (dx !== 0 && direction.x !== -dx) { nextDirection.x = dx; nextDirection.y = 0; }
+    if (dy !== 0 && direction.y !== -dy) { nextDirection.x = 0; nextDirection.y = dy; }
+  };
+
+  // 🛡️ 3. गेम ओवर और नया लीडरबोर्ड सेविंग लॉजिक
   const savePointsToDatabase = async () => {
     if (isSaving) return;
     setIsSaving(true);
     
-    // Anti-Cheat Check
     const playTimeSeconds = (Date.now() - gameStartTime) / 1000;
     if (score > 0 && (score / playTimeSeconds > 6)) {
       setIsSaving(false);
       return toast.error("⚠️ चीटिंग पकड़ी गई!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    // 👉 30 फ़ूड = 10 कूपन, 60 फ़ूड = 20 कूपन
+    // 🏆 नया नियम: अगर पिछले चैंपियन का रिकॉर्ड तोड़ा, तो जीतेंगे 20 कूपन
     let pointsWon = 0;
-    if (score >= 60) pointsWon = 20;
-    else if (score >= 30) pointsWon = 10;
+    let isNewRecord = false;
+    
+    if (score > globalHighScore) {
+      pointsWon = 20; 
+      isNewRecord = true;
+    }
 
     try {
       const userRef = doc(db, "customer_points", phone);
@@ -341,10 +346,9 @@ export default function HungrySnakePage() {
 
       if (pointsWon > 0 && finalPointsToAdd === 0) {
         toast("आप आज की लिमिट (20 कूपन) पार कर चुके हैं।", { icon: "⚠️" });
-        setIsSaving(false);
-        return;
       }
 
+      // यूजर का डेटा अपडेट करें
       await setDoc(userRef, {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
@@ -352,15 +356,26 @@ export default function HungrySnakePage() {
         lastCatchGameScore: score 
       }, { merge: true });
 
+      // 🏆 ग्लोबल लीडरबोर्ड अपडेट करें (अगर रिकॉर्ड टूटा है)
+      if (isNewRecord) {
+        const cleanName = formatNameTitleCase(name.trim());
+        await setDoc(doc(db, "leaderboards", "HungrySnake"), {
+          topScore: score,
+          topName: cleanName,
+          timestamp: serverTimestamp()
+        });
+      }
+
       setEarnedPoints(finalPointsToAdd);
-      
       localStorage.setItem("snake_cooldown", Date.now().toString());
       localStorage.setItem("snake_locked_phone", phone);
 
-      if (finalPointsToAdd > 0) {
-        toast.success(`बधाई हो! आपको ${finalPointsToAdd} कूपन मिले! 🎉`);
-      } else if (score < 30) {
-        toast.error("टारगेट पूरा नहीं हुआ (कम से कम 30 स्कोर चाहिए)!");
+      if (isNewRecord && finalPointsToAdd > 0) {
+        toast.success(`बधाई हो! आपने रिकॉर्ड तोड़ दिया और ${finalPointsToAdd} कूपन जीते! 🎉`, { duration: 5000 });
+      } else if (isNewRecord) {
+        toast.success(`आपने रिकॉर्ड तोड़ दिया! आप नए चैंपियन हैं! 👑`);
+      } else {
+        toast.error(`टारगेट पूरा नहीं हुआ! रिकॉर्ड तोड़ने के लिए ${globalHighScore + 1} स्कोर चाहिए था।`);
       }
 
     } catch (err) {
@@ -374,7 +389,6 @@ export default function HungrySnakePage() {
     if (step === "gameover") savePointsToDatabase();
   }, [step]);
 
-  // 🛡️ 2. यहाँ हमने GameGuard का इस्तेमाल किया है (allowedGameName="HungrySnake")
   return (
     <GameGuard allowedGameName="HungrySnake">
       <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden select-none touch-none">
@@ -383,17 +397,25 @@ export default function HungrySnakePage() {
         {/* ---------------- LOGIN SCREEN ---------------- */}
         {step === "login" && (
           <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
+            
+            {/* 🏆 LIVE LEADERBOARD BANNER */}
+            <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-2xl p-4 mb-6 text-center shadow-[0_0_15px_rgba(234,179,8,0.2)] animate-pulse-slow">
+              <p className="text-yellow-500 text-[10px] font-black uppercase tracking-widest mb-1">👑 Current Champion 👑</p>
+              <h2 className="text-2xl font-black text-white drop-shadow-md">{globalHighScorer}</h2>
+              <div className="inline-block bg-yellow-500 text-black px-4 py-1 rounded-full text-sm font-black mt-2 shadow-lg">
+                High Score: {globalHighScore}
+              </div>
+            </div>
+
             <div className="mb-6 text-center">
-              <h1 className="text-4xl font-black text-green-500 drop-shadow-md tracking-wider">Hungry Snake 🐍</h1>
-              <p className="text-sm font-bold text-neutral-400 mt-1">बम बम कैफे, मोहंद्रा</p>
+              <h1 className="text-3xl font-black text-green-500 drop-shadow-md tracking-wider font-mono">RETRO SNAKE 🐍</h1>
             </div>
 
             <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
               <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-3 rounded-xl border border-neutral-700 text-left">
-                स्क्रीन पर उंगली फेर कर (Swipe) सांप को घुमाएं और बर्गर-पिज़्ज़ा खिलाएं! 🍔<br/>
-                <span className="text-green-400 block mt-2 text-center text-sm">
-                  30 स्कोर = 10 कूपन (₹10)<br/>
-                  60 स्कोर = 20 कूपन (₹20)
+                बचपन की यादें! कूपन जीतने के लिए आपको <strong className="text-yellow-400">{globalHighScorer}</strong> का रिकॉर्ड <strong className="text-yellow-400">({globalHighScore} Score)</strong> तोड़ना होगा!<br/>
+                <span className="text-green-400 block mt-2 text-center text-[11px]">
+                  रिकॉर्ड तोड़ने पर मिलेंगे = 20 कूपन (₹20) 🎟️
                 </span>
               </p>
               
@@ -401,55 +423,67 @@ export default function HungrySnakePage() {
                 <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
                 <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3 rounded-xl outline-none text-white focus:border-green-400 font-bold" />
                 
-                {/* 👉 जन्मदिन वाला सेक्शन */}
                 <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                    🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
-                  </p>
                   <div className="flex gap-2">
                     <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>जन्म की तारीख *</option>
+                      <option value="" disabled>जन्म तारीख *</option>
                       {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
                     </select>
                     <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>जन्म का महीना *</option>
+                      <option value="" disabled>जन्म महीना *</option>
                       {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
                     </select>
                   </div>
-                  <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
-                    ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
-                  </p>
                 </div>
 
-                <button type="submit" disabled={isLoading} className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
-                  {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
+                <button type="submit" disabled={isLoading} className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
+                  {isLoading ? "प्रतीक्षा करें..." : `▶ रिकॉर्ड तोड़ें (Target: ${globalHighScore + 1})`}
                 </button>
               </form>
             </div>
           </div>
         )}
 
-        {/* ---------------- PLAYING SCREEN ---------------- */}
+        {/* ---------------- PLAYING SCREEN (NOKIA 3310 UI) ---------------- */}
         {step === "playing" && (
           <div className="w-full flex flex-col items-center justify-center h-[100dvh]">
-            <div className="w-full max-w-sm px-4 flex justify-between items-center mb-6">
-               <div>
-                 <h2 className="text-2xl font-black text-green-500 tracking-wider">Snake 🐍</h2>
-                 <p className="text-[10px] text-neutral-400">Target: 30 / 60</p>
-               </div>
-               <div className="bg-[#1e293b] border border-[#334155] px-6 py-2 rounded-xl text-center shadow-lg">
-                  <p className="text-[9px] font-black uppercase text-neutral-400">Score</p>
-                  <p className="text-2xl font-mono font-black text-white">{score}</p>
-               </div>
-            </div>
+            
+            <div className="relative bg-[#1c2938] w-[340px] h-[650px] rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_-10px_20px_rgba(255,255,255,0.1)] border-[6px] border-[#0f172a] flex flex-col items-center pt-8 pb-10">
+              
+              <div className="text-neutral-400/60 text-lg font-black tracking-widest mb-4 font-mono">
+                BAM BAM 3310
+              </div>
+              
+              <div className="bg-[#111] p-3 rounded-2xl shadow-inner mb-6 relative">
+                {/* Score Target Overlay (छोटे अक्षरों में ऊपर दिखेगा) */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full z-10 shadow-md">
+                  Target: {globalHighScore + 1}
+                </div>
+                
+                <div className="rounded-xl overflow-hidden shadow-[inset_0_0_15px_rgba(0,0,0,0.5)] bg-[#8CC084] border-4 border-[#333]">
+                   <canvas ref={canvasRef} className="block" />
+                </div>
+              </div>
 
-            <div className="rounded-xl overflow-hidden border-4 border-[#334155] shadow-2xl relative bg-[#1e293b]">
-               <canvas ref={canvasRef} />
-               <div className="absolute inset-0 pointer-events-none border border-black/20 rounded-xl"></div>
-            </div>
+              <div className="text-center mb-6">
+                <p className="text-neutral-500 text-[10px] uppercase font-bold tracking-widest">
+                  👆 Swipe or Use Buttons 👇
+                </p>
+                <p className="text-yellow-600/80 text-[10px] font-bold mt-1">Break {globalHighScorer}'s Record!</p>
+              </div>
 
-            <div className="mt-8 text-neutral-500 text-[10px] uppercase font-bold tracking-widest bg-black/40 px-4 py-2 rounded-full">
-              👆 Swipe to Move 👆
+              {/* Classic Physical-looking D-PAD */}
+              <div className="grid grid-cols-3 gap-2 mt-auto w-full px-12">
+                <div />
+                <button onClick={() => handleDirectionButton(0, -1)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-t-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mx-auto flex items-center justify-center text-xl font-black">▲</button>
+                <div />
+                <button onClick={() => handleDirectionButton(-1, 0)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-l-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] ml-auto flex items-center justify-center text-xl font-black">◀</button>
+                <button className="bg-[#3b4c6b] text-neutral-400 w-16 h-12 rounded-xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mx-auto flex items-center justify-center text-xs font-black">OK</button>
+                <button onClick={() => handleDirectionButton(1, 0)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-r-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mr-auto flex items-center justify-center text-xl font-black">▶</button>
+                <div />
+                <button onClick={() => handleDirectionButton(0, 1)} className="bg-[#2a3a52] text-neutral-300 w-16 h-12 rounded-b-2xl shadow-[0_5px_0_#0f172a] active:shadow-[0_0px_0_#0f172a] active:translate-y-[5px] mx-auto flex items-center justify-center text-xl font-black">▼</button>
+                <div />
+              </div>
             </div>
           </div>
         )}
@@ -457,53 +491,44 @@ export default function HungrySnakePage() {
         {/* ---------------- GAME OVER SCREEN ---------------- */}
         {step === "gameover" && (
           <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
-            <div className="text-6xl">{score >= 30 ? '🎉' : '💥'}</div>
-            <h2 className="text-3xl font-black uppercase text-green-500 tracking-wider">Game Over</h2>
+            
+            <div className="text-6xl">{score > globalHighScore ? '🏆' : '💥'}</div>
+            
+            <h2 className={`text-3xl font-black uppercase tracking-wider ${score > globalHighScore ? 'text-yellow-400' : 'text-red-500'}`}>
+              {score > globalHighScore ? 'NEW CHAMPION!' : 'Game Over'}
+            </h2>
             
             <div className="bg-[#0f172a] p-4 rounded-2xl border border-[#334155]">
               <p className="text-xs font-bold text-neutral-400 uppercase">Your Final Score</p>
-              <p className="text-6xl font-mono font-black text-green-400 mt-2">{score}</p>
+              <p className={`text-6xl font-mono font-black mt-2 ${score > globalHighScore ? 'text-yellow-400' : 'text-green-400'}`}>
+                {score}
+              </p>
             </div>
 
             {isSaving ? (
                <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर चेक हो रहा है...</p>
             ) : earnedPoints > 0 ? (
-              <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl">
-                <p className="text-[11px] font-black uppercase text-green-500">डिस्काउंट कूपन जीते</p>
-                <p className="text-4xl font-black text-green-400 mt-1">🎟️ {earnedPoints}</p>
+              <div className="bg-yellow-900/20 border border-yellow-500/30 p-5 rounded-2xl">
+                <p className="text-[11px] font-black uppercase text-yellow-500">आपने रिकॉर्ड तोड़ दिया!</p>
+                <p className="text-4xl font-black text-yellow-400 mt-1">🎟️ {earnedPoints} कूपन</p>
                 <p className="text-xs text-neutral-300 mt-3 font-bold">
-                  कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
+                  आप कैफे के नए किंग हैं! कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं।
                 </p>
               </div>
             ) : (
               <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl">
                  <p className="text-sm font-black text-red-400">Better Luck Next Time! 😔</p>
                  <p className="text-xs text-neutral-400 mt-2">
-                   कूपन जीतने के लिए कम से कम 30 स्कोर (30 फ़ूड) खाना ज़रूरी है।
+                   रिकॉर्ड तोड़ने के लिए आपको कम से कम <strong className="text-white">{globalHighScore + 1}</strong> स्कोर बनाना था।
                  </p>
               </div>
             )}
 
             <div className="flex flex-col gap-2 pt-2">
-              <button onClick={() => {
-                  setScore(0);
-                  gameState.current = {
-                    snake: [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }],
-                    direction: { x: 0, y: -1 },
-                    nextDirection: { x: 0, y: -1 },
-                    food: spawnFood([{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }]),
-                    lastMoveTime: Date.now(),
-                    speed: 200
-                  };
-                  setGameStartTime(Date.now());
-                  setStep("playing");
-                }} 
+              <button onClick={() => window.location.reload()} 
                 className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-sm uppercase rounded-xl shadow-lg"
               >
-                 🔁 फिर से खेलें (Play Again)
-              </button>
-              <button onClick={() => setStep("login")} className="w-full py-2 bg-transparent text-neutral-400 font-bold text-xs hover:text-white transition-all">
-                 मुख्य मेनू (Main Menu)
+                 🔁 फिर से खेलें (Main Menu)
               </button>
             </div>
           </div>
