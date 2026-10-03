@@ -5,6 +5,9 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
+// 🛡️ 1. Security Guard को Import किया है
+import GameGuard from "@/components/GameGuard";
+
 const formatNameTitleCase = (text: string) => {
   return text.toLowerCase().split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 };
@@ -356,155 +359,158 @@ export default function Cafe2048Page() {
     if (step === "gameover") savePointsToDatabase();
   }, [step]);
 
+  // 🛡️ 2. यहाँ हमने GameGuard का इस्तेमाल किया है (allowedGameName="Cafe2048")
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden select-none">
-      <Toaster position="top-center" />
-      
-      {/* ---------------- LOGIN SCREEN ---------------- */}
-      {step === "login" && (
-        <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
-          <div className="mb-6 text-center">
-            <h1 className="text-4xl font-black text-amber-500 drop-shadow-md tracking-wider">Cafe 2048 🧩</h1>
-            <p className="text-sm font-bold text-neutral-400 mt-1">बम बम कैफे, मोहंद्रा</p>
-          </div>
+    <GameGuard allowedGameName="Cafe2048">
+      <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden select-none">
+        <Toaster position="top-center" />
+        
+        {/* ---------------- LOGIN SCREEN ---------------- */}
+        {step === "login" && (
+          <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
+            <div className="mb-6 text-center">
+              <h1 className="text-4xl font-black text-amber-500 drop-shadow-md tracking-wider">Cafe 2048 🧩</h1>
+              <p className="text-sm font-bold text-neutral-400 mt-1">बम बम कैफे, मोहंद्रा</p>
+            </div>
 
-          <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
-            <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-3 rounded-xl border border-neutral-700 text-left">
-              उंगली से स्वाइप करके एक जैसे 2 आइटम्स को जोड़ें और बड़ा आइटम बनाएँ!<br/>
-              <span className="text-amber-400 block mt-2 text-center text-sm">
-                🍔 (बर्गर) बनाया = 10 कूपन<br/>
-                🍕 (पिज़्ज़ा) बनाया = 20 कूपन
-              </span>
-            </p>
-            
-            <form onSubmit={handleStartGame} className="space-y-3 pt-2">
-              <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-amber-500 text-center py-3 rounded-xl outline-none text-white focus:border-amber-400 font-mono" />
-              <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-orange-500 text-center py-3 rounded-xl outline-none text-white focus:border-orange-400 font-bold" />
+            <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
+              <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-3 rounded-xl border border-neutral-700 text-left">
+                उंगली से स्वाइप करके एक जैसे 2 आइटम्स को जोड़ें और बड़ा आइटम बनाएँ!<br/>
+                <span className="text-amber-400 block mt-2 text-center text-sm">
+                  🍔 (बर्गर) बनाया = 10 कूपन<br/>
+                  🍕 (पिज़्ज़ा) बनाया = 20 कूपन
+                </span>
+              </p>
               
-              {/* 👉 जन्मदिन वाला सेक्शन (सबके लिए अनिवार्य + साफ़ चेतावनी के साथ) */}
-              <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                  🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
-                </p>
-                <div className="flex gap-2">
-                  <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                    <option value="" disabled>जन्म की तारीख *</option>
-                    {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                  </select>
-                  <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                    <option value="" disabled>जन्म का महीना *</option>
-                    {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                  </select>
+              <form onSubmit={handleStartGame} className="space-y-3 pt-2">
+                <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-amber-500 text-center py-3 rounded-xl outline-none text-white focus:border-amber-400 font-mono" />
+                <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-orange-500 text-center py-3 rounded-xl outline-none text-white focus:border-orange-400 font-bold" />
+                
+                {/* 👉 जन्मदिन वाला सेक्शन */}
+                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
+                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
+                    🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
+                  </p>
+                  <div className="flex gap-2">
+                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>जन्म की तारीख *</option>
+                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
+                    </select>
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
+                      <option value="" disabled>जन्म का महीना *</option>
+                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
+                    </select>
+                  </div>
+                  <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
+                    ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
+                  </p>
                 </div>
-                <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
-                  ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
+
+                <button type="submit" disabled={isLoading} className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
+                  {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ---------------- PLAYING SCREEN ---------------- */}
+        {step === "playing" && (
+          <div className="w-full max-w-sm px-4 flex flex-col items-center justify-center h-[100dvh]" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+            <div className="w-full flex justify-between items-center mb-6">
+               <div>
+                 <h2 className="text-2xl font-black text-amber-500">Cafe 2048</h2>
+                 <p className="text-[10px] text-neutral-400">Target: 🍔 or 🍕</p>
+               </div>
+               <div className="bg-[#1e293b] border border-[#334155] px-4 py-2 rounded-xl text-center shadow-lg">
+                  <p className="text-[9px] font-black uppercase text-neutral-400">Score</p>
+                  <p className="text-xl font-mono font-black text-white">{score}</p>
+               </div>
+            </div>
+            
+            <div className="w-full bg-[#1e293b] p-3 rounded-xl border border-neutral-700 mb-4 flex justify-between items-center text-xl">
+               <div className={`opacity-50 ${maxTile >= 512 ? 'opacity-100 scale-125 transition-transform' : ''}`}>🍔</div>
+               <div className="h-1 flex-1 bg-neutral-700 mx-3 rounded">
+                 <div className="h-1 bg-amber-500 rounded transition-all" style={{width: `${Math.min(100, (maxTile/2048)*100)}%`}}></div>
+               </div>
+               <div className={`opacity-50 ${maxTile >= 2048 ? 'opacity-100 scale-125 transition-transform' : ''}`}>🍕</div>
+            </div>
+
+            <div className="bg-[#a67c52] p-2 rounded-2xl shadow-[inset_0_4px_15px_rgba(0,0,0,0.5)] touch-none">
+              <div className="grid grid-cols-4 gap-2">
+                {board.map((row, r) => 
+                  row.map((val, c) => (
+                    <div 
+                      key={`${r}-${c}`} 
+                      className={`w-16 h-16 sm:w-18 sm:h-18 rounded-xl flex items-center justify-center text-4xl shadow-sm transition-all duration-150 ${TILE_MAP[val]?.bg}`}
+                    >
+                      <span className={`${val > 0 ? 'scale-100 animate-[pop_0.2s_ease-in-out]' : 'scale-0'}`}>
+                        {TILE_MAP[val]?.emoji}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mt-8 text-neutral-500 text-[10px] uppercase font-bold tracking-widest">
+              Swipe Up, Down, Left, Right
+            </div>
+            
+            <button onClick={() => setStep("gameover")} className="mt-4 px-4 py-2 bg-red-900/50 text-red-400 rounded-lg text-[10px] font-black uppercase border border-red-900">
+              End Game
+            </button>
+          </div>
+        )}
+
+        {/* ---------------- GAME OVER SCREEN ---------------- */}
+        {step === "gameover" && (
+          <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
+            <div className="text-6xl">{maxTile >= 512 ? '🎉' : '💥'}</div>
+            <h2 className="text-3xl font-black uppercase text-amber-500 tracking-wider">Game Over</h2>
+            
+            <div className="bg-[#0f172a] p-4 rounded-2xl border border-[#334155]">
+              <p className="text-xs font-bold text-neutral-400 uppercase">Your Final Score</p>
+              <p className="text-5xl font-mono font-black text-amber-400 mt-2">{score}</p>
+              <p className="text-[10px] mt-2 text-neutral-500">Biggest Item: {TILE_MAP[maxTile]?.emoji} {TILE_MAP[maxTile]?.name}</p>
+            </div>
+
+            {isSaving ? (
+               <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर चेक हो रहा है...</p>
+            ) : earnedPoints > 0 ? (
+              <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl">
+                <p className="text-[11px] font-black uppercase text-green-500">डिस्काउंट कूपन जीते</p>
+                <p className="text-4xl font-black text-green-400 mt-1">🎟️ {earnedPoints}</p>
+                <p className="text-xs text-neutral-300 mt-3 font-bold">
+                  कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
                 </p>
               </div>
+            ) : (
+              <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl">
+                 <p className="text-sm font-black text-red-400">Better Luck Next Time! 😔</p>
+                 <p className="text-xs text-neutral-400 mt-2">
+                   कूपन जीतने के लिए कम से कम 🍔 (बर्गर) तक पहुँचना ज़रूरी है।
+                 </p>
+              </div>
+            )}
 
-              <button type="submit" disabled={isLoading} className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
-                {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
+            <div className="flex flex-col gap-2 pt-2">
+              <button onClick={() => {
+                  initializeGame();
+                  setGameStartTime(Date.now());
+                  setStep("playing");
+                }} 
+                className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-sm uppercase rounded-xl shadow-lg"
+              >
+                 🔁 फिर से खेलें (Play Again)
               </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ---------------- PLAYING SCREEN ---------------- */}
-      {step === "playing" && (
-        <div className="w-full max-w-sm px-4 flex flex-col items-center justify-center h-[100dvh]" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <div className="w-full flex justify-between items-center mb-6">
-             <div>
-               <h2 className="text-2xl font-black text-amber-500">Cafe 2048</h2>
-               <p className="text-[10px] text-neutral-400">Target: 🍔 or 🍕</p>
-             </div>
-             <div className="bg-[#1e293b] border border-[#334155] px-4 py-2 rounded-xl text-center shadow-lg">
-                <p className="text-[9px] font-black uppercase text-neutral-400">Score</p>
-                <p className="text-xl font-mono font-black text-white">{score}</p>
-             </div>
-          </div>
-          
-          <div className="w-full bg-[#1e293b] p-3 rounded-xl border border-neutral-700 mb-4 flex justify-between items-center text-xl">
-             <div className={`opacity-50 ${maxTile >= 512 ? 'opacity-100 scale-125 transition-transform' : ''}`}>🍔</div>
-             <div className="h-1 flex-1 bg-neutral-700 mx-3 rounded">
-               <div className="h-1 bg-amber-500 rounded transition-all" style={{width: `${Math.min(100, (maxTile/2048)*100)}%`}}></div>
-             </div>
-             <div className={`opacity-50 ${maxTile >= 2048 ? 'opacity-100 scale-125 transition-transform' : ''}`}>🍕</div>
-          </div>
-
-          <div className="bg-[#a67c52] p-2 rounded-2xl shadow-[inset_0_4px_15px_rgba(0,0,0,0.5)] touch-none">
-            <div className="grid grid-cols-4 gap-2">
-              {board.map((row, r) => 
-                row.map((val, c) => (
-                  <div 
-                    key={`${r}-${c}`} 
-                    className={`w-16 h-16 sm:w-18 sm:h-18 rounded-xl flex items-center justify-center text-4xl shadow-sm transition-all duration-150 ${TILE_MAP[val]?.bg}`}
-                  >
-                    <span className={`${val > 0 ? 'scale-100 animate-[pop_0.2s_ease-in-out]' : 'scale-0'}`}>
-                      {TILE_MAP[val]?.emoji}
-                    </span>
-                  </div>
-                ))
-              )}
+              <button onClick={() => setStep("login")} className="w-full py-2 bg-transparent text-neutral-400 font-bold text-xs hover:text-white transition-all">
+                 मुख्य मेनू (Main Menu)
+              </button>
             </div>
           </div>
-
-          <div className="mt-8 text-neutral-500 text-[10px] uppercase font-bold tracking-widest">
-            Swipe Up, Down, Left, Right
-          </div>
-          
-          <button onClick={() => setStep("gameover")} className="mt-4 px-4 py-2 bg-red-900/50 text-red-400 rounded-lg text-[10px] font-black uppercase border border-red-900">
-            End Game
-          </button>
-        </div>
-      )}
-
-      {/* ---------------- GAME OVER SCREEN ---------------- */}
-      {step === "gameover" && (
-        <div className="bg-[#1e293b] p-8 rounded-3xl w-full max-w-sm border border-[#334155] shadow-2xl text-center space-y-6 z-10 mx-4">
-          <div className="text-6xl">{maxTile >= 512 ? '🎉' : '💥'}</div>
-          <h2 className="text-3xl font-black uppercase text-amber-500 tracking-wider">Game Over</h2>
-          
-          <div className="bg-[#0f172a] p-4 rounded-2xl border border-[#334155]">
-            <p className="text-xs font-bold text-neutral-400 uppercase">Your Final Score</p>
-            <p className="text-5xl font-mono font-black text-amber-400 mt-2">{score}</p>
-            <p className="text-[10px] mt-2 text-neutral-500">Biggest Item: {TILE_MAP[maxTile]?.emoji} {TILE_MAP[maxTile]?.name}</p>
-          </div>
-
-          {isSaving ? (
-             <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर चेक हो रहा है...</p>
-          ) : earnedPoints > 0 ? (
-            <div className="bg-green-900/20 border border-green-500/30 p-5 rounded-2xl">
-              <p className="text-[11px] font-black uppercase text-green-500">डिस्काउंट कूपन जीते</p>
-              <p className="text-4xl font-black text-green-400 mt-1">🎟️ {earnedPoints}</p>
-              <p className="text-xs text-neutral-300 mt-3 font-bold">
-                कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं। बिल बनवाते समय नंबर बताएं!
-              </p>
-            </div>
-          ) : (
-            <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl">
-               <p className="text-sm font-black text-red-400">Better Luck Next Time! 😔</p>
-               <p className="text-xs text-neutral-400 mt-2">
-                 कूपन जीतने के लिए कम से कम 🍔 (बर्गर) तक पहुँचना ज़रूरी है।
-               </p>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2 pt-2">
-            <button onClick={() => {
-                initializeGame();
-                setGameStartTime(Date.now());
-                setStep("playing");
-              }} 
-              className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-sm uppercase rounded-xl shadow-lg"
-            >
-               🔁 फिर से खेलें (Play Again)
-            </button>
-            <button onClick={() => setStep("login")} className="w-full py-2 bg-transparent text-neutral-400 font-bold text-xs hover:text-white transition-all">
-               मुख्य मेनू (Main Menu)
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </GameGuard>
   );
 }
