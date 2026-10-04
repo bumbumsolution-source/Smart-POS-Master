@@ -21,10 +21,7 @@ export default function RetroSnakePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   
-  const [birthDay, setBirthDay] = useState(""); 
-  const [birthMonth, setBirthMonth] = useState(""); 
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
-  
   const [isLoading, setIsLoading] = useState(false);
   
   // 🏆 Leaderboard States
@@ -84,36 +81,19 @@ export default function RetroSnakePage() {
     return () => unsub();
   }, []);
 
-  // 🚀 ऑटो-फिल लॉजिक (अब जन्मतिथि भी ऑटो-फिल होगी)
+  // 🚀 ऑटो-फिल लॉजिक
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
         if (snap.exists()) {
           const data = snap.data();
           if (data.name) setName(data.name);
-          
-          // चेक करें कि क्या जन्मदिन सेव है
-          if (data.specialDates && Array.isArray(data.specialDates)) {
-            const bdayObj = data.specialDates.find((d: any) => d.type === "Birthday");
-            if (bdayObj && bdayObj.date) {
-              const parts = bdayObj.date.split('-'); // Format is 'YYYY-MM-DD'
-              if (parts.length === 3) {
-                setBirthMonth(parts[1]); // MM
-                setBirthDay(parts[2]);   // DD
-              }
-            }
-          }
         } else {
           setName("");
-          setBirthDay("");
-          setBirthMonth("");
         }
       });
     } else {
-      // अगर नंबर 10 अंकों से कम है तो नाम और डेट खाली कर सकते हैं
       setName("");
-      setBirthDay("");
-      setBirthMonth("");
     }
   }, [phone]);
 
@@ -125,7 +105,6 @@ export default function RetroSnakePage() {
     
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    if (!birthDay || !birthMonth) return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -143,31 +122,19 @@ export default function RetroSnakePage() {
     try {
       const userRef = doc(db, "customer_points", cleanPhone);
       const userSnap = await getDoc(userRef);
-      let existingSpecialDates: any[] = [];
 
       if (userSnap.exists()) {
         const data = userSnap.data();
-        existingSpecialDates = data.specialDates || [];
         const todayStr = new Date().toDateString();
         if (data.lastGameDate === todayStr && data.todayGamePoints >= 20) {
           toast("⚠️ आप आज की 20 कूपन की लिमिट पार कर चुके हैं, मजे के लिए खेलें!", { icon: '🎮' });
         }
       }
 
-      const formattedDate = `2000-${birthMonth}-${birthDay}`;
-      const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
-      
-      if (bdayIndex > -1) {
-        existingSpecialDates[bdayIndex].date = formattedDate; 
-      } else {
-        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); 
-      }
-
       await setDoc(userRef, { 
         name: cleanName, 
         phone: cleanPhone, 
         table: tableNo,
-        specialDates: existingSpecialDates, 
         lastActive: serverTimestamp(),
         importSource: 'ClassicSnake'
       }, { merge: true });
@@ -364,7 +331,7 @@ export default function RetroSnakePage() {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
-        lastCatchGameScore: score 
+        lastSnakeGameScore: score 
       }, { merge: true });
 
       if (isNewRecord) {
@@ -432,19 +399,6 @@ export default function RetroSnakePage() {
                 <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3.5 rounded-xl outline-none text-white focus:border-green-400 font-mono" />
                 <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-green-500 text-center py-3.5 rounded-xl outline-none text-white focus:border-green-400 font-bold" />
                 
-                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                  <div className="flex gap-2">
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3.5 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>जन्म तारीख *</option>
-                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                    </select>
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3.5 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>महीना *</option>
-                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                    </select>
-                  </div>
-                </div>
-
                 <button type="submit" disabled={isLoading} className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4 transition-all">
                   {isLoading ? "प्रतीक्षा करें..." : `▶ रिकॉर्ड तोड़ें (Target: ${globalHighScore + 1})`}
                 </button>
