@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
-// 🛡️ 1. Security Guard को Import किया है
+// 🛡️ 1. Security Guard
 import GameGuard from "@/components/GameGuard";
 
 const formatNameTitleCase = (text: string) => {
@@ -22,9 +22,6 @@ export default function CatchGamePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   
-  const [birthDay, setBirthDay] = useState(""); 
-  const [birthMonth, setBirthMonth] = useState(""); 
-
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   const [isLoading, setIsLoading] = useState(false);
   
@@ -56,7 +53,7 @@ export default function CatchGamePage() {
     }
   }, []);
 
-  // ऑटो-फिल (नाम और जन्मदिन)
+  // ऑटो-फिल (नाम)
   useEffect(() => {
     if (phone.length === 10) {
       getDoc(doc(db, "customer_points", phone)).then((snap) => {
@@ -66,21 +63,9 @@ export default function CatchGamePage() {
             setName(data.name); 
             setIsReturningUser(true);
           }
-          if (data.specialDates && Array.isArray(data.specialDates)) {
-            const bdayEntry = data.specialDates.find((d: any) => d.type === 'Birthday');
-            if (bdayEntry && bdayEntry.date) {
-              const parts = bdayEntry.date.split("-");
-              if (parts.length === 3) {
-                setBirthMonth(parts[1]);
-                setBirthDay(parts[2]);
-              }
-            }
-          }
         } else {
           setIsReturningUser(false); 
           setName("");
-          setBirthMonth("");
-          setBirthDay("");
         }
       });
     } else {
@@ -94,10 +79,6 @@ export default function CatchGamePage() {
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     const cleanPhone = phone.replace(/\D/g, "").slice(-10);
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-
-    if (!birthDay || !birthMonth) {
-      return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
-    }
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -118,31 +99,18 @@ export default function CatchGamePage() {
       const userRef = doc(db, "customer_points", cleanPhone);
       const userSnap = await getDoc(userRef);
       
-      let existingSpecialDates: any[] = [];
-
       if (userSnap.exists()) {
         const data = userSnap.data();
-        existingSpecialDates = data.specialDates || [];
         const todayStr = new Date().toDateString();
         if (data.lastGameDate === todayStr && data.todayGamePoints >= 20) {
           toast("⚠️ आप आज की 20 कूपन की लिमिट पार कर चुके हैं, मजे के लिए खेलें!", { icon: '🎮' });
         }
       }
 
-      const formattedDate = `2000-${birthMonth}-${birthDay}`;
-      const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
-      
-      if (bdayIndex > -1) {
-        existingSpecialDates[bdayIndex].date = formattedDate; 
-      } else {
-        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); 
-      }
-
       await setDoc(userRef, { 
         name: cleanName, 
         phone: cleanPhone, 
         table: tableNo,
-        specialDates: existingSpecialDates, 
         lastActive: serverTimestamp(),
         importSource: 'CatchGame'
       }, { merge: true });
@@ -339,7 +307,7 @@ export default function CatchGamePage() {
     }
   }, [step]);
 
-  // 🛡️ 2. यहाँ हमने GameGuard का इस्तेमाल किया है (allowedGameName="CatchGame")
+  // 🛡️ 2. GameGuard (allowedGameName="CatchGame")
   return (
     <GameGuard allowedGameName="CatchGame">
       <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col justify-center items-center overflow-hidden touch-none relative select-none">
@@ -385,25 +353,6 @@ export default function CatchGamePage() {
                   className="w-full bg-[#0f172a] border-2 border-blue-500 text-center text-base py-3 rounded-xl outline-none text-white focus:border-blue-400 font-bold" 
                 />
                 
-                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                    🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
-                  </p>
-                  <div className="flex gap-2">
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthDay ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
-                      <option value="" disabled>तारीख *</option>
-                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                    </select>
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className={`w-1/2 bg-[#0f172a] border-2 text-center text-sm py-3 rounded-xl outline-none appearance-none ${birthMonth ? "border-green-500 text-green-400 font-bold" : "border-pink-500 text-white"}`}>
-                      <option value="" disabled>महीना *</option>
-                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                    </select>
-                  </div>
-                  <p className="text-[10px] text-yellow-400 font-bold text-left bg-yellow-900/20 p-2 rounded-lg border border-yellow-500/30">
-                    ⚠️ कृपया आज की तारीख न चुनें। अपना असली जन्मदिन ही डालें ताकि आपको आपके जन्मदिन पर स्पेशल गिफ्ट मिल सके!
-                  </p>
-                </div>
-
                 <button 
                   type="submit" 
                   disabled={isLoading}
