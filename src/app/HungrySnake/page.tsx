@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
-// 🛡️ Security Guard 
+// 🛡️ Security Guard वापस लगा दिया गया है
 import GameGuard from "@/components/GameGuard";
 
 const formatNameTitleCase = (text: string) => {
@@ -216,8 +216,8 @@ export default function RetroSnakePage() {
         state.lastMoveTime = now;
       }
 
-      // 🎨 Draw Canvas Background (Brighter & Clearer Green)
-      ctx.fillStyle = "#A8D08D"; // साफ और चमकदार रेट्रो हरा
+      // 🎨 Draw Canvas Background
+      ctx.fillStyle = "#A8D08D"; 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Subtle Grid Lines
@@ -228,16 +228,15 @@ export default function RetroSnakePage() {
         ctx.beginPath(); ctx.moveTo(0, i * TILE_SIZE); ctx.lineTo(canvas.width, i * TILE_SIZE); ctx.stroke();
       }
 
-      // Draw Food (बड़ा और साफ इमोजी)
+      // Draw Food
       ctx.font = `${TILE_SIZE * 0.9}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(state.food.emoji, state.food.x * TILE_SIZE + TILE_SIZE/2, state.food.y * TILE_SIZE + TILE_SIZE/2);
 
-      // Draw Snake (गहरा रंग ताकि एकदम साफ दिखे)
-      ctx.fillStyle = "#1A2315"; // Very dark green, almost black
+      // Draw Snake
+      ctx.fillStyle = "#1A2315"; 
       state.snake.forEach((segment) => {
-        // हल्का सा राउंडेड और बड़ा पिक्सल
         ctx.fillRect(segment.x * TILE_SIZE + 0.5, segment.y * TILE_SIZE + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
       });
 
