@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
-// 🛡️ Security Guard वापस लगा दिया गया है
+// 🛡️ Security Guard 
 import GameGuard from "@/components/GameGuard";
 
 const formatNameTitleCase = (text: string) => {
@@ -24,9 +24,11 @@ export default function RetroSnakePage() {
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   const [isLoading, setIsLoading] = useState(false);
   
-  // 🏆 Leaderboard States
-  const [globalHighScore, setGlobalHighScore] = useState(30); 
-  const [globalHighScorer, setGlobalHighScorer] = useState("बम बम कैफे");
+  // 🏆 Leaderboard States (Top 3)
+  const [leaderboard, setLeaderboard] = useState<{name: string, score: number, phone?: string}[]>([
+    { name: "बम बम कैफे", score: 30 }
+  ]);
+  const [globalHighScore, setGlobalHighScore] = useState(30);
 
   // गेम UI स्टेट्स
   const [score, setScore] = useState(0);
@@ -70,12 +72,19 @@ export default function RetroSnakePage() {
     }
   }, []);
 
-  // 📡 Real-time Leaderboard Fetch 
+  // 📡 Real-time Leaderboard Fetch (Top 3)
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "leaderboards", "HungrySnake"), (docSnap) => {
       if (docSnap.exists()) {
-        setGlobalHighScore(docSnap.data().topScore || 30);
-        setGlobalHighScorer(docSnap.data().topName || "बम बम कैफे");
+        const data = docSnap.data();
+        if (data.topScores && data.topScores.length > 0) {
+          setLeaderboard(data.topScores);
+          setGlobalHighScore(data.topScores[0].score);
+        } else if (data.topScore) {
+          // Backward compatibility for old single score
+          setLeaderboard([{ name: data.topName || "बम बम कैफे", score: data.topScore }]);
+          setGlobalHighScore(data.topScore);
+        }
       }
     });
     return () => unsub();
@@ -169,7 +178,6 @@ export default function RetroSnakePage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // 🚀 स्क्रीन के हिसाब से परफेक्ट चौड़ाई
     const size = Math.min(window.innerWidth * 0.92, 420); 
     canvas.width = size;
     canvas.height = size;
@@ -185,7 +193,7 @@ export default function RetroSnakePage() {
         let newX = state.snake[0].x + state.direction.x;
         let newY = state.snake[0].y + state.direction.y;
 
-        // Wrap Around Logic (दीवार के आर-पार)
+        // Wrap Around Logic
         if (newX < 0) newX = GRID_SIZE - 1;
         else if (newX >= GRID_SIZE) newX = 0;
         if (newY < 0) newY = GRID_SIZE - 1;
@@ -216,11 +224,9 @@ export default function RetroSnakePage() {
         state.lastMoveTime = now;
       }
 
-      // 🎨 Draw Canvas Background
       ctx.fillStyle = "#A8D08D"; 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Subtle Grid Lines
       ctx.strokeStyle = "#9BBE83"; 
       ctx.lineWidth = 1;
       for (let i = 0; i <= GRID_SIZE; i++) {
@@ -228,13 +234,11 @@ export default function RetroSnakePage() {
         ctx.beginPath(); ctx.moveTo(0, i * TILE_SIZE); ctx.lineTo(canvas.width, i * TILE_SIZE); ctx.stroke();
       }
 
-      // Draw Food
       ctx.font = `${TILE_SIZE * 0.9}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(state.food.emoji, state.food.x * TILE_SIZE + TILE_SIZE/2, state.food.y * TILE_SIZE + TILE_SIZE/2);
 
-      // Draw Snake
       ctx.fillStyle = "#1A2315"; 
       state.snake.forEach((segment) => {
         ctx.fillRect(segment.x * TILE_SIZE + 0.5, segment.y * TILE_SIZE + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
@@ -265,7 +269,6 @@ export default function RetroSnakePage() {
       touchStart.current = null;
     };
 
-    // Keyboard (for PC)
     const onKeyDown = (e: KeyboardEvent) => {
       const { direction, nextDirection } = gameState.current;
       if (e.key === "ArrowUp" && direction.y !== 1) { nextDirection.x = 0; nextDirection.y = -1; }
@@ -286,7 +289,7 @@ export default function RetroSnakePage() {
     };
   }, [step, score]);
 
-  // 🛡️ गेम ओवर 
+  // 🛡️ गेम ओवर और स्कोर सेविंग (Top 3 Logic)
   const savePointsToDatabase = async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -297,15 +300,32 @@ export default function RetroSnakePage() {
       return toast.error("⚠️ चीटिंग पकड़ी गई!", { style: { background: "#ef4444", color: "#fff" } });
     }
 
-    let pointsWon = 0;
-    let isNewRecord = false;
-    
-    if (score > globalHighScore) {
-      pointsWon = 20; 
-      isNewRecord = true;
-    }
-
     try {
+      // 1️⃣ सबसे पहले ताज़ा लीडरबोर्ड मंगवाएं
+      const lbRef = doc(db, "leaderboards", "HungrySnake");
+      const lbSnap = await getDoc(lbRef);
+      let currentTopScores = [{ name: "बम बम कैफे", score: 30, phone: "0000000000" }];
+      
+      if (lbSnap.exists()) {
+        const data = lbSnap.data();
+        if (data.topScores && data.topScores.length > 0) {
+          currentTopScores = data.topScores;
+        } else if (data.topScore) {
+          currentTopScores = [{ name: data.topName, score: data.topScore }];
+        }
+      }
+
+      const currentNo1Score = currentTopScores[0].score;
+      let pointsWon = 0;
+      let isNewNo1 = false;
+      
+      // कूपन सिर्फ़ #1 को हराने पर मिलेंगे
+      if (score > currentNo1Score) {
+        pointsWon = 20; 
+        isNewNo1 = true;
+      }
+
+      // 2️⃣ ग्राहक के आज के कूपन चेक करें
       const userRef = doc(db, "customer_points", phone);
       const userSnap = await getDoc(userRef);
       
@@ -326,6 +346,7 @@ export default function RetroSnakePage() {
         toast("आप आज की लिमिट (20 कूपन) पार कर चुके हैं।", { icon: "⚠️" });
       }
 
+      // 3️⃣ ग्राहक का डेटा सेव करें
       await setDoc(userRef, {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
@@ -333,25 +354,51 @@ export default function RetroSnakePage() {
         lastSnakeGameScore: score 
       }, { merge: true });
 
-      if (isNewRecord) {
+      // 4️⃣ क्या खिलाड़ी टॉप 3 में आया है?
+      let isTop3 = false;
+      if (currentTopScores.length < 3 || score > currentTopScores[currentTopScores.length - 1].score) {
+        isTop3 = true;
+      }
+
+      if (isTop3) {
         const cleanName = formatNameTitleCase(name.trim());
-        await setDoc(doc(db, "leaderboards", "HungrySnake"), {
-          topScore: score,
-          topName: cleanName,
+        // एक ही व्यक्ति का बार-बार नाम न आए, इसके लिए नंबर से चेक करें
+        const existingIndex = currentTopScores.findIndex(item => item.phone === phone);
+        
+        if (existingIndex > -1) {
+          if (score > currentTopScores[existingIndex].score) {
+            currentTopScores[existingIndex].score = score;
+            currentTopScores[existingIndex].name = cleanName;
+          }
+        } else {
+          currentTopScores.push({ name: cleanName, score: score, phone: phone });
+        }
+
+        // स्कोर के अनुसार छंटाई (Sort) और सिर्फ़ टॉप 3 रखें
+        currentTopScores.sort((a, b) => b.score - a.score);
+        currentTopScores = currentTopScores.slice(0, 3);
+
+        await setDoc(lbRef, {
+          topScores: currentTopScores,
+          topScore: currentTopScores[0].score, // Backward compatibility
+          topName: currentTopScores[0].name,
           timestamp: serverTimestamp()
-        });
+        }, { merge: true });
       }
 
       setEarnedPoints(finalPointsToAdd);
       localStorage.setItem("snake_cooldown", Date.now().toString());
       localStorage.setItem("snake_locked_phone", phone);
 
-      if (isNewRecord && finalPointsToAdd > 0) {
+      // 5️⃣ सही Toast Message दिखाएं
+      if (isNewNo1 && finalPointsToAdd > 0) {
         toast.success(`बधाई हो! आपने रिकॉर्ड तोड़ दिया और ${finalPointsToAdd} कूपन जीते! 🎉`, { duration: 5000 });
-      } else if (isNewRecord) {
-        toast.success(`आपने रिकॉर्ड तोड़ दिया! आप नए चैंपियन हैं! 👑`);
+      } else if (isNewNo1) {
+        toast.success(`आपने रिकॉर्ड तोड़ दिया! आप कैफे के नए चैंपियन हैं! 🥇`);
+      } else if (isTop3) {
+        toast.success(`शानदार! आप टॉप-3 विजेताओं में शामिल हो गए हैं! 🏆`);
       } else {
-        toast.error(`टारगेट पूरा नहीं हुआ! रिकॉर्ड तोड़ने के लिए ${globalHighScore + 1} स्कोर चाहिए था।`);
+        toast.error(`टारगेट पूरा नहीं हुआ! रिकॉर्ड तोड़ने के लिए ${currentNo1Score + 1} स्कोर चाहिए था।`);
       }
 
     } catch (err) {
@@ -374,11 +421,25 @@ export default function RetroSnakePage() {
         {step === "login" && (
           <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
             
-            <div className="bg-gradient-to-br from-yellow-900/60 to-yellow-700/20 border border-yellow-500/50 rounded-2xl p-5 mb-6 text-center shadow-[0_0_20px_rgba(234,179,8,0.25)] animate-pulse-slow">
-              <p className="text-yellow-400 text-[11px] font-black uppercase tracking-widest mb-1 flex items-center justify-center gap-2"><span>🏆</span> Current Champion <span>🏆</span></p>
-              <h2 className="text-3xl font-black text-white drop-shadow-lg mt-1">{globalHighScorer}</h2>
-              <div className="inline-block bg-yellow-500 text-black px-5 py-1.5 rounded-full text-sm font-black mt-3 shadow-lg border border-yellow-300">
-                High Score: {globalHighScore}
+            {/* 🏆 TOP 3 LEADERBOARD */}
+            <div className="bg-gradient-to-br from-yellow-900/60 to-yellow-700/20 border border-yellow-500/50 rounded-2xl p-4 mb-6 shadow-[0_0_20px_rgba(234,179,8,0.25)]">
+              <p className="text-yellow-400 text-[12px] font-black uppercase tracking-widest mb-3 flex items-center justify-center gap-2">
+                <span>🏆</span> Top 3 Champions <span>🏆</span>
+              </p>
+              
+              <div className="space-y-2">
+                {leaderboard.map((lb, index) => (
+                  <div key={index} className={`flex justify-between items-center px-4 py-2.5 rounded-lg font-black text-sm border shadow-sm ${
+                    index === 0 ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black border-yellow-200" :
+                    index === 1 ? "bg-gradient-to-r from-gray-300 to-gray-400 text-black border-gray-100" :
+                    "bg-gradient-to-r from-amber-600 to-orange-500 text-white border-orange-300"
+                  }`}>
+                    <span className="truncate max-w-[160px]">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'} {lb.name}
+                    </span>
+                    <span>{lb.score} <span className="text-[10px] uppercase opacity-80">Score</span></span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -388,9 +449,9 @@ export default function RetroSnakePage() {
 
             <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
               <p className="text-xs text-neutral-300 font-bold leading-relaxed bg-black/30 p-4 rounded-xl border border-neutral-700 text-left">
-                बचपन की यादें! कूपन जीतने के लिए आपको <strong className="text-yellow-400">{globalHighScorer}</strong> का रिकॉर्ड <strong className="text-yellow-400">({globalHighScore} Score)</strong> तोड़ना होगा!<br/>
+                बचपन की यादें! कूपन जीतने के लिए आपको <strong className="text-yellow-400">{leaderboard[0]?.name || "चैंपियन"}</strong> का रिकॉर्ड <strong className="text-yellow-400">({globalHighScore} Score)</strong> तोड़ना होगा!<br/>
                 <span className="text-green-400 block mt-2 text-center text-xs bg-green-900/20 py-2 rounded-lg border border-green-500/20">
-                  रिकॉर्ड तोड़ने पर मिलेंगे = 20 कूपन (₹20) 🎟️
+                  #1 रिकॉर्ड तोड़ने पर = 20 कूपन (₹20) 🎟️
                 </span>
               </p>
               
@@ -410,7 +471,6 @@ export default function RetroSnakePage() {
         {step === "playing" && (
           <div className="w-full flex flex-col items-center justify-center h-[100dvh] px-4 relative">
             
-            {/* 🏆 Header - Bum Bum Cafe Branding */}
             <div className="w-full max-w-[420px] flex justify-between items-end mb-6">
                <div>
                  <h2 className="text-3xl font-black text-green-400 tracking-wider drop-shadow-[0_2px_10px_rgba(74,222,128,0.5)] leading-none">BUM BUM CAFE</h2>
@@ -425,14 +485,12 @@ export default function RetroSnakePage() {
                </div>
             </div>
 
-            {/* 🟩 Beautiful Glowing Canvas Frame */}
             <div className="p-2 rounded-2xl shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700/50">
                <div className="rounded-xl overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] border-4 border-[#1A2315]">
                   <canvas ref={canvasRef} className="block bg-[#A8D08D]" />
                </div>
             </div>
 
-            {/* 👆 Swipe Instruction */}
             <div className="mt-10 animate-bounce">
               <p className="text-neutral-300 text-[11px] uppercase font-black tracking-widest bg-[#1e293b]/80 px-6 py-3 rounded-full border border-neutral-600 shadow-[0_5px_20px_rgba(0,0,0,0.5)] flex gap-3 items-center backdrop-blur-sm">
                 <span>👆</span> Swipe On Screen to Play <span>👇</span>
@@ -463,7 +521,7 @@ export default function RetroSnakePage() {
                <p className="text-sm text-neutral-400 animate-pulse font-bold">स्कोर चेक हो रहा है...</p>
             ) : earnedPoints > 0 ? (
               <div className="bg-yellow-900/20 border border-yellow-500/30 p-5 rounded-2xl">
-                <p className="text-[11px] font-black uppercase text-yellow-500">आपने रिकॉर्ड तोड़ दिया!</p>
+                <p className="text-[11px] font-black uppercase text-yellow-500">आपने #1 रिकॉर्ड तोड़ दिया!</p>
                 <p className="text-4xl font-black text-yellow-400 mt-1">🎟️ {earnedPoints} कूपन</p>
                 <p className="text-xs text-neutral-300 mt-3 font-bold">
                   आप कैफे के नए किंग हैं! कूपन <span className="text-white bg-black/30 px-1 rounded">({phone})</span> पर सेव हो गए हैं।
