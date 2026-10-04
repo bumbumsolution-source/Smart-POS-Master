@@ -21,7 +21,7 @@ export default function RetroSnakePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   
-  const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
+  const [tableNo, setTableNo] = useState<string>("सामान्य টেবल");
   const [isLoading, setIsLoading] = useState(false);
   
   // 🏆 Leaderboard States (Top 3)
@@ -304,14 +304,16 @@ export default function RetroSnakePage() {
       // 1️⃣ सबसे पहले ताज़ा लीडरबोर्ड मंगवाएं
       const lbRef = doc(db, "leaderboards", "HungrySnake");
       const lbSnap = await getDoc(lbRef);
-      let currentTopScores = [{ name: "बम बम कैफे", score: 30, phone: "0000000000" }];
+      // यहाँ हमने TypeScript को बता दिया है कि phone नंबर optional (?) है।
+      let currentTopScores: { name: string, score: number, phone?: string }[] = [{ name: "बम बम कैफे", score: 30, phone: "0000000000" }];
       
       if (lbSnap.exists()) {
         const data = lbSnap.data();
         if (data.topScores && data.topScores.length > 0) {
           currentTopScores = data.topScores;
         } else if (data.topScore) {
-          currentTopScores = [{ name: data.topName, score: data.topScore }];
+          // पुराना डेटा जिसमें phone नहीं था, उसके लिए डिफ़ॉल्ट वैल्यू
+          currentTopScores = [{ name: data.topName || "बम बम कैफे", score: data.topScore, phone: "0000000000" }];
         }
       }
 
@@ -531,7 +533,7 @@ export default function RetroSnakePage() {
               <div className="bg-red-900/20 border border-red-500/30 p-5 rounded-2xl">
                  <p className="text-sm font-black text-red-400">Better Luck Next Time! 😔</p>
                  <p className="text-xs text-neutral-400 mt-2">
-                   रिकॉर्ड तोड़ने के लिए आपको कम से कम <strong className="text-white">{globalHighScore + 1}</strong> स्कोर बनाना था।
+                   कूपन जीतने के लिए आपको कम से कम <strong className="text-white">{globalHighScore + 1}</strong> स्कोर बनाना था।
                  </p>
               </div>
             )}
