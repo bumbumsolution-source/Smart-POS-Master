@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
-// 🛡️ 1. Security Guard को Import किया है
+// 🛡️ 1. Security Guard
 import GameGuard from "@/components/GameGuard";
 
 const formatNameTitleCase = (text: string) => {
@@ -29,8 +29,6 @@ export default function MemoryGamePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   
-  const [birthDay, setBirthDay] = useState(""); 
-  const [birthMonth, setBirthMonth] = useState(""); 
   const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   
   const [isLoading, setIsLoading] = useState(false);
@@ -96,10 +94,6 @@ export default function MemoryGamePage() {
     
     if (cleanName.length < 2) return toast.error("कृपया सही नाम दर्ज करें!");
     if (!isValidIndianPhone(cleanPhone)) return toast.error("सही 10-अंकों का नंबर डालें!");
-    
-    if (!birthDay || !birthMonth) {
-      return toast.error("कृपया अपने जन्मदिन की तारीख और महीना चुनें!");
-    }
 
     setIsLoading(true);
     const ONE_HOUR = 60 * 60 * 1000;
@@ -118,31 +112,19 @@ export default function MemoryGamePage() {
     try {
       const userRef = doc(db, "customer_points", cleanPhone);
       const userSnap = await getDoc(userRef);
-      let existingSpecialDates: any[] = [];
 
       if (userSnap.exists()) {
         const data = userSnap.data();
-        existingSpecialDates = data.specialDates || [];
         const todayStr = new Date().toDateString();
         if (data.lastGameDate === todayStr && data.todayGamePoints >= 20) {
           toast("⚠️ आप आज की 20 कूपन की लिमिट पार कर चुके हैं, मजे के लिए खेलें!", { icon: '🎮' });
         }
       }
 
-      const formattedDate = `2000-${birthMonth}-${birthDay}`;
-      const bdayIndex = existingSpecialDates.findIndex((d: any) => d.type === 'Birthday' && d.name === cleanName);
-      
-      if (bdayIndex > -1) {
-        existingSpecialDates[bdayIndex].date = formattedDate; 
-      } else {
-        existingSpecialDates.push({ type: 'Birthday', date: formattedDate, name: cleanName }); 
-      }
-
       await setDoc(userRef, { 
         name: cleanName, 
         phone: cleanPhone, 
         table: tableNo,
-        specialDates: existingSpecialDates, 
         lastActive: serverTimestamp(),
         importSource: 'MemoryGame'
       }, { merge: true });
@@ -270,7 +252,7 @@ export default function MemoryGamePage() {
         gamePoints: prevGamePoints + finalPointsToAdd, 
         todayGamePoints: todayGamePoints + finalPointsToAdd,
         lastGameDate: todayStr,
-        lastCatchGameScore: timeElapsed 
+        lastMemoryGameScore: timeElapsed 
       }, { merge: true });
 
       setEarnedPoints(finalPointsToAdd);
@@ -326,22 +308,6 @@ export default function MemoryGamePage() {
                 <input type="tel" maxLength={10} placeholder="10-अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required className="w-full bg-[#0f172a] border-2 border-cyan-500 text-center py-3 rounded-xl outline-none text-white focus:border-cyan-400 font-mono" />
                 <input type="text" placeholder="आपका नाम" value={name} onChange={(e) => setName(formatNameTitleCase(e.target.value))} required className="w-full bg-[#0f172a] border-2 border-blue-500 text-center py-3 rounded-xl outline-none text-white focus:border-blue-400 font-bold" />
                 
-                <div className="mt-3 pt-3 border-t border-[#334155] space-y-2">
-                  <p className="text-[11px] font-bold text-pink-400 text-left leading-tight">
-                    🎂 अपना या अपने बच्चे का असली जन्मदिन (Birth Date) चुनें <span className="text-white">(अनिवार्य)</span>:
-                  </p>
-                  <div className="flex gap-2">
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>तारीख *</option>
-                      {Array.from({ length: 31 }, (_, i) => <option key={i+1} value={String(i+1).padStart(2, '0')}>{i+1}</option>)}
-                    </select>
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required className="w-1/2 bg-[#0f172a] border-2 border-pink-500 text-center text-sm py-3 rounded-xl outline-none appearance-none text-white">
-                      <option value="" disabled>महीना *</option>
-                      {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m, i) => <option key={m} value={m}>{new Date(0, i).toLocaleString('en', {month:'short'})}</option>)}
-                    </select>
-                  </div>
-                </div>
-
                 <button type="submit" disabled={isLoading} className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black text-sm rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 mt-4">
                   {isLoading ? "प्रतीक्षा करें..." : "▶ गेम शुरू करें"}
                 </button>
