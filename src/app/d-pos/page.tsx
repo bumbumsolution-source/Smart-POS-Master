@@ -4324,8 +4324,8 @@ export default function BbCafeDesktopPos() {
                   </div>
                 </div>
 
-                {/* 📊 DAILY SALES GRAPH (दिन-वार बिक्री का ग्राफ़) */}
-                {(reportFilter === 'last7days' || reportFilter === 'custom') && dailyTrendData.length > 0 && (
+               {/* 📊 DAILY SALES GRAPH (दिन-वार बिक्री का ग्राफ़) */}
+                {(reportFilter === 'last7days' || reportFilter === 'last30days' || reportFilter === 'custom') && dailyTrendData.length > 0 && (
                   <div className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 p-6 rounded-3xl shadow-sm mt-6 relative overflow-hidden">
                     {/* ग्राफ़ के पीछे का हल्का संतरी (Orange) ग्लो (चमक) */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 dark:bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
@@ -4336,7 +4336,7 @@ export default function BbCafeDesktopPos() {
                            <SafeBarChart3 size={18} /> Sales Trend (बिक्री ग्राफ)
                          </h3>
                          <p className="text-[10px] text-neutral-500 font-bold mt-1">
-                           {reportFilter === 'custom' ? 'चुनी गई तारीखों की बिक्री' : 'पिछले 7 दिनों की बिक्री का ग्राफ'}
+                           {reportFilter === 'custom' ? 'चुनी गई तारीखों की बिक्री' : reportFilter === 'last30days' ? 'पिछले 30 दिनों की बिक्री का ग्राफ' : 'पिछले 7 दिनों की बिक्री का ग्राफ'}
                          </p>
                        </div>
                        <div className="text-right">
