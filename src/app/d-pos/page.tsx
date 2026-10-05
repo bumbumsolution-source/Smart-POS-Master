@@ -2864,9 +2864,12 @@ export default function BbCafeDesktopPos() {
     let start = new Date();
     let end = new Date();
 
-    // चेक करें कि कौन सा बटन दबाया गया है: 7 दिन या Date Picker?
-    if (reportFilter === 'last7days') {
+   if (reportFilter === 'last7days') {
       start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (reportFilter === 'last30days') {
+      start.setDate(start.getDate() - 29);
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
     } else if (reportFilter === 'custom' && customStartDate && customEndDate) {
@@ -2887,7 +2890,8 @@ export default function BbCafeDesktopPos() {
     // 1. Start से End तक की हर तारीख का ढांचा बनाएँ
     const loopStart = new Date(start);
     let safetyCounter = 0;
-    while (loopStart <= end && safetyCounter < 60) { // अधिकतम 60 दिन तक का ग्राफ़ दिखेगा
+    // ग्राफ़ अब 100 दिनों तक का डेटा आसानी से दिखा सकता है
+    while (loopStart <= end && safetyCounter < 100) {ा
       const dateStr = `${String(loopStart.getDate()).padStart(2, '0')} ${loopStart.toLocaleString('default', { month: 'short' })}`;
       const dayData = { date: dateStr, total: 0, orders: 0 };
       dateMap[dateStr] = dayData;
