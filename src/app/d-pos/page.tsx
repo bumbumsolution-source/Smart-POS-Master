@@ -2685,7 +2685,7 @@ export default function BbCafeDesktopPos() {
       doc.text("Item-wise Sales Details", 15, 120);
 
       const tableColumn = ["S.No", "Item Name", "Qty Sold", "Total Revenue (Rs)"];
-      const tableRows = [];
+      const tableRows: any[] = []; // <--- यहाँ : any[] लगा दिया गया है ताकि एरर न आए
 
       itemWiseSales.forEach((item, index) => {
         tableRows.push([
