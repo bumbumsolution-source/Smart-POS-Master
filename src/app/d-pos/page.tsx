@@ -4263,11 +4263,13 @@ export default function BbCafeDesktopPos() {
   <button onClick={handleSendOwnerSummary} className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
     <SafeSend size={14} /> WhatsApp
   </button>
-  <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-2xl border">
-                      <button onClick={() => setReportFilter('today')} className={`px-3 py-1.5 text-xs font-black uppercase rounded-xl ${reportFilter === 'today' ? 'bg-orange-600 text-white' : 'text-neutral-700 dark:text-neutral-400'}`}>Today</button>
-                      <button onClick={() => setReportFilter('last7days')} className={`px-3 py-1.5 text-xs font-black uppercase rounded-xl ${reportFilter === 'last7days' ? 'bg-orange-600 text-white' : 'text-neutral-700 dark:text-neutral-400'}`}>Last 7 Days</button>
-                      <button onClick={() => setReportFilter('custom')} className={`px-3 py-1.5 text-xs font-black uppercase rounded-xl ${reportFilter === 'custom' ? 'bg-orange-600 text-white' : 'text-neutral-700 dark:text-neutral-400'}`}>Date Picker</button>
-                    </div>
+  <div className="flex flex-wrap gap-1 bg-neutral-200 dark:bg-neutral-800 p-1.5 rounded-2xl border">
+    <button onClick={() => setReportFilter('today')} className={`px-3 py-1.5 text-[10px] sm:text-xs font-black uppercase rounded-xl transition-all ${reportFilter === 'today' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}>Today (आज)</button>
+    <button onClick={() => setReportFilter('yesterday')} className={`px-3 py-1.5 text-[10px] sm:text-xs font-black uppercase rounded-xl transition-all ${reportFilter === 'yesterday' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}>Yesterday (कल)</button>
+    <button onClick={() => setReportFilter('last7days')} className={`px-3 py-1.5 text-[10px] sm:text-xs font-black uppercase rounded-xl transition-all ${reportFilter === 'last7days' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}>Week (7 दिन)</button>
+    <button onClick={() => setReportFilter('last30days')} className={`px-3 py-1.5 text-[10px] sm:text-xs font-black uppercase rounded-xl transition-all ${reportFilter === 'last30days' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}>Month (30 दिन)</button>
+    <button onClick={() => setReportFilter('custom')} className={`px-3 py-1.5 text-[10px] sm:text-xs font-black uppercase rounded-xl transition-all flex items-center gap-1 ${reportFilter === 'custom' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}>📅 Custom</button>
+  </div>
                     {reportFilter === 'custom' && (
                       <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl border border-neutral-300 dark:border-neutral-700">
                         <input 
