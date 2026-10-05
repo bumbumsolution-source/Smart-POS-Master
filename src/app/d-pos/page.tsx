@@ -2513,11 +2513,125 @@ export default function BbCafeDesktopPos() {
     window.open(`https://wa.me/91${clean}?text=${msg}`, '_blank');
   };
 
-  // Owner EOD Summary WhatsApp
-  const handleSendOwnerSummary = () => {
-    const cleanOwner = getSanitizedPhone(ownerPhoneConfig);
-    const msg = `*☕ BUM BUM CAFE - DAY END SUMMARY*%0A------------------------------%0A*Date:* ${new Date().toLocaleDateString()}%0A*Total Sales:* ₹${reportSummary.totalSale}%0A*Orders Settled:* ${reportSummary.totalOrdersCount}%0A------------------------------%0A*💵 Gross Cash:* ₹${reportSummary.cashSale}%0A*📱 UPI / Bank:* ₹${reportSummary.upiSale}%0A*📕 Udhar / Due:* ₹${reportSummary.dueSale}%0A*🧾 Expenses:* -₹${reportSummary.totalExpenseAmount}%0A------------------------------%0A*💰 Net Cash in Drawer:* ₹${reportSummary.netCashInDrawer}%0A------------------------------%0A_Generated via Bum Bum Cafe Desktop POS_`;
-    window.open(`https://wa.me/${cleanOwner}?text=${msg}`, '_blank');
+ // 📊 Owner EOD Summary PDF Generator & WhatsApp Sender
+  const handleSendOwnerSummary = async () => {
+    const toastId = toast.loading("PDF रिपोर्ट तैयार की जा रही है...");
+    
+    try {
+      const doc = new jsPDF();
+      const todayDate = new Date().toLocaleDateString();
+      const cleanOwner = getSanitizedPhone(ownerPhoneConfig);
+
+      // --- 1. PDF HEADER ---
+      doc.setFontSize(22);
+      doc.setTextColor(234, 88, 12); // Orange
+      doc.text("BUM BUM CAFE", 105, 20, { align: "center" });
+      
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100); // Gray
+      doc.text("Mohandra", 105, 27, { align: "center" });
+
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text("Daily Sales & EOD Report", 105, 38, { align: "center" });
+      
+      doc.setLineWidth(0.5);
+      doc.line(15, 42, 195, 42); // Line divider
+
+      // --- 2. SUMMARY SECTION ---
+      doc.setFontSize(12);
+      doc.text(`Date: ${todayDate}`, 15, 52);
+      doc.text(`Total Settled Orders: ${reportSummary.totalOrdersCount}`, 130, 52);
+
+      // Box for Revenue
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(249, 250, 251);
+      doc.rect(15, 58, 180, 50, "FD");
+
+      doc.setFontSize(11);
+      doc.text(`Total Gross Sales: Rs. ${reportSummary.totalSale}`, 20, 68);
+      
+      doc.text(`Cash Received: Rs. ${reportSummary.cashSale}`, 20, 78);
+      doc.text(`UPI Received: Rs. ${reportSummary.upiSale}`, 110, 78);
+      
+      doc.text(`Udhar (Due): Rs. ${reportSummary.dueSale}`, 20, 88);
+      
+      doc.setTextColor(220, 38, 38); // Red
+      doc.text(`Total Expenses: - Rs. ${reportSummary.totalExpenseAmount}`, 110, 88);
+
+      doc.setFontSize(14);
+      doc.setTextColor(22, 163, 74); // Green
+      doc.text(`Net Cash in Drawer: Rs. ${reportSummary.netCashInDrawer}`, 20, 100);
+
+      // --- 3. ITEM-WISE SALES TABLE ---
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
+      doc.text("Item-wise Sales Details", 15, 120);
+
+      const tableColumn = ["S.No", "Item Name", "Qty Sold", "Total Revenue (Rs)"];
+      const tableRows = [];
+
+      itemWiseSales.forEach((item, index) => {
+        tableRows.push([
+          index + 1,
+          item.name,
+          item.quantity,
+          `Rs. ${item.revenue}`
+        ]);
+      });
+
+      autoTable(doc, {
+        startY: 125,
+        head: [tableColumn],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
+      });
+
+      // --- 4. GENERATE FILE ---
+      const pdfBlob = doc.output('blob');
+      const fileName = `EOD_Report_${todayDate.replace(/\//g, '-')}.pdf`;
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+      toast.dismiss(toastId);
+
+      // --- 5. SMART SHARE LOGIC ---
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            title: 'Bum Bum Cafe EOD Report',
+            text: `*BUM BUM CAFE - EOD SUMMARY*\nDate: ${todayDate}\nTotal Sales: ₹${reportSummary.totalSale}\n\nपूरी डिटेल के लिए PDF चेक करें 👇`,
+            files: [pdfFile]
+          });
+          toast.success("रिपोर्ट शेयर कर दी गई! ✅");
+          return;
+        } catch (err) {
+          console.log("User cancelled sharing");
+        }
+      }
+
+      // Fallback for Desktop (PC Web)
+      const fileURL = URL.createObjectURL(pdfBlob);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = fileURL;
+      downloadLink.download = fileName;
+      downloadLink.click();
+
+      toast.success("PDF डाउनलोड हो गई है! कृपया WhatsApp Web पर अटैच करें।", { duration: 6000 });
+
+      const msg = `*☕ BUM BUM CAFE - DAY END SUMMARY*%0A------------------------------%0A*Date:* ${todayDate}%0A*Total Sales:* ₹${reportSummary.totalSale}%0A*Orders Settled:* ${reportSummary.totalOrdersCount}%0A------------------------------%0A*💵 Gross Cash:* ₹${reportSummary.cashSale}%0A*📱 UPI / Bank:* ₹${reportSummary.upiSale}%0A*📕 Udhar / Due:* ₹${reportSummary.dueSale}%0A*🧾 Expenses:* -₹${reportSummary.totalExpenseAmount}%0A------------------------------%0A*💰 Net Cash in Drawer:* ₹${reportSummary.netCashInDrawer}%0A------------------------------%0A_(⚠️ कृपया डाउनलोड की गई EOD PDF फाइल यहाँ अटैच करें)_`;
+      
+      setTimeout(() => {
+        window.open(`https://wa.me/${cleanOwner}?text=${msg}`, '_blank');
+      }, 1500);
+
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error("PDF बनाने में त्रुटि आई!");
+      console.error(error);
+    }
   };
 
   // Daily Drawer Expense Save
