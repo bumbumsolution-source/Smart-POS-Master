@@ -2747,23 +2747,25 @@ export default function BbCafeDesktopPos() {
       let startTarget = new Date();
       let endTarget = new Date();
 
-      if (reportFilter === 'today') {
+     if (reportFilter === 'today') {
         startTarget.setHours(0, 0, 0, 0);
         endTarget.setHours(23, 59, 59, 999);
-    } else if (reportFilter === 'yesterday') {
+      } else if (reportFilter === 'yesterday') {
         startTarget.setDate(startTarget.getDate() - 1);
         startTarget.setHours(0, 0, 0, 0);
         endTarget.setDate(endTarget.getDate() - 1);
         endTarget.setHours(23, 59, 59, 999);
       } else if (reportFilter === 'last7days') {
-        // पिछले 7 दिन का लॉजिक
         startTarget.setDate(startTarget.getDate() - 6); 
+        startTarget.setHours(0, 0, 0, 0);
+        endTarget.setHours(23, 59, 59, 999);
+      } else if (reportFilter === 'last30days') {
+        startTarget.setDate(startTarget.getDate() - 29); // पिछले 30 दिन
         startTarget.setHours(0, 0, 0, 0);
         endTarget.setHours(23, 59, 59, 999);
       } else if (reportFilter === 'custom' && customStartDate && customEndDate) {
         const startParts = customStartDate.split('-');
         startTarget = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]), 0, 0, 0, 0);
-        
         const endParts = customEndDate.split('-');
         endTarget = new Date(Number(endParts[0]), Number(endParts[1]) - 1, Number(endParts[2]), 23, 59, 59, 999);
       }
