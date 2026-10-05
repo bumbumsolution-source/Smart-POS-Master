@@ -2280,10 +2280,12 @@ export default function BbCafeDesktopPos() {
           prevVisits = Number(data.totalVisits) || 0;
         }
 
-        // 🛡️ चेक करें कि क्या यह पुराना कम्प्लीट बिल एडिट हो रहा है?
+       // 🛡️ चेक करें कि क्या यह पुराना कम्प्लीट बिल एडिट हो रहा है?
         const isReEditingCompletedBill = 
           activeEditingPreviousOrder && 
-          (activeEditingPreviousOrder.status === 'completed' || activeEditingPreviousOrder.paymentSettled);
+          (activeEditingPreviousOrder.pointsEarned !== undefined || 
+           activeEditingPreviousOrder.status === 'completed' || 
+           activeEditingPreviousOrder.paymentSettled);
 
         let newSpent = prevSpent + finalTotal;
         let newVisits = prevVisits + 1;
