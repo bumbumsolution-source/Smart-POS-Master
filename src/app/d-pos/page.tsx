@@ -2891,7 +2891,7 @@ export default function BbCafeDesktopPos() {
     const loopStart = new Date(start);
     let safetyCounter = 0;
     // ग्राफ़ अब 100 दिनों तक का डेटा आसानी से दिखा सकता है
-    while (loopStart <= end && safetyCounter < 100) {ा
+    while (loopStart <= end && safetyCounter < 100) {
       const dateStr = `${String(loopStart.getDate()).padStart(2, '0')} ${loopStart.toLocaleString('default', { month: 'short' })}`;
       const dayData = { date: dateStr, total: 0, orders: 0 };
       dateMap[dateStr] = dayData;
