@@ -2634,6 +2634,89 @@ export default function BbCafeDesktopPos() {
     }
   };
 
+  // 📥 ONLY Download PDF Function (बिना WhatsApp के)
+  const handleDownloadSummaryPDF = () => {
+    const toastId = toast.loading("PDF डाउनलोड हो रहा है...");
+    try {
+      const doc = new jsPDF();
+      const todayDate = new Date().toLocaleDateString();
+
+      // --- 1. PDF HEADER ---
+      doc.setFontSize(22);
+      doc.setTextColor(234, 88, 12);
+      doc.text("BUM BUM CAFE", 105, 20, { align: "center" });
+      
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Mohandra", 105, 27, { align: "center" });
+
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Daily Sales & EOD Report", 105, 38, { align: "center" });
+      
+      doc.setLineWidth(0.5);
+      doc.line(15, 42, 195, 42);
+
+      // --- 2. SUMMARY SECTION ---
+      doc.setFontSize(12);
+      doc.text(`Date: ${todayDate}`, 15, 52);
+      doc.text(`Total Settled Orders: ${reportSummary.totalOrdersCount}`, 130, 52);
+
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(249, 250, 251);
+      doc.rect(15, 58, 180, 50, "FD");
+
+      doc.setFontSize(11);
+      doc.text(`Total Gross Sales: Rs. ${reportSummary.totalSale}`, 20, 68);
+      doc.text(`Cash Received: Rs. ${reportSummary.cashSale}`, 20, 78);
+      doc.text(`UPI Received: Rs. ${reportSummary.upiSale}`, 110, 78);
+      doc.text(`Udhar (Due): Rs. ${reportSummary.dueSale}`, 20, 88);
+      
+      doc.setTextColor(220, 38, 38);
+      doc.text(`Total Expenses: - Rs. ${reportSummary.totalExpenseAmount}`, 110, 88);
+
+      doc.setFontSize(14);
+      doc.setTextColor(22, 163, 74);
+      doc.text(`Net Cash in Drawer: Rs. ${reportSummary.netCashInDrawer}`, 20, 100);
+
+      // --- 3. ITEM-WISE SALES TABLE ---
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
+      doc.text("Item-wise Sales Details", 15, 120);
+
+      const tableColumn = ["S.No", "Item Name", "Qty Sold", "Total Revenue (Rs)"];
+      const tableRows = [];
+
+      itemWiseSales.forEach((item, index) => {
+        tableRows.push([
+          index + 1,
+          item.name,
+          item.quantity,
+          `Rs. ${item.revenue}`
+        ]);
+      });
+
+      autoTable(doc, {
+        startY: 125,
+        head: [tableColumn],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
+      });
+
+      // --- 4. DOWNLOAD FILE DIRECTLY ---
+      doc.save(`BB_Cafe_Report_${todayDate.replace(/\//g, '-')}.pdf`);
+      
+      toast.dismiss(toastId);
+      toast.success("PDF सफलतापूर्वक डाउनलोड हो गई! 📥");
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error("PDF बनाने में त्रुटि आई!");
+      console.error(error);
+    }
+  };
   // Daily Drawer Expense Save
   const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
