@@ -19,7 +19,9 @@
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.3.0",
     "react-hot-toast": "^2.4.1",
-    "zustand": "^4.5.2"
+    "zustand": "^4.5.2",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.31"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.6.4",
