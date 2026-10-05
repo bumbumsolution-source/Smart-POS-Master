@@ -2513,96 +2513,165 @@ export default function BbCafeDesktopPos() {
     window.open(`https://wa.me/91${clean}?text=${msg}`, '_blank');
   };
 
- // 📊 Owner EOD Summary PDF Generator & WhatsApp Sender
+ // 📄 [HELPER] Professional EOD PDF Generator
+  const generateProfessionalPDF = () => {
+    const doc = new jsPDF();
+    const todayDate = new Date().toLocaleDateString('en-IN');
+    const currentTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    // --- 1. HEADER ---
+    doc.setFontSize(24);
+    doc.setTextColor(234, 88, 12); // Orange Theme
+    doc.text("BUM BUM CAFE", 105, 18, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Mohandra | Daily EOD Sales & Settlement Report", 105, 24, { align: "center" });
+    doc.text(`Date: ${todayDate}   |   Generated At: ${currentTime}`, 105, 29, { align: "center" });
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 33, 195, 33);
+
+    // --- 2. FINANCIAL SUMMARY TABLE ---
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text("1. Financial Summary", 15, 43);
+
+    autoTable(doc, {
+      startY: 47,
+      head: [["Description", "Amount / Count"]],
+      body: [
+        ["Total Settled Orders", `${reportSummary.totalOrdersCount} Orders`],
+        ["Gross Sales (Total Billing)", `Rs. ${reportSummary.totalSale}`],
+        ["Received via Cash", `Rs. ${reportSummary.cashSale}`],
+        ["Received via UPI / Online", `Rs. ${reportSummary.upiSale}`],
+        ["Udhar (Due / Unpaid)", `Rs. ${reportSummary.dueSale}`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255] },
+      styles: { fontSize: 10, cellPadding: 4 },
+      columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
+    });
+
+    // --- 3. CASH DRAWER AUDIT TABLE ---
+    let finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.text("2. Cash Drawer Audit (गल्ला)", 15, finalY);
+
+    autoTable(doc, {
+      startY: finalY + 4,
+      head: [["Description", "Amount (Rs.)"]],
+      body: [
+        ["Total Cash Collected", `Rs. ${reportSummary.cashSale}`],
+        ["Total Expenses Paid from Drawer", `- Rs. ${reportSummary.totalExpenseAmount}`],
+        ["NET CASH IN DRAWER (गल्ले में होना चाहिए)", `Rs. ${reportSummary.netCashInDrawer}`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255] },
+      styles: { fontSize: 10, cellPadding: 4 },
+      bodyStyles: { textColor: [0, 0, 0] },
+      columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } },
+      didParseCell: function(data: any) {
+        if (data.row.index === 2 && data.section === 'body') {
+          data.cell.styles.textColor = [22, 163, 74]; // Green color for Net Cash
+        }
+        if (data.row.index === 1 && data.section === 'body') {
+          data.cell.styles.textColor = [220, 38, 38]; // Red color for Expense
+        }
+      }
+    });
+
+    // --- 4. ITEM-WISE SALES TABLE (CLEANED) ---
+    finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.text("3. Item-wise Sales Breakdown", 15, finalY);
+
+    // 🧹 Clean Items Logic: Remove "| Note: Spicy" or "| Add-ons: Cheese"
+    const cleanItemsMap: any = {};
+    itemWiseSales.forEach((item) => {
+      let cleanName = item.name.split('|')[0].trim(); // Removes everything after '|'
+      
+      if (!cleanItemsMap[cleanName]) {
+         cleanItemsMap[cleanName] = { name: cleanName, qty: 0, rev: 0 };
+      }
+      cleanItemsMap[cleanName].qty += item.quantity;
+      cleanItemsMap[cleanName].rev += Number(item.revenue);
+    });
+
+    // Sort by highest quantity sold
+    const sortedCleanItems = Object.values(cleanItemsMap).sort((a: any, b: any) => b.qty - a.qty);
+
+    const tableRows: any[] = [];
+    sortedCleanItems.forEach((item: any, index: number) => {
+      tableRows.push([
+        index + 1,
+        item.name,
+        item.qty.toString(),
+        `Rs. ${item.rev}`
+      ]);
+    });
+
+    autoTable(doc, {
+      startY: finalY + 4,
+      head: [["S.No", "Item Name", "Qty Sold", "Revenue"]],
+      body: tableRows,
+      theme: 'striped',
+      headStyles: { fillColor: [50, 50, 50] },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        2: { cellWidth: 25, halign: 'center', fontStyle: 'bold' },
+        3: { cellWidth: 35, halign: 'right', fontStyle: 'bold' }
+      }
+    });
+
+    // --- 5. FOOTER SIGNATURES ---
+    finalY = (doc as any).lastAutoTable.finalY + 25;
+    if (finalY > 270) { doc.addPage(); finalY = 30; } // Add new page if space is low
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.line(15, finalY, 65, finalY); // Manager line
+    doc.text("Manager Signature", 20, finalY + 5);
+    
+    doc.line(140, finalY, 190, finalY); // Owner line
+    doc.text("Owner Signature", 148, finalY + 5);
+
+    return { doc, todayDate };
+  };
+
+  // 📥 ONLY Download PDF Function (बिना WhatsApp के)
+  const handleDownloadSummaryPDF = () => {
+    const toastId = toast.loading("PDF रिपोर्ट बनाई जा रही है...");
+    try {
+      const { doc, todayDate } = generateProfessionalPDF();
+      doc.save(`BBCafe_EOD_${todayDate.replace(/\//g, '-')}.pdf`);
+      toast.dismiss(toastId);
+      toast.success("EOD रिपोर्ट सफलतापूर्वक डाउनलोड हो गई! 📥");
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error("PDF बनाने में त्रुटि आई!");
+      console.error(error);
+    }
+  };
+
+  // 🟢 WhatsApp to Owner with PDF
   const handleSendOwnerSummary = async () => {
     const toastId = toast.loading("PDF रिपोर्ट तैयार की जा रही है...");
-    
     try {
-      const doc = new jsPDF();
-      const todayDate = new Date().toLocaleDateString();
+      const { doc, todayDate } = generateProfessionalPDF();
       const cleanOwner = getSanitizedPhone(ownerPhoneConfig);
 
-      // --- 1. PDF HEADER ---
-      doc.setFontSize(22);
-      doc.setTextColor(234, 88, 12); // Orange
-      doc.text("BUM BUM CAFE", 105, 20, { align: "center" });
-      
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100); // Gray
-      doc.text("Mohandra", 105, 27, { align: "center" });
-
-      doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0); // Black
-      doc.text("Daily Sales & EOD Report", 105, 38, { align: "center" });
-      
-      doc.setLineWidth(0.5);
-      doc.line(15, 42, 195, 42); // Line divider
-
-      // --- 2. SUMMARY SECTION ---
-      doc.setFontSize(12);
-      doc.text(`Date: ${todayDate}`, 15, 52);
-      doc.text(`Total Settled Orders: ${reportSummary.totalOrdersCount}`, 130, 52);
-
-      // Box for Revenue
-      doc.setDrawColor(200, 200, 200);
-      doc.setFillColor(249, 250, 251);
-      doc.rect(15, 58, 180, 50, "FD");
-
-      doc.setFontSize(11);
-      doc.text(`Total Gross Sales: Rs. ${reportSummary.totalSale}`, 20, 68);
-      
-      doc.text(`Cash Received: Rs. ${reportSummary.cashSale}`, 20, 78);
-      doc.text(`UPI Received: Rs. ${reportSummary.upiSale}`, 110, 78);
-      
-      doc.text(`Udhar (Due): Rs. ${reportSummary.dueSale}`, 20, 88);
-      
-      doc.setTextColor(220, 38, 38); // Red
-      doc.text(`Total Expenses: - Rs. ${reportSummary.totalExpenseAmount}`, 110, 88);
-
-      doc.setFontSize(14);
-      doc.setTextColor(22, 163, 74); // Green
-      doc.text(`Net Cash in Drawer: Rs. ${reportSummary.netCashInDrawer}`, 20, 100);
-
-      // --- 3. ITEM-WISE SALES TABLE ---
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(14);
-      doc.text("Item-wise Sales Details", 15, 120);
-
-      const tableColumn = ["S.No", "Item Name", "Qty Sold", "Total Revenue (Rs)"];
-      const tableRows: any[] = []; // <--- यहाँ : any[] लगा दिया गया है
-
-      itemWiseSales.forEach((item, index) => {
-        tableRows.push([
-          index + 1,
-          item.name,
-          item.quantity,
-          `Rs. ${item.revenue}`
-        ]);
-      });
-
-      autoTable(doc, {
-        startY: 125,
-        head: [tableColumn],
-        body: tableRows,
-        theme: 'grid',
-        headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255], fontStyle: 'bold' },
-        styles: { fontSize: 10, cellPadding: 3 },
-        alternateRowStyles: { fillColor: [249, 250, 251] }
-      });
-
-      // --- 4. GENERATE FILE ---
       const pdfBlob = doc.output('blob');
-      const fileName = `EOD_Report_${todayDate.replace(/\//g, '-')}.pdf`;
+      const fileName = `BBCafe_EOD_${todayDate.replace(/\//g, '-')}.pdf`;
       const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
 
       toast.dismiss(toastId);
 
-      // --- 5. SMART SHARE LOGIC ---
+      // Mobile Share via Web Share API
       if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
         try {
           await navigator.share({
             title: 'Bum Bum Cafe EOD Report',
-            text: `*BUM BUM CAFE - EOD SUMMARY*\nDate: ${todayDate}\nTotal Sales: ₹${reportSummary.totalSale}\n\nपूरी डिटेल के लिए PDF चेक करें 👇`,
+            text: `*☕ BUM BUM CAFE - EOD SUMMARY*\nDate: ${todayDate}\nTotal Sales: ₹${reportSummary.totalSale}\n\nपूरी डिटेल के लिए PDF चेक करें 👇`,
             files: [pdfFile]
           });
           toast.success("रिपोर्ट शेयर कर दी गई! ✅");
@@ -2612,7 +2681,7 @@ export default function BbCafeDesktopPos() {
         }
       }
 
-      // Fallback for Desktop (PC Web)
+      // PC Desktop Download & Redirect to WhatsApp Web
       const fileURL = URL.createObjectURL(pdfBlob);
       const downloadLink = document.createElement("a");
       downloadLink.href = fileURL;
@@ -2621,7 +2690,7 @@ export default function BbCafeDesktopPos() {
 
       toast.success("PDF डाउनलोड हो गई है! कृपया WhatsApp Web पर अटैच करें।", { duration: 6000 });
 
-      const msg = `*☕ BUM BUM CAFE - DAY END SUMMARY*%0A------------------------------%0A*Date:* ${todayDate}%0A*Total Sales:* ₹${reportSummary.totalSale}%0A*Orders Settled:* ${reportSummary.totalOrdersCount}%0A------------------------------%0A*💵 Gross Cash:* ₹${reportSummary.cashSale}%0A*📱 UPI / Bank:* ₹${reportSummary.upiSale}%0A*📕 Udhar / Due:* ₹${reportSummary.dueSale}%0A*🧾 Expenses:* -₹${reportSummary.totalExpenseAmount}%0A------------------------------%0A*💰 Net Cash in Drawer:* ₹${reportSummary.netCashInDrawer}%0A------------------------------%0A_(⚠️ कृपया डाउनलोड की गई EOD PDF फाइल यहाँ अटैच करें)_`;
+      const msg = `*☕ BUM BUM CAFE - EOD SUMMARY*%0A------------------------------%0A*Date:* ${todayDate}%0A*Total Sales:* ₹${reportSummary.totalSale}%0A*Net Cash in Drawer:* ₹${reportSummary.netCashInDrawer}%0A------------------------------%0A_(⚠️ कृपया अभी डाउनलोड हुई EOD PDF फाइल यहाँ अटैच करें)_`;
       
       setTimeout(() => {
         window.open(`https://wa.me/${cleanOwner}?text=${msg}`, '_blank');
@@ -2633,90 +2702,7 @@ export default function BbCafeDesktopPos() {
       console.error(error);
     }
   };
-
-  // 📥 ONLY Download PDF Function (बिना WhatsApp के)
-  const handleDownloadSummaryPDF = () => {
-    const toastId = toast.loading("PDF डाउनलोड हो रहा है...");
-    try {
-      const doc = new jsPDF();
-      const todayDate = new Date().toLocaleDateString();
-
-      // --- 1. PDF HEADER ---
-      doc.setFontSize(22);
-      doc.setTextColor(234, 88, 12);
-      doc.text("BUM BUM CAFE", 105, 20, { align: "center" });
-      
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Mohandra", 105, 27, { align: "center" });
-
-      doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Daily Sales & EOD Report", 105, 38, { align: "center" });
-      
-      doc.setLineWidth(0.5);
-      doc.line(15, 42, 195, 42);
-
-      // --- 2. SUMMARY SECTION ---
-      doc.setFontSize(12);
-      doc.text(`Date: ${todayDate}`, 15, 52);
-      doc.text(`Total Settled Orders: ${reportSummary.totalOrdersCount}`, 130, 52);
-
-      doc.setDrawColor(200, 200, 200);
-      doc.setFillColor(249, 250, 251);
-      doc.rect(15, 58, 180, 50, "FD");
-
-      doc.setFontSize(11);
-      doc.text(`Total Gross Sales: Rs. ${reportSummary.totalSale}`, 20, 68);
-      doc.text(`Cash Received: Rs. ${reportSummary.cashSale}`, 20, 78);
-      doc.text(`UPI Received: Rs. ${reportSummary.upiSale}`, 110, 78);
-      doc.text(`Udhar (Due): Rs. ${reportSummary.dueSale}`, 20, 88);
-      
-      doc.setTextColor(220, 38, 38);
-      doc.text(`Total Expenses: - Rs. ${reportSummary.totalExpenseAmount}`, 110, 88);
-
-      doc.setFontSize(14);
-      doc.setTextColor(22, 163, 74);
-      doc.text(`Net Cash in Drawer: Rs. ${reportSummary.netCashInDrawer}`, 20, 100);
-
-      // --- 3. ITEM-WISE SALES TABLE ---
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(14);
-      doc.text("Item-wise Sales Details", 15, 120);
-
-      const tableColumn = ["S.No", "Item Name", "Qty Sold", "Total Revenue (Rs)"];
-      const tableRows: any[] = []; // <--- यहाँ : any[] लगा दिया गया है ताकि एरर न आए
-
-      itemWiseSales.forEach((item, index) => {
-        tableRows.push([
-          index + 1,
-          item.name,
-          item.quantity,
-          `Rs. ${item.revenue}`
-        ]);
-      });
-
-      autoTable(doc, {
-        startY: 125,
-        head: [tableColumn],
-        body: tableRows,
-        theme: 'grid',
-        headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255], fontStyle: 'bold' },
-        styles: { fontSize: 10, cellPadding: 3 },
-        alternateRowStyles: { fillColor: [249, 250, 251] }
-      });
-
-      // --- 4. DOWNLOAD FILE DIRECTLY ---
-      doc.save(`BB_Cafe_Report_${todayDate.replace(/\//g, '-')}.pdf`);
-      
-      toast.dismiss(toastId);
-      toast.success("PDF सफलतापूर्वक डाउनलोड हो गई! 📥");
-    } catch (error) {
-      toast.dismiss(toastId);
-      toast.error("PDF बनाने में त्रुटि आई!");
-      console.error(error);
-    }
-  };
+  
   // Daily Drawer Expense Save
   const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
