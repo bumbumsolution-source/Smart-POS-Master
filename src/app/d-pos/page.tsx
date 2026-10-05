@@ -4256,22 +4256,28 @@ export default function BbCafeDesktopPos() {
                     </h2>
                     <p className="text-xs text-neutral-600 dark:text-neutral-400">Total settled sales, cash drawer reconciliation and item-wise sales report.</p>
                   </div>
-                  <div className="flex items-center gap-2">
-  <button onClick={handleDownloadSummaryPDF} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
-    📥 Download PDF
-  </button>
-  <button onClick={handleSendOwnerSummary} className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
-    <SafeSend size={14} /> WhatsApp
-  </button>
-  <div className="flex bg-neutral-200 dark:bg-neutral-800/80 p-1 rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-inner">
-    <button onClick={() => setReportFilter('today')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'today' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>Today</button>
-    <button onClick={() => setReportFilter('yesterday')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'yesterday' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>Yesterday</button>
-    <button onClick={() => setReportFilter('last7days')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'last7days' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>7 Days</button>
-    <button onClick={() => setReportFilter('last30days')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'last30days' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>30 Days</button>
-    <button onClick={() => setReportFilter('custom')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all flex items-center gap-1 ${reportFilter === 'custom' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>📅 Custom</button>
-  </div>
+                 {/* 👉 फिक्स: flex-col items-end की वजह से Date Picker अब नीचे आएगा */}
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-2">
+                      <button onClick={handleDownloadSummaryPDF} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
+                        📥 Download PDF
+                      </button>
+                      <button onClick={handleSendOwnerSummary} className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
+                        <SafeSend size={14} /> WhatsApp
+                      </button>
+                      <div className="flex bg-neutral-200 dark:bg-neutral-800/80 p-1 rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-inner">
+                        <button onClick={() => setReportFilter('today')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'today' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>Today</button>
+                        <button onClick={() => setReportFilter('yesterday')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'yesterday' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>Yesterday</button>
+                        <button onClick={() => setReportFilter('last7days')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'last7days' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>7 Days</button>
+                        <button onClick={() => setReportFilter('last30days')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all ${reportFilter === 'last30days' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>30 Days</button>
+                        <button onClick={() => setReportFilter('custom')} className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg whitespace-nowrap transition-all flex items-center gap-1 ${reportFilter === 'custom' ? 'bg-orange-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}>📅 Custom</button>
+                      </div>
+                    </div>
+
+                    {/* 👉 Custom Date Picker (बटनों के ठीक नीचे) */}
                     {reportFilter === 'custom' && (
-                      <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl border border-neutral-300 dark:border-neutral-700">
+                      <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 p-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-sm transition-all duration-300">
+                        <span className="text-[10px] font-black uppercase text-neutral-500 px-1">From</span>
                         <input 
                           type="date" 
                           value={customStartDate} 
@@ -4279,7 +4285,7 @@ export default function BbCafeDesktopPos() {
                           title="Start Date"
                           className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg px-2 py-1 text-xs font-bold outline-none cursor-pointer"
                         />
-                        <span className="text-[10px] font-black uppercase text-neutral-500">To</span>
+                        <span className="text-[10px] font-black uppercase text-neutral-500 px-1">To</span>
                         <input 
                           type="date" 
                           value={customEndDate} 
