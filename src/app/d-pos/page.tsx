@@ -4263,10 +4263,13 @@ export default function BbCafeDesktopPos() {
                     <p className="text-xs text-neutral-600 dark:text-neutral-400">Total settled sales, cash drawer reconciliation and item-wise sales report.</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={handleSendOwnerSummary} className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
-                      <SafeSend size={14} /> WhatsApp to Owner
-                    </button>
-                    <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-2xl border">
+  <button onClick={handleDownloadSummaryPDF} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
+    📥 Download PDF
+  </button>
+  <button onClick={handleSendOwnerSummary} className="px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow">
+    <SafeSend size={14} /> WhatsApp
+  </button>
+  <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-2xl border">
                       <button onClick={() => setReportFilter('today')} className={`px-3 py-1.5 text-xs font-black uppercase rounded-xl ${reportFilter === 'today' ? 'bg-orange-600 text-white' : 'text-neutral-700 dark:text-neutral-400'}`}>Today</button>
                       <button onClick={() => setReportFilter('last7days')} className={`px-3 py-1.5 text-xs font-black uppercase rounded-xl ${reportFilter === 'last7days' ? 'bg-orange-600 text-white' : 'text-neutral-700 dark:text-neutral-400'}`}>Last 7 Days</button>
                       <button onClick={() => setReportFilter('custom')} className={`px-3 py-1.5 text-xs font-black uppercase rounded-xl ${reportFilter === 'custom' ? 'bg-orange-600 text-white' : 'text-neutral-700 dark:text-neutral-400'}`}>Date Picker</button>
