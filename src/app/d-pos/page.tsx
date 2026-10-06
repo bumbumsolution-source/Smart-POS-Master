@@ -5111,6 +5111,11 @@ export default function BbCafeDesktopPos() {
                 </div>
               </div>
             )}
+
+              </main>  {/* <--- यह लाइन जोड़ें */}
+        </>        {/* <--- यह लाइन जोड़ें */}
+      )}           {/* <--- यह लाइन जोड़ें */}
+
       {/* POPUP: HELP & SHORTCUTS [F1] */}
       <AnimatePresence>
         {isHelpModalOpen && (
