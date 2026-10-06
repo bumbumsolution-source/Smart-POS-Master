@@ -1437,7 +1437,17 @@ export default function BbCafeDesktopPos() {
     return () => unsubscribe();
   }, []);
 
-  
+  // Real-time listener for live orders
+  useEffect(() => {
+    const q = query(collection(db, "orders"), orderBy("timestamp", "desc"), limit(100));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      // ... (यहाँ आपका पुराना कोड होगा)
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 👇👇 यहाँ अपना नया कोड पेस्ट करें 👇👇
+
   // 👉 NEW: Firebase से लाइव कूपन लोड करें
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -2960,8 +2970,8 @@ export default function BbCafeDesktopPos() {
     });
   }, [pastReceipts, receiptSearchQuery, receiptFilterDay]);
 
- // Keyboard Shortcuts Handler - FIXED FOR PERFORMANCE (Latest Ref Pattern)
-  const handleKeyDownRef = useRef<any>(null);
+  // Keyboard Shortcuts Handler - FIXED FOR PERFORMANCE (Latest Ref Pattern)
+  const handleKeyDownRef = useRef<((e: KeyboardEvent) => void) | null>(null);
 
   // यह वाला useEffect हर बार नया डेटा (State) ref में सेव करेगा, बिना DOM को छेड़े।
   useEffect(() => {
@@ -3078,7 +3088,7 @@ export default function BbCafeDesktopPos() {
     });
   }, [products, inventorySearchQuery]);
 
- const mainClass = "h-screen w-screen flex font-sans antialiased overflow-hidden " + (themeMode === "dark" ? "dark bg-[#121212] text-neutral-100" : "bg-[#f4f5f7] text-neutral-900");
+  const mainClass = "h-screen w-screen flex font-sans antialiased overflow-hidden " + (themeMode === "dark" ? "dark bg-[#121212] text-neutral-100" : "bg-[#f4f5f7] text-neutral-900");
 
   return (
     <div className={mainClass}>
@@ -4959,152 +4969,123 @@ export default function BbCafeDesktopPos() {
               </div>
             )}
             
-    {/* TAB 7: SETTINGS */}
+     {/* TAB 7: SETTINGS */}
             {activeTab === 'settings' && (
-              <div className="flex-1 p-4 sm:p-8 h-full overflow-y-auto bg-neutral-50/50 dark:bg-[#0a0a0a]">
-                <div className="max-w-5xl mx-auto space-y-6 pb-10">
+              <div className="flex-1 p-6 h-full overflow-y-auto flex justify-center">
+                <div className="max-w-xl w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 p-6 rounded-3xl shadow-xl space-y-6">
+                  <h3 className="text-sm font-black uppercase text-orange-600 dark:text-orange-500">POS & Hardware Settings</h3>
                   
-                  {/* Header */}
-                  <div>
-                    <h2 className="text-xl font-black uppercase text-orange-600 dark:text-orange-500 flex items-center gap-2">
-                      <Settings size={22} /> System Settings
-                    </h2>
-                    <p className="text-xs text-neutral-500 font-bold mt-1">POS कॉन्फ़िगरेशन, टैक्स, पेमेंट और कस्टमर गेम्स मैनेज करें।</p>
+                  {/* NEXT BILL / INVOICE NUMBER */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <p className="text-xs font-bold uppercase">Next Bill / Invoice Number:</p>
+                    <div className="flex gap-2">
+                      <input type="number" value={manualInvoiceCounterInput} onChange={e => setManualInvoiceCounterInput(e.target.value)} placeholder="e.g. 200" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" />
+                      <button onClick={() => { const num = parseInt(manualInvoiceCounterInput, 10); if (!isNaN(num) && num >= 1) { localStorage.setItem("bb_pos_local_bill_counter_pc", String(num - 1)); toast.success(`Next Invoice will be #${num}! ✅`); } }} className="bg-orange-600 text-white px-4 rounded-xl text-xs font-black uppercase">Set Counter</button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    
-                    {/* COLUMN 1: Billing & Workspace */}
-                    <div className="space-y-6">
-                       
-                       {/* CARD: Billing & Invoice */}
-                       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 rounded-3xl shadow-sm space-y-5">
-                         <h3 className="text-xs font-black uppercase text-neutral-400 border-b border-neutral-100 dark:border-neutral-800 pb-2 flex items-center gap-1.5"><Receipt size={14}/> Billing & Taxes</h3>
-                         
-                         {/* Bill Counter */}
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase text-neutral-700 dark:text-neutral-300">Next Bill / Invoice Number:</p>
-                           <div className="flex gap-2">
-                             <input type="number" value={manualInvoiceCounterInput} onChange={e => setManualInvoiceCounterInput(e.target.value)} placeholder="e.g. 200" className="flex-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono font-bold outline-none focus:border-orange-500 transition-colors" />
-                             <button onClick={() => { const num = parseInt(manualInvoiceCounterInput, 10); if (!isNaN(num) && num >= 1) { localStorage.setItem("bb_pos_local_bill_counter_pc", String(num - 1)); toast.success(`Next Invoice will be #${num}! ✅`); } }} className="bg-orange-600 hover:bg-orange-500 text-white px-5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-colors">Set</button>
-                           </div>
-                         </div>
-
-                         {/* GST */}
-                         <div className="space-y-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                           <div className="flex justify-between items-center">
-                             <p className="text-[11px] font-bold uppercase text-neutral-700 dark:text-neutral-300">Enable GST (टैक्स):</p>
-                             <button onClick={() => { const newVal = !gstEnabled; setGstEnabled(newVal); localStorage.setItem("bb_pos_gst_enabled_pc", String(newVal)); toast.success(newVal ? `GST Enabled (${gstRate}%)!` : "GST Disabled!"); }} className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors ${gstEnabled ? 'bg-green-500' : 'bg-neutral-300 dark:bg-neutral-700'}`}>
-                               <div className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${gstEnabled ? 'translate-x-4' : ''}`}></div>
-                             </button>
-                           </div>
-                           {gstEnabled && (
-                             <div className="flex gap-2">
-                               <input type="number" value={gstRate} onChange={e => { const rate = Number(e.target.value); setGstRate(rate); localStorage.setItem("bb_pos_gst_rate_pc", String(rate)); }} placeholder="%" className="w-24 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono font-bold outline-none focus:border-orange-500 transition-colors text-center" />
-                               <div className="flex-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-xl flex items-center justify-center text-[10px] font-bold text-neutral-500 uppercase border border-transparent">GST % Rate</div>
-                             </div>
-                           )}
-                         </div>
-                       </div>
-
-                       {/* CARD: Workspace & UI */}
-                       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 rounded-3xl shadow-sm space-y-5">
-                         <h3 className="text-xs font-black uppercase text-neutral-400 border-b border-neutral-100 dark:border-neutral-800 pb-2 flex items-center gap-1.5"><LayoutGrid size={14}/> Workspace UI</h3>
-                         
-                         {/* Cash Tendered */}
-                         <div className="flex justify-between items-center">
-                           <div>
-                             <p className="text-[11px] font-bold uppercase text-neutral-700 dark:text-neutral-300">Cash Calculator</p>
-                             <p className="text-[9px] text-neutral-500 mt-0.5">कैश वापसी कैलकुलेटर चालू करें</p>
-                           </div>
-                           <button onClick={() => { const newVal = !cashTenderEnabled; setCashTenderEnabled(newVal); localStorage.setItem("bb_pos_cash_tender_enabled_pc", String(newVal)); toast.success(newVal ? "Cash Calculator ON हो गया!" : "Cash Calculator OFF हो गया!"); }} className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors ${cashTenderEnabled ? 'bg-green-500' : 'bg-neutral-300 dark:bg-neutral-700'}`}>
-                             <div className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${cashTenderEnabled ? 'translate-x-4' : ''}`}></div>
-                           </button>
-                         </div>
-
-                         {/* Theme */}
-                         <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-2.5">
-                           <p className="text-[11px] font-bold uppercase text-neutral-700 dark:text-neutral-300">App Theme:</p>
-                           <div className="flex bg-neutral-100 dark:bg-neutral-950 p-1.5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-inner">
-                             <button onClick={() => { setThemeMode('light'); localStorage.setItem("bb_pos_theme_pc", 'light'); document.documentElement.classList.remove('dark'); }} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${themeMode === 'light' ? 'bg-white text-orange-600 shadow-sm border border-neutral-200' : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300'}`}>☀️ Light</button>
-                             <button onClick={() => { setThemeMode('dark'); localStorage.setItem("bb_pos_theme_pc", 'dark'); document.documentElement.classList.add('dark'); }} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${themeMode === 'dark' ? 'bg-neutral-800 text-amber-400 shadow-sm border border-neutral-700' : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300'}`}>🌙 Dark</button>
-                           </div>
-                         </div>
-                       </div>
+                  {/* 👉 GST Settings */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs font-bold uppercase">Enable GST (टैक्स):</p>
+                      <button onClick={() => { const newVal = !gstEnabled; setGstEnabled(newVal); localStorage.setItem("bb_pos_gst_enabled_pc", String(newVal)); toast.success(newVal ? `GST Enabled (${gstRate}%)!` : "GST Disabled!"); }} className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${gstEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}>
+                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${gstEnabled ? 'translate-x-6' : ''}`}></div>
+                      </button>
                     </div>
+                    {gstEnabled && (
+                      <div className="flex gap-2 pt-2">
+                        <input type="number" value={gstRate} onChange={e => { const rate = Number(e.target.value); setGstRate(rate); localStorage.setItem("bb_pos_gst_rate_pc", String(rate)); }} placeholder="GST % (e.g. 5)" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" />
+                        <span className="bg-neutral-200 dark:bg-neutral-700 px-4 py-2 rounded-xl text-xs font-black uppercase flex items-center">% Rate (दर)</span>
+                      </div>
+                    )}
+                  </div>
 
-                    {/* COLUMN 2: Contact & Game */}
-                    <div className="space-y-6">
-                       
-                       {/* CARD: Contact & Payment */}
-                       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 rounded-3xl shadow-sm space-y-5">
-                         <h3 className="text-xs font-black uppercase text-neutral-400 border-b border-neutral-100 dark:border-neutral-800 pb-2 flex items-center gap-1.5"><SafeShare2 size={14}/> Payment & Contact</h3>
-                         
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase text-neutral-700 dark:text-neutral-300">UPI ID (QR Code):</p>
-                           <div className="flex gap-2">
-                             <input type="text" value={upiIdConfig} onChange={e => setUpiIdConfig(e.target.value)} placeholder="e.g. Q991347275@ybl" className="flex-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono font-bold outline-none focus:border-orange-500 transition-colors" />
-                             <button onClick={() => { localStorage.setItem("bb_pos_upi_id", upiIdConfig); toast.success("UPI ID Saved!"); }} className="bg-blue-600 hover:bg-blue-500 text-white px-5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-colors">Save</button>
-                           </div>
-                         </div>
+                  {/* 👉 NEW: Cash Tendered Settings */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs font-bold uppercase">Show Cash Change Calculator (कैश वापसी):</p>
+                      <button onClick={() => { const newVal = !cashTenderEnabled; setCashTenderEnabled(newVal); localStorage.setItem("bb_pos_cash_tender_enabled_pc", String(newVal)); toast.success(newVal ? "Cash Calculator ON हो गया!" : "Cash Calculator OFF हो गया!"); }} className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${cashTenderEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}>
+                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${cashTenderEnabled ? 'translate-x-6' : ''}`}></div>
+                      </button>
+                    </div>
+                  </div>
 
-                         <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                           <p className="text-[11px] font-bold uppercase text-neutral-700 dark:text-neutral-300">Owner WhatsApp (EOD):</p>
-                           <div className="flex gap-2">
-                             <input type="text" value={ownerPhoneConfig} onChange={e => setOwnerPhoneConfig(e.target.value)} placeholder="e.g. 919714293759" className="flex-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono font-bold outline-none focus:border-orange-500 transition-colors" />
-                             <button onClick={() => { localStorage.setItem("bb_pos_owner_phone", ownerPhoneConfig); toast.success("Owner Phone Saved!"); }} className="bg-green-600 hover:bg-green-500 text-white px-5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-colors">Save</button>
-                           </div>
-                         </div>
-                       </div>
+                  {/* UPI ID SETTING */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <p className="text-xs font-bold uppercase">Dynamic UPI ID (VPA for QR Code):</p>
+                    <div className="flex gap-2">
+                      <input type="text" value={upiIdConfig} onChange={e => setUpiIdConfig(e.target.value)} placeholder="e.g. Q991347275@ybl" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" />
+                      <button onClick={() => { localStorage.setItem("bb_pos_upi_id", upiIdConfig); toast.success("UPI ID Saved!"); }} className="bg-blue-600 text-white px-4 rounded-xl text-xs font-black uppercase">Save</button>
+                    </div>
+                  </div>
 
-                       {/* CARD: Game Controller */}
-                       <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-neutral-900 border border-purple-200 dark:border-purple-800/50 p-6 rounded-3xl shadow-sm relative overflow-hidden">
-                         {/* Decorative background shape */}
-                         <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
-
-                         <div className="mb-5 relative z-10">
-                           <h3 className="text-sm font-black uppercase text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><Gamepad2 size={16}/> Customer Table Game</h3>
-                           <p className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold mt-1">टेबल के QR कोड को स्कैन करने पर कस्टमर के फोन में कौन सा गेम खुलेगा, उसे यहाँ से बदलें।</p>
-                         </div>
-                         
-                         <div className="grid grid-cols-2 gap-3 relative z-10">
-                            {[
-                              { id: 'SpinGame', label: '🎡 Spin Wheel', color: 'text-purple-600' },
-                              { id: 'CatchGame', label: '🍔 Catch Game', color: 'text-orange-600' },
-                              { id: 'FruitNinja', label: '🍉 Fruit Cutter', color: 'text-red-500' },
-                              { id: 'MemoryGame', label: '🃏 Food Match', color: 'text-blue-500' },
-                              { id: 'Cafe2048', label: '🧩 2048 Puzzle', color: 'text-amber-500' },
-                              { id: 'HungrySnake', label: '🐍 Hungry Snake', color: 'text-green-500' },
-                            ].map(game => {
-                              const isActive = activeGameType === game.id;
-                              return (
-                                <button 
-                                  key={game.id}
-                                  onClick={() => handleToggleGame(game.id)} 
-                                  className={`py-3.5 px-2 rounded-2xl text-[10px] font-black uppercase transition-all flex flex-col items-center gap-1.5 border relative overflow-hidden ${
-                                    isActive 
-                                      ? `bg-white dark:bg-neutral-950 ${game.color} border-purple-300 dark:border-purple-600 shadow-md ring-2 ring-purple-500/20 scale-[1.02]` 
-                                      : 'bg-white/60 dark:bg-neutral-800/60 text-neutral-500 border-neutral-200 dark:border-neutral-800 hover:bg-white dark:hover:bg-neutral-800 hover:shadow-sm'
-                                  }`}
-                                >
-                                  <span className="text-lg mb-0.5">{game.label.split(' ')[0]}</span>
-                                  <span>{game.label.split(' ').slice(1).join(' ')}</span>
-                                  {isActive && <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_#22c55e]"></span>}
-                                </button>
-                              );
-                            })}
-                         </div>
-                       </div>
-                       
+                  {/* OWNER WHATSAPP SETTING */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <p className="text-xs font-bold uppercase">Owner WhatsApp Number (for EOD Report):</p>
+                    <div className="flex gap-2">
+                      <input type="text" value={ownerPhoneConfig} onChange={e => setOwnerPhoneConfig(e.target.value)} placeholder="e.g. 919714293759" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" />
+                      <button onClick={() => { localStorage.setItem("bb_pos_owner_phone", ownerPhoneConfig); toast.success("Owner Phone Saved!"); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-black uppercase">Save</button>
+                    </div>
+                  </div>
+{/* 👉 NEW: ACTIVE GAME SETTING (कस्टमर का गेम बदलें) */}
+                  <div className="space-y-3 border-b border-neutral-300 dark:border-neutral-800 pb-5">
+                    <div>
+                      <p className="text-xs font-black uppercase text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><Gamepad2 size={16}/> 🎮 Active Customer Game (QR Code):</p>
+                      <p className="text-[10px] text-neutral-500 font-bold mt-0.5">टेबल के QR कोड को स्कैन करने पर कस्टमर के फोन में कौन सा गेम खुलेगा, उसे यहाँ से बदलें।</p>
+                    </div>
+                    <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-2xl w-full max-w-2xl border border-neutral-300 dark:border-neutral-700 shadow-inner">
+                      <button 
+                        onClick={() => handleToggleGame('SpinGame')} 
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'SpinGame' ? 'bg-white dark:bg-neutral-900 text-purple-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🎡 Spin Wheel
+                      </button>
+                      <button 
+                        onClick={() => handleToggleGame('CatchGame')} 
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'CatchGame' ? 'bg-white dark:bg-neutral-900 text-orange-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🍔 Catch Game
+                      </button>
+                      <button 
+                        onClick={() => handleToggleGame('FruitNinja')} 
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'FruitNinja' ? 'bg-white dark:bg-neutral-900 text-green-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🍉 Fruit Cutter
+                      </button>
+                      <button 
+                        onClick={() => handleToggleGame('MemoryGame')} 
+                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all ${activeGameType === 'MemoryGame' ? 'bg-white dark:bg-neutral-900 text-cyan-600 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🃏 Food Match
+                      </button>
+                       <button 
+                        onClick={() => handleToggleGame('Cafe2048')} 
+                        className={`flex-1 py-2.5 px-2 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${activeGameType === 'Cafe2048' ? 'bg-white dark:bg-neutral-900 text-amber-500 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🧩 2048 Puzzle
+                      </button>
+                      <button 
+                        onClick={() => handleToggleGame('HungrySnake')} 
+                        className={`flex-1 py-2.5 px-2 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${activeGameType === 'HungrySnake' ? 'bg-white dark:bg-neutral-900 text-green-500 shadow-md ring-1 ring-neutral-300 dark:ring-neutral-700' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-700'}`}
+                      >
+                        🐍 Hungry Snake
+                      </button>
+                    </div>
+                  </div>
+                  {/* THEME SETTING */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <p className="text-xs font-bold uppercase">UI Theme:</p>
+                    <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-xl w-48">
+                      <button onClick={() => { setThemeMode('light'); localStorage.setItem("bb_pos_theme_pc", 'light'); document.documentElement.classList.remove('dark'); }} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase ${themeMode === 'light' ? 'bg-white text-orange-600 shadow' : 'text-neutral-700 dark:text-neutral-400'}`}>Light</button>
+                      <button onClick={() => { setThemeMode('dark'); localStorage.setItem("bb_pos_theme_pc", 'dark'); document.documentElement.classList.add('dark'); }} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase ${themeMode === 'dark' ? 'bg-neutral-950 text-amber-400 shadow' : 'text-neutral-700 dark:text-neutral-400'}`}>Dark</button>
                     </div>
                   </div>
                 </div>
               </div>
             )}
-
-              </main>  {/* <--- यह लाइन जोड़ें */}
-        </>        {/* <--- यह लाइन जोड़ें */}
-      )}           {/* <--- यह लाइन जोड़ें */}
+          </main>
+        </>
+      )}
 
       {/* POPUP: HELP & SHORTCUTS [F1] */}
       <AnimatePresence>
