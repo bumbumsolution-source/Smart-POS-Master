@@ -1437,17 +1437,7 @@ export default function BbCafeDesktopPos() {
     return () => unsubscribe();
   }, []);
 
-  // Real-time listener for live orders
-  useEffect(() => {
-    const q = query(collection(db, "orders"), orderBy("timestamp", "desc"), limit(100));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      // ... (यहाँ आपका पुराना कोड होगा)
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // 👇👇 यहाँ अपना नया कोड पेस्ट करें 👇👇
-
+  
   // 👉 NEW: Firebase से लाइव कूपन लोड करें
   useEffect(() => {
     if (!isLoggedIn) return;
