@@ -2970,8 +2970,8 @@ export default function BbCafeDesktopPos() {
     });
   }, [pastReceipts, receiptSearchQuery, receiptFilterDay]);
 
-  // Keyboard Shortcuts Handler - FIXED FOR PERFORMANCE (Latest Ref Pattern)
-  const handleKeyDownRef = useRef<((e: KeyboardEvent) => void) | null>(null);
+ // Keyboard Shortcuts Handler - FIXED FOR PERFORMANCE (Latest Ref Pattern)
+  const handleKeyDownRef = useRef<any>(null);
 
   // यह वाला useEffect हर बार नया डेटा (State) ref में सेव करेगा, बिना DOM को छेड़े।
   useEffect(() => {
