@@ -2515,7 +2515,7 @@ export default function BbCafeDesktopPos() {
     window.open(`https://wa.me/91${clean}?text=${msg}`, '_blank');
   };
 
- // 📄 [HELPER] Professional EOD PDF Generator
+// 📄 [HELPER] Professional EOD PDF Generator
   const generateProfessionalPDF = () => {
     const doc = new jsPDF();
     const todayDate = new Date().toLocaleDateString('en-IN');
@@ -2557,7 +2557,8 @@ export default function BbCafeDesktopPos() {
 
     // --- 3. CASH DRAWER AUDIT TABLE ---
     let finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.text("2. Cash Drawer Audit (गल्ला)", 15, finalY);
+    // 👉 मैंने यहाँ से भी हिंदी शब्द हटा दिया है ताकि PDF में कचरा (Garbage text) न छपे
+    doc.text("2. Cash Drawer Audit", 15, finalY);
 
     autoTable(doc, {
       startY: finalY + 4,
@@ -2565,7 +2566,7 @@ export default function BbCafeDesktopPos() {
       body: [
         ["Total Cash Collected", `Rs. ${reportSummary.cashSale}`],
         ["Total Expenses Paid from Drawer", `- Rs. ${reportSummary.totalExpenseAmount}`],
-        ["NET CASH IN DRAWER (गल्ले में होना चाहिए)", `Rs. ${reportSummary.netCashInDrawer}`],
+        ["NET CASH IN DRAWER", `Rs. ${reportSummary.netCashInDrawer}`],
       ],
       theme: 'grid',
       headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255] },
@@ -2586,11 +2587,23 @@ export default function BbCafeDesktopPos() {
     finalY = (doc as any).lastAutoTable.finalY + 10;
     doc.text("3. Item-wise Sales Breakdown", 15, finalY);
 
-    // 🧹 Clean Items Logic: Remove "| Note: Spicy" or "| Add-ons: Cheese"
+    // 🧹 Clean Items Logic
     const cleanItemsMap: any = {};
     itemWiseSales.forEach((item) => {
-      let cleanName = item.name.split('|')[0].trim(); // Removes everything after '|'
+      let cleanName = item.name.split('|')[0].trim(); // Removes Add-ons & Notes
       
+      // 👉 NEW: हिंदी या अन्य अनचाहे अक्षरों को यहाँ हटा रहे हैं
+      cleanName = cleanName.replace(/[^\x00-\x7F]/g, ""); 
+      
+      // 👉 NEW: हिंदी हटाने के बाद बचने वाले खाली ब्रैकेट '()' को हटा रहे हैं
+      cleanName = cleanName.replace(/\(\s*\)/g, "").trim();
+      
+      // 👉 NEW: एक्स्ट्रा स्पेस हटा रहे हैं ताकि नाम साफ़ दिखे
+      cleanName = cleanName.replace(/\s+/g, " ");
+
+      // अगर आइटम का नाम सिर्फ हिंदी में था और वो हट गया है, तो fallback
+      if (!cleanName) cleanName = "Menu Item"; 
+
       if (!cleanItemsMap[cleanName]) {
          cleanItemsMap[cleanName] = { name: cleanName, qty: 0, rev: 0 };
       }
