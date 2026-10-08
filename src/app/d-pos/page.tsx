@@ -260,7 +260,7 @@ export default function BbCafeDesktopPos() {
       }
 
       // 2. अगर कूपन कोड डाला है (उदा. BOM-4821)
-      if (!targetDoc && term.toUpperCase().startsWith("BOM-")) {
+     if (!targetDoc && term.toUpperCase().startsWith("WIN-")) {
         const q = query(collection(db, "customer_points"), where("voucherCode", "==", term.toUpperCase()), limit(1));
         const qSnap = await getDocs(q);
         if (!qSnap.empty) targetDoc = { id: qSnap.docs[0].id, ...qSnap.docs[0].data() };
@@ -5794,7 +5794,7 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
                 <input 
                   type="text" 
                   autoFocus
-                  placeholder="उदा. 9876543210 या BOM-4821" 
+                  placeholder="उदा. 9876543210 या WIN-4821"
                   value={gameSearchInput}
                   onChange={e => setGameSearchInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleVerifyGameCode(gameSearchInput)}
