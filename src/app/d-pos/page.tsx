@@ -5051,6 +5051,22 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
                       </button>
                     </div>
                   </div>
+                  {/* 👇 नया कोड: PIZZA ADD-ONS SETTING यहाँ पेस्ट करें 👇 */}
+                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs font-bold uppercase">Enable Pizza Add-ons (पिज़्ज़ा टॉपिंग):</p>
+                      <button onClick={() => { 
+                        const newVal = !pizzaAddonsEnabled; 
+                        setPizzaAddonsEnabled(newVal); 
+                        localStorage.setItem("smart_pos_pizza_addons_enabled_pc", String(newVal)); 
+                        toast.success(newVal ? "Pizza Add-ons ON हो गया! 🍕" : "Pizza Add-ons OFF हो गया! ❌"); 
+                      }} className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${pizzaAddonsEnabled ? 'bg-green-500' : 'bg-neutral-400'}`}>
+                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${pizzaAddonsEnabled ? 'translate-x-6' : ''}`}></div>
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 font-bold">इसे बंद करने पर आइटम सेलेक्ट करते समय पिज़्ज़ा टॉपिंग के ऑप्शन नहीं दिखेंगे। (चाय/बिरयानी वालों के लिए इसे OFF रखें)</p>
+                  </div>
+                  {/* 👆 नया कोड यहाँ खत्म 👆 */}
 
                   {/* 👉 STORE PROFILE (DYNAMIC SETTINGS) 👈 */}
                   <div className="space-y-3 border-b border-neutral-300 dark:border-neutral-800 pb-5">
