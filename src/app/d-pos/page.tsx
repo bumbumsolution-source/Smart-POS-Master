@@ -2679,7 +2679,8 @@ export default function BbCafeDesktopPos() {
     const toastId = toast.loading("PDF रिपोर्ट बनाई जा रही है...");
     try {
       const { doc, todayDate } = generateProfessionalPDF();
-      doc.save(`BBCafe_EOD_${todayDate.replace(/\//g, '-')}.pdf`);
+      doc.save(`${storeNameConfig.replace(/\s/g, '')}_EOD_
+${todayDate.replace(/\//g, '-')}.pdf`);
       toast.dismiss(toastId);
       toast.success("EOD रिपोर्ट सफलतापूर्वक डाउनलोड हो गई! 📥");
     } catch (error) {
@@ -2697,7 +2698,8 @@ export default function BbCafeDesktopPos() {
       const cleanOwner = getSanitizedPhone(ownerPhoneConfig);
 
       const pdfBlob = doc.output('blob');
-      const fileName = `BBCafe_EOD_${todayDate.replace(/\//g, '-')}.pdf`;
+      const fileName = `${storeNameConfig.replace(/\s/g, '')}_EOD_
+${todayDate.replace(/\//g, '-')}.pdf`;
       const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
 
       toast.dismiss(toastId);
