@@ -3134,7 +3134,7 @@ export default function BbCafeDesktopPos() {
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-10 shadow-2xl space-y-6 text-center">
             <div className="flex flex-col items-center gap-3">
               <div className="p-4 bg-orange-500/10 text-orange-500 rounded-full border border-orange-500/20"><SafeLock size={36} /></div>
-              <h1 className="text-2xl font-black uppercase text-yellow-500 tracking-wider">BUM BUM CAFE - PC POS</h1>
+             <h1 className="text-2xl font-black uppercase text-yellow-500 tracking-wider">SMART POS</h1>
               <p className="text-xs text-neutral-400">Desktop Terminal Locked • Enter Staff PIN</p>
             </div>
             <form onSubmit={async (e) => {
