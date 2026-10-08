@@ -2533,7 +2533,7 @@ export default function BbCafeDesktopPos() {
     if (!ord.items || ord.items.length === 0) return toast.error("No items in cart!");
 
     const itemsText = ord.items.map((i: any) => `• ${i.name} x${i.quantity} = ₹${i.price * i.quantity}`).join('%0A');
-    const msg = `*☕ BUM BUM CAFE - DIGITAL RECEIPT*%0A------------------------------%0A*Customer:* ${ord.customerName || 'Valued Guest'}%0A*Total Amount:* ₹${ord.total}%0A*Payment:* ${ord.paymentMethod || 'Paid'}%0A------------------------------%0A${itemsText}%0A------------------------------%0A_Thank you for visiting Bum Bum Cafe! Visit Again!_ 💛`;
+   const msg = `*☕ ${storeNameConfig.toUpperCase()} - DIGITAL RECEIPT*%0A------------------------------%0A*Customer:* ${ord.customerName || 'Valued Guest'}%0A*Total Amount:* ₹${ord.total}%0A*Payment:* ${ord.paymentMethod || 'Paid'}%0A------------------------------%0A${itemsText}%0A------------------------------%0A_Thank you for visiting ${storeNameConfig}! Visit Again!_ 💛`;
     window.open(`https://wa.me/91${clean}?text=${msg}`, '_blank');
   };
 
