@@ -1232,6 +1232,7 @@ export default function SmartPosDashboard() {
     }
     // 👉 NEW: Load Cash Tender Setting
     setCashTenderEnabled(localStorage.getItem("bb_pos_cash_tender_enabled_pc") === 'true');
+    setPizzaAddonsEnabled(localStorage.getItem("smart_pos_pizza_addons_enabled_pc") === 'true');
     setKotEnabled(localStorage.getItem("bb_pos_kot_enabled_pc") !== 'false'); 
 
     const localTheme = localStorage.getItem("bb_pos_theme_pc") || 'light';
