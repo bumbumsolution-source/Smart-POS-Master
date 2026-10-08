@@ -1996,7 +1996,7 @@ export default function BbCafeDesktopPos() {
 
       // Preload QR Code for extra safety if you still use external image API
       if (!isKot) {
-        const upiString = `upi://pay?pa=${orderObj.upiId || upiIdConfig}&pn=BumBumCafe&am=${orderObj.total}&cu=INR&tn=Bill-${orderObj.billNumber || 'Order'}`;
+        const upiString = `upi://pay?pa=${orderObj.upiId || upiIdConfig}&pn=${encodeURIComponent(storeNameConfig)}&am=${orderObj.total}&cu=INR&tn=Bill-${orderObj.billNumber || 'Order'}`;
         await preloadQrCode(upiString);
       }
 
