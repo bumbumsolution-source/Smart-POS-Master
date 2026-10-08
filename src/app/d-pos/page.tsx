@@ -3184,7 +3184,7 @@ export default function BbCafeDesktopPos() {
                   <SafeDatabase className="text-orange-500 shrink-0" size={22} />
                   {!isSidebarCollapsed && (
                     <div className="truncate">
-                      <h1 className="text-xs font-black uppercase text-orange-600 dark:text-yellow-500 truncate">Bum Bum Cafe</h1>
+                     <h1 className="text-xs font-black uppercase text-orange-600 dark:text-yellow-500 truncate">{storeNameConfig}</h1>
                       <span className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold">POS Pro v4.4</span>
                     </div>
                   )}
