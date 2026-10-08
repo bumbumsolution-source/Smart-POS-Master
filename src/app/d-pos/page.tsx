@@ -2728,8 +2728,7 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
 
       toast.success("PDF डाउनलोड हो गई है! कृपया WhatsApp Web पर अटैच करें।", { duration: 6000 });
 
-      const msg = `*☕ BUM BUM CAFE - EOD SUMMARY*%0A------------------------------%0A*Date:* ${todayDate}%0A*Total Sales:* ₹${reportSummary.totalSale}%0A*Net Cash in Drawer:* ₹${reportSummary.netCashInDrawer}%0A------------------------------%0A_(⚠️ कृपया अभी डाउनलोड हुई EOD PDF फाइल यहाँ अटैच करें)_`;
-      
+     const msg = `*☕ ${storeNameConfig.toUpperCase()} - EOD SUMMARY*%0A------------------------------%0A*Date:* ${todayDate}%0A*Total Sales:* ₹${reportSummary.totalSale}%0A*Net Cash in Drawer:* ₹${reportSummary.netCashInDrawer}%0A------------------------------%0A_(⚠️ कृपया अभी डाउनलोड हुई EOD PDF फाइल यहाँ अटैच करें)_`;
       setTimeout(() => {
         window.open(`https://wa.me/${cleanOwner}?text=${msg}`, '_blank');
       }, 1500);
