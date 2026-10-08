@@ -4812,7 +4812,7 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
                           {/* WhatsApp Invite Button */}
                           <button 
                             onClick={() => {
-                              const msg = `Hi ${evt.customerName}! 🎉 We noticed an upcoming ${evt.eventType} celebration for ${evt.eventName}! Celebrate your special day at Bum Bum Cafe and get a surprise gift / Special Discount. Reply to book your table! ☕🎂`;
+                              const msg = `Hi ${evt.customerName}! 🎉 We noticed an upcoming ${evt.eventType} celebration for ${evt.eventName}! Celebrate your special day at ${storeNameConfig} and get a surprise gift / Special Discount. Reply to book your table! ☕🎂`;
                               window.open(`https://wa.me/91${evt.customerPhone}?text=${encodeURIComponent(msg)}`, '_blank');
                             }}
                             className="w-full mt-2 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-1 transition-colors"
@@ -4930,8 +4930,8 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
                                      <span className="text-[9px] font-black uppercase text-green-700 dark:text-green-400">Select Message</span>
                                      <button onClick={() => setActiveWaDropdown(null)} className="text-red-500 hover:text-red-700"><X size={12} /></button>
                                    </div>
-                                   <button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, we miss you at Bum Bum Cafe! ☕ Visit us soon and enjoy a 20% OFF using code COMEBACK20.`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🥺 We Miss You Offer</button>
-                                   <button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Happy Birthday to your family member from Bum Bum Cafe! 🎂 Celebrate with us and get a surprise gift!`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🎂 Birthday Booking</button>
+                                   <button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, we miss you at ${storeNameConfig}! ☕ Visit us soon and enjoy a 20% OFF using code COMEBACK20.`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🥺 We Miss You Offer</button>
+<button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Happy Birthday to your family member from ${storeNameConfig}! 🎂 Celebrate with us and get a surprise gift!`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200">🎂 Birthday Booking</button>
                                    <button onClick={() => { setActiveWaDropdown(null); window.open(`https://wa.me/91${cust.phone || cust.id}?text=Hi ${cust.name}, your Loyalty Points Balance is ⭐ ${cust.points || 0}. Redeem them on your next visit!`, '_blank'); }} className="px-3 py-2.5 text-[10px] font-bold text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">⭐ Points Update</button>
                                 </div>
                               )}
