@@ -5252,7 +5252,30 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
                   </div>
                 </div>
               )}
+{/* 👇 नया कोड: Add-ons (Topings) List 👇 */}
+              {pizzaAddonsEnabled && PIZZA_ADDONS[selectedSize?.toLowerCase()] && (
+                <div className="space-y-1.5 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                  <label className="text-xs font-bold uppercase text-neutral-500">Add-ons (टॉपिंग):</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(PIZZA_ADDONS[selectedSize.toLowerCase()]).map(([addonName, addonPrice]) => (
+                      <label key={addonName} className="flex items-center gap-2 bg-neutral-50 dark:bg-neutral-800 p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:border-orange-500 transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={!!selectedAddons[addonName]} 
+                          onChange={(e) => setSelectedAddons(prev => ({ ...prev, [addonName]: e.target.checked }))}
+                          className="w-4 h-4 accent-orange-600 cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                          {addonName} <span className="text-orange-600">(+₹{addonPrice})</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* 👆 नया कोड यहाँ खत्म 👆 */}
 
+              
               <div>
                 <input 
                   type="text" 
