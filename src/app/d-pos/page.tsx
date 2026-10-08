@@ -132,6 +132,7 @@ export default function SmartPosDashboard() {
   const [gstRate, setGstRate] = useState(5);
   // 👉 NEW: Cash Tendered Calculator On/Off
   const [cashTenderEnabled, setCashTenderEnabled] = useState(false);
+  const [pizzaAddonsEnabled, setPizzaAddonsEnabled] = useState(false);
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('light');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
