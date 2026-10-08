@@ -2543,14 +2543,14 @@ export default function BbCafeDesktopPos() {
     const todayDate = new Date().toLocaleDateString('en-IN');
     const currentTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-    // --- 1. HEADER ---
+  // --- 1. HEADER ---
     doc.setFontSize(24);
     doc.setTextColor(234, 88, 12); // Orange Theme
-    doc.text("BUM BUM CAFE", 105, 18, { align: "center" });
+    doc.text(storeNameConfig.toUpperCase(), 105, 18, { align: "center" });
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text("Mohandra | Daily EOD Sales & Settlement Report", 105, 24, { align: "center" });
+    doc.text(`${storeAddressConfig} | Daily EOD Sales & Settlement Report`, 105, 24, { align: "center" });
     doc.text(`Date: ${todayDate}   |   Generated At: ${currentTime}`, 105, 29, { align: "center" });
     
     doc.setDrawColor(200, 200, 200);
