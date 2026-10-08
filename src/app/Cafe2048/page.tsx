@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
 // 🛡️ 1. Security Guard को Import किया है
@@ -40,6 +40,19 @@ export default function Cafe2048Page() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isReturningUser, setIsReturningUser] = useState(false);
+  
+  // 👉 NEW: Store Settings State
+  const [storeNameConfig, setStoreNameConfig] = useState('Smart POS Store');
+
+  // Load Store Name from Firebase
+  useEffect(() => {
+    const unsubStore = onSnapshot(doc(db, "system_settings", "store_info"), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().storeName) {
+        setStoreNameConfig(docSnap.data().storeName);
+      }
+    });
+    return () => unsubStore();
+  }, []);
 
   // गेम स्टेट्स
   const [board, setBoard] = useState<number[][]>([]);
@@ -370,7 +383,7 @@ export default function Cafe2048Page() {
           <div className="w-full max-w-sm px-4 z-10 py-6 overflow-y-auto max-h-[100dvh]">
             <div className="mb-6 text-center">
               <h1 className="text-4xl font-black text-amber-500 drop-shadow-md tracking-wider">Cafe 2048 🧩</h1>
-              <p className="text-sm font-bold text-neutral-400 mt-1">बम बम कैफे, मोहंद्रा</p>
+              <p className="text-sm font-bold text-neutral-400 mt-1 uppercase">{storeNameConfig}</p>
             </div>
 
             <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
