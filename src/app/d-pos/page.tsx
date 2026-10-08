@@ -3767,12 +3767,13 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
 
                           <div className="flex gap-1.5">
                             <input 
-                              type="text" 
-                              placeholder="Coupon Code (e.g. CAFE10, BUM50)" 
-                              value={promoCouponInput}
-                              onChange={e => setPromoCouponInput(e.target.value)}
-                              className="flex-1 bg-white dark:bg-neutral-900 border rounded-lg px-2.5 py-1 text-xs font-mono font-bold uppercase text-neutral-900 dark:text-white outline-none" 
-                            />
+  type="text" 
+  // 👇 यहाँ यह नया डायनामिक प्लेसहोल्डर डालें 
+  placeholder={`Coupon Code (e.g. ${storeNameConfig.split(' ')[0].toUpperCase()}10, ${storeNameConfig.split(' ')[0].toUpperCase()}50)`}
+  value={promoCouponInput}
+  onChange={e => setPromoCouponInput(e.target.value)}
+  className="flex-1 bg-white dark:bg-neutral-900 border rounded-lg px-2.5 py-1 text-xs font-mono font-bold uppercase text-neutral-900 dark:text-white outline-none" 
+/>
                             <button 
                               type="button" 
                               onClick={handleApplyPromoCoupon} 
