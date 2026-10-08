@@ -122,7 +122,7 @@ const getCategoryBaseCode = (catName: string): number => {
   return 1000;
 };
 
-export default function BbCafeDesktopPos() {
+export default function SmartPosDashboard() {
  const DELIVERY_AREAS: DeliveryArea[] = useMemo(() => [
     { name: "Local Area (0-2 KM)", fee: 20, minFree: 99, range: "0-2 KM" },
     { name: "City Area (2-5 KM)", fee: 50, minFree: 499, range: "2-5 KM" },
