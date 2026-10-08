@@ -5045,21 +5045,43 @@ export default function BbCafeDesktopPos() {
                     </div>
                   </div>
 
-                  {/* UPI ID SETTING */}
-                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
-                    <p className="text-xs font-bold uppercase">Dynamic UPI ID (VPA for QR Code):</p>
-                    <div className="flex gap-2">
-                      <input type="text" value={upiIdConfig} onChange={e => setUpiIdConfig(e.target.value)} placeholder="e.g. Q991347275@ybl" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" />
-                      <button onClick={() => { localStorage.setItem("bb_pos_upi_id", upiIdConfig); toast.success("UPI ID Saved!"); }} className="bg-blue-600 text-white px-4 rounded-xl text-xs font-black uppercase">Save</button>
+                  {/* 👉 STORE PROFILE (DYNAMIC SETTINGS) 👈 */}
+                  <div className="space-y-3 border-b border-neutral-300 dark:border-neutral-800 pb-5">
+                    <div>
+                      <p className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                        🏪 Store Profile (दुकान की जानकारी):
+                      </p>
+                      <p className="text-[10px] text-neutral-500 font-bold mt-0.5">
+                        यहाँ जो नाम और जानकारी आप डालेंगे, वही ग्राहकों के बिल और WhatsApp रसीद पर छपेगी।
+                      </p>
                     </div>
-                  </div>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-2xl border border-blue-200 dark:border-blue-800/50 space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-neutral-500">Store Name (दुकान का नाम)</label>
+                          <input type="text" value={storeNameConfig} onChange={e => setStoreNameConfig(e.target.value)} placeholder="e.g. Raju Pizza Cafe" className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-bold outline-none" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-neutral-500">City / Location (शहर)</label>
+                          <input type="text" value={storeAddressConfig} onChange={e => setStoreAddressConfig(e.target.value)} placeholder="e.g. Bhopal, MP" className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-bold outline-none" />
+                        </div>
+                      </div>
 
-                  {/* OWNER WHATSAPP SETTING */}
-                  <div className="space-y-2 border-b border-neutral-300 dark:border-neutral-800 pb-4">
-                    <p className="text-xs font-bold uppercase">Owner WhatsApp Number (for EOD Report):</p>
-                    <div className="flex gap-2">
-                      <input type="text" value={ownerPhoneConfig} onChange={e => setOwnerPhoneConfig(e.target.value)} placeholder="e.g. 919714293759" className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono outline-none" />
-                      <button onClick={() => { localStorage.setItem("bb_pos_owner_phone", ownerPhoneConfig); toast.success("Owner Phone Saved!"); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-black uppercase">Save</button>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-neutral-500">Store UPI ID (QR Code के लिए)</label>
+                          <input type="text" value={upiIdConfig} onChange={e => setUpiIdConfig(e.target.value)} placeholder="e.g. 9876543210@ybl" className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase text-neutral-500">Owner WhatsApp No. (EOD Report)</label>
+                          <input type="text" value={ownerPhoneConfig} onChange={e => setOwnerPhoneConfig(e.target.value)} placeholder="e.g. 919876543210" className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none" />
+                        </div>
+                      </div>
+
+                      <button onClick={handleSaveStoreProfile} className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs rounded-xl shadow-lg transition-all">
+                        💾 Save Store Profile (सेव करें)
+                      </button>
                     </div>
                   </div>
 {/* 👉 NEW: ACTIVE GAME SETTING (कस्टमर का गेम बदलें) */}
