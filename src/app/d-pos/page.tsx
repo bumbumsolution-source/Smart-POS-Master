@@ -123,12 +123,11 @@ const getCategoryBaseCode = (catName: string): number => {
 };
 
 export default function BbCafeDesktopPos() {
-  const DELIVERY_AREAS: DeliveryArea[] = useMemo(() => [
-    { name: "Mohandra Town", fee: 20, minFree: 99, range: "0-2 KM" },
-    { name: "Within 5 KM (Bum Bum Cafe से 5km के दायरे में)", fee: 50, minFree: 499, range: "2-5 KM" },
-    { name: "Within 12 KM (12km के दायरे में)", fee: 99, minFree: 999, range: "5-12 KM" }
+ const DELIVERY_AREAS: DeliveryArea[] = useMemo(() => [
+    { name: "Local Area (0-2 KM)", fee: 20, minFree: 99, range: "0-2 KM" },
+    { name: "City Area (2-5 KM)", fee: 50, minFree: 499, range: "2-5 KM" },
+    { name: "Outer Area (5-12 KM)", fee: 99, minFree: 999, range: "5-12 KM" }
   ], []);
-
   // System States
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
