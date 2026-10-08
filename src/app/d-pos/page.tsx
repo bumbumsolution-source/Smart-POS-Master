@@ -1622,7 +1622,7 @@ export default function SmartPosDashboard() {
     }
   };
 
-  const handleApplyPromoCoupon = () => {
+ const handleApplyPromoCoupon = () => {
     const code = promoCouponInput.trim().toUpperCase();
     if (!code) return toast.error("Enter a promo code!");
 
@@ -1630,16 +1630,26 @@ export default function SmartPosDashboard() {
     const dbCoupon = liveDbCoupons.find(c => c.code === code);
     
     if (dbCoupon) {
-      setDiscountType('amount'); // एडमिन से अभी फ्लैट डिस्काउंट ही बन रहा है
+      setDiscountType('amount'); 
       setDiscountValue(Number(dbCoupon.discountValue));
       setAppliedPromoName(code);
       toast.success(`Coupon "${code}" (₹${dbCoupon.discountValue} OFF) लागू हो गया! 🎉`);
       return;
     }
 
-    // 2. अगर वहां नहीं मिला, तो पुरानी फिक्स लिस्ट (PROMO_COUPONS) में चेक करें
-    if (PROMO_COUPONS[code]) {
-      const c = PROMO_COUPONS[code];
+    // 2. स्टोर के नाम से डायनामिक कूपन बनाना (उदा. "Raju Pizza" -> "RAJU10", "RAJU50")
+    // स्टोर के नाम का पहला शब्द निकालें (e.g., Smart POS -> SMART)
+    const storePrefix = storeNameConfig.split(' ')[0].toUpperCase(); 
+
+    const DYNAMIC_COUPONS: { [key: string]: { type: 'percent' | 'flat', value: number } } = {
+      [`${storePrefix}10`]: { type: 'percent', value: 10 },
+      [`${storePrefix}50`]: { type: 'flat', value: 50 },
+      'WELCOME': { type: 'percent', value: 15 },
+      'FLAT100': { type: 'flat', value: 100 }
+    };
+
+    if (DYNAMIC_COUPONS[code]) {
+      const c = DYNAMIC_COUPONS[code];
       if (c.type === 'percent') {
         setDiscountType('percentage');
         setDiscountValue(c.value);
