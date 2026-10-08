@@ -2708,8 +2708,8 @@ ${todayDate.replace(/\//g, '-')}.pdf`;
       if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
         try {
           await navigator.share({
-            title: 'Bum Bum Cafe EOD Report',
-            text: `*☕ BUM BUM CAFE - EOD SUMMARY*\nDate: ${todayDate}\nTotal Sales: ₹${reportSummary.totalSale}\n\nपूरी डिटेल के लिए PDF चेक करें 👇`,
+            title: `${storeNameConfig} EOD Report`,
+            text: `*☕ ${storeNameConfig.toUpperCase()} - EOD SUMMARY*\nDate: ${todayDate}\nTotal Sales: ₹${reportSummary.totalSale}\n\nपूरी डिटेल के लिए PDF चेक करें 👇`,
             files: [pdfFile]
           });
           toast.success("रिपोर्ट शेयर कर दी गई! ✅");
