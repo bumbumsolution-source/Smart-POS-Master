@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
 // 🛡️ 1. Security Guard
@@ -33,6 +33,19 @@ export default function MemoryGamePage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isReturningUser, setIsReturningUser] = useState(false);
+
+  // 👉 NEW: Store Settings State (दुकान का नाम डायनामिक करने के लिए)
+  const [storeNameConfig, setStoreNameConfig] = useState('Smart POS');
+
+  // Load Store Name from Firebase
+  useEffect(() => {
+    const unsubStore = onSnapshot(doc(db, "system_settings", "store_info"), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().storeName) {
+        setStoreNameConfig(docSnap.data().storeName);
+      }
+    });
+    return () => unsubStore();
+  }, []);
 
   // गेम स्टेट्स
   const [cards, setCards] = useState<CardData[]>([]);
@@ -293,6 +306,8 @@ export default function MemoryGamePage() {
                 {tableNo}
               </div>
               <h1 className="text-3xl font-black text-cyan-400 drop-shadow-md">Food Memory 🃏</h1>
+              {/* 👉 NEW: Dynamic Store Name Added Below */}
+              <p className="text-sm font-bold text-neutral-400 mt-2 uppercase">{storeNameConfig}</p>
             </div>
 
             <div className="bg-[#1e293b] p-6 rounded-3xl border border-[#334155] shadow-2xl text-center space-y-4">
