@@ -21,12 +21,27 @@ export default function RetroSnakePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   
-  const [tableNo, setTableNo] = useState<string>("सामान्य টেবल");
+  const [tableNo, setTableNo] = useState<string>("सामान्य टेबल");
   const [isLoading, setIsLoading] = useState(false);
+
+  // 👉 NEW: Store Settings State (दुकान का नाम डायनामिक करने के लिए)
+  const [storeNameConfig, setStoreNameConfig] = useState('Smart POS');
+  const [storeAddressConfig, setStoreAddressConfig] = useState('Local Area');
+
+  // Load Store Profile from Firebase
+  useEffect(() => {
+    const unsubStore = onSnapshot(doc(db, "system_settings", "store_info"), (docSnap) => {
+      if (docSnap.exists()) {
+        if (docSnap.data().storeName) setStoreNameConfig(docSnap.data().storeName);
+        if (docSnap.data().storeAddress) setStoreAddressConfig(docSnap.data().storeAddress);
+      }
+    });
+    return () => unsubStore();
+  }, []);
   
   // 🏆 Leaderboard States (Top 3)
   const [leaderboard, setLeaderboard] = useState<{name: string, score: number, phone?: string}[]>([
-    { name: "बम बम कैफे", score: 30 }
+    { name: storeNameConfig, score: 30 } // Default Name is now dynamic
   ]);
   const [globalHighScore, setGlobalHighScore] = useState(30);
 
@@ -82,13 +97,13 @@ export default function RetroSnakePage() {
           setGlobalHighScore(data.topScores[0].score);
         } else if (data.topScore) {
           // Backward compatibility for old single score
-          setLeaderboard([{ name: data.topName || "बम बम कैफे", score: data.topScore }]);
+          setLeaderboard([{ name: data.topName || storeNameConfig, score: data.topScore }]);
           setGlobalHighScore(data.topScore);
         }
       }
     });
     return () => unsub();
-  }, []);
+  }, [storeNameConfig]);
 
   // 🚀 ऑटो-फिल लॉजिक
   useEffect(() => {
@@ -305,15 +320,15 @@ export default function RetroSnakePage() {
       const lbRef = doc(db, "leaderboards", "HungrySnake");
       const lbSnap = await getDoc(lbRef);
       // यहाँ हमने TypeScript को बता दिया है कि phone नंबर optional (?) है।
-      let currentTopScores: { name: string, score: number, phone?: string }[] = [{ name: "बम बम कैफे", score: 30, phone: "0000000000" }];
+      let currentTopScores: { name: string, score: number, phone?: string }[] = [{ name: storeNameConfig, score: 30, phone: "0000000000" }];
       
       if (lbSnap.exists()) {
         const data = lbSnap.data();
         if (data.topScores && data.topScores.length > 0) {
           currentTopScores = data.topScores;
         } else if (data.topScore) {
-          // पुराना डेटा जिसमें phone नहीं था, उसके लिए डिफ़ॉल्ट वैल्यू
-          currentTopScores = [{ name: data.topName || "बम बम कैफे", score: data.topScore, phone: "0000000000" }];
+          // Backward compatibility for old single score
+          currentTopScores = [{ name: data.topName || storeNameConfig, score: data.topScore, phone: "0000000000" }];
         }
       }
 
@@ -475,8 +490,10 @@ export default function RetroSnakePage() {
             
             <div className="w-full max-w-[420px] flex justify-between items-end mb-6">
                <div>
-                 <h2 className="text-3xl font-black text-green-400 tracking-wider drop-shadow-[0_2px_10px_rgba(74,222,128,0.5)] leading-none">BUM BUM CAFE</h2>
-                 <p className="text-[13px] text-green-600 font-black uppercase tracking-[0.2em] mt-1 ml-1">Mohandra</p>
+                 <h2 className="text-3xl font-black text-green-400 tracking-wider drop-shadow-[0_2px_10px_rgba(74,222,128,0.5)] leading-none uppercase">
+                   {storeNameConfig}
+                 </h2>
+                 <p className="text-[13px] text-green-600 font-black uppercase tracking-[0.2em] mt-1 ml-1">{storeAddressConfig}</p>
                </div>
                
                <div className="flex flex-col items-end">
