@@ -98,12 +98,6 @@ const PIZZA_ADDONS: { [size: string]: { [addon: string]: number } } = {
 
 const COOKING_TAGS = ['🌶️ Less Spicy', '🧅 No Onion/Garlic', '📦 Parcel/To-Go', '🧊 Less Ice', '🧀 Extra Dip', '☕ Kadak'];
 
-const PROMO_COUPONS: { [code: string]: { type: 'percent' | 'flat', value: number } } = {
-  'CAFE10': { type: 'percent', value: 10 },
-  'BUM50': { type: 'flat', value: 50 },
-  'WELCOME': { type: 'percent', value: 15 },
-  'FLAT100': { type: 'flat', value: 100 }
-};
 
 let globalAudioCtx: AudioContext | null = null;
 
