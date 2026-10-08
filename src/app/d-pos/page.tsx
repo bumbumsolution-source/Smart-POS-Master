@@ -142,23 +142,45 @@ export default function BbCafeDesktopPos() {
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('light');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const [kotEnabled, setKotEnabled] = useState<boolean>(true); 
-  const [upiIdConfig, setUpiIdConfig] = useState<string>('Q991347275@ybl');
-  const [ownerPhoneConfig, setOwnerPhoneConfig] = useState<string>('919714293759');
+ const [kotEnabled, setKotEnabled] = useState<boolean>(true); 
+  const [upiIdConfig, setUpiIdConfig] = useState<string>('');
+  const [ownerPhoneConfig, setOwnerPhoneConfig] = useState<string>('');
   const [manualInvoiceCounterInput, setManualInvoiceCounterInput] = useState<string>('200');
-// 👉 NEW: स्मार्ट गेम कंट्रोलर (POS से गेम बदलने के लिए)
   const [activeGameType, setActiveGameType] = useState('SpinGame'); 
+  
+  // 👉 NEW: Store Settings
+  const [storeNameConfig, setStoreNameConfig] = useState('Smart POS');
+  const [storeAddressConfig, setStoreAddressConfig] = useState('Local Area');
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    const unsub = onSnapshot(doc(db, "system_settings", "game_config"), (docSnap) => {
+    // Load Game Config
+    const unsubGame = onSnapshot(doc(db, "system_settings", "game_config"), (docSnap) => {
+      if (docSnap.exists()) setActiveGameType(docSnap.data().activeGame || 'SpinGame');
+    });
+    // Load Store Profile
+    const unsubStore = onSnapshot(doc(db, "system_settings", "store_info"), (docSnap) => {
       if (docSnap.exists()) {
-        setActiveGameType(docSnap.data().activeGame || 'SpinGame');
+        const data = docSnap.data();
+        if(data.storeName) setStoreNameConfig(data.storeName);
+        if(data.storeAddress) setStoreAddressConfig(data.storeAddress);
+        if(data.upiId) setUpiIdConfig(data.upiId);
+        if(data.ownerPhone) setOwnerPhoneConfig(data.ownerPhone);
       }
     });
-    return () => unsub();
+    return () => { unsubGame(); unsubStore(); };
   }, [isLoggedIn]);
 
+  const handleSaveStoreProfile = async () => {
+    const toastId = toast.loading("दुकान की जानकारी सेव हो रही है...");
+    try {
+      await setDoc(doc(db, "system_settings", "store_info"), {
+        storeName: storeNameConfig, storeAddress: storeAddressConfig, upiId: upiIdConfig, ownerPhone: ownerPhoneConfig, updatedAt: new Date()
+      }, { merge: true });
+      toast.dismiss(toastId);
+      toast.success("दुकान की जानकारी सेव हो गई! ✅");
+    } catch (e) { toast.dismiss(toastId); toast.error("सेव करने में समस्या आई!"); }
+  };
   const handleToggleGame = async (gameType: string) => {
     triggerBeep('tap');
     await setDoc(doc(db, "system_settings", "game_config"), { activeGame: gameType }, { merge: true });
